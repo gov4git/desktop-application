@@ -1,0 +1,69 @@
+appId: org.gov4git
+productName: Gov4Git
+asar: true
+directories:
+  buildResources: buildResources
+  output: release
+electronDownload:
+  cache: './.electron-cache'
+files:
+  - '**/*'
+  - '!**/.vscode/**/*'
+  - '!.electron-cache/**/*'
+  - '!**/node_modules/**/{CHANGELOG.md,README.md,README,readme.md,readme}'
+  - '!**/node_modules/**/{test,__tests__,tests,powered-test,example,examples}'
+  - '!**/node_modules/**/*.d.ts'
+  - '!**/node_modules/.bin'
+  - '!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}'
+  - '!**/{.git,.gitignore,.gitattributes}'
+  - '!**/azure_pipelines.yml'
+  - '!**/npm-debug.log'
+  - '!src/**/*'
+  - '!migrations/**/*'
+  - '!scripts/**/*'
+  - '!{.editorconfig,.eslintignore,.eslintrc.cjs,.prettierignore,.prettierrc}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsup.config.ts,vite.webapp.config.ts}'
+extraResources:
+  - from: 'extraResources'
+    to: '.'
+    filter:
+      - 'app-update.yml'
+  - from: 'migrations'
+    to: 'migrations'
+    filter:
+      - '**/*'
+win:
+  executableName: Gov4Git
+nsis:
+  oneClick: true
+  perMachine: false
+  packElevateHelper: false
+  artifactName: ${name}-setup.${ext}
+  shortcutName: ${productName}
+  uninstallDisplayName: ${productName}
+  createDesktopShortcut: always
+afterSign: ./scripts/notarize.js
+mac:
+  artifactName: ${name}.${ext}
+  type: distribution
+  gatekeeperAssess: false
+  hardenedRuntime: true
+  entitlements: assets/entitlements.mac.plist
+  entitlementsInherit: assets/entitlements.mac.plist
+  notarize: false
+  target:
+    - dmg
+    - zip
+linux:
+  target:
+    - AppImage
+  maintainer: gov4git.org
+  category: Utility
+appImage:
+  artifactName: ${name}.${ext}
+npmRebuild: true
+publish:
+  - provider: github
+    protocol: https
+    private: false

@@ -1,0 +1,6 @@
+owner: gov4git
+repo: desktop-application
+provider: github
+protocol: https
+private: true
+updaterCacheDirName: gov4git-desktop-app-updater

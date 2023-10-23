@@ -1,0 +1,224 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - releases/*
+
+stages:
+  - stage: Release
+    jobs:
+      - job: Mac
+        pool:
+          vmImage: 'macOS-latest'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSource: 'spec'
+              versionSpec: '18.x'
+          - script: npm install
+            displayName: 'install'
+          - script: npm run build
+            displayName: 'Build'
+          - script: npm run electron:buildPackage
+            displayName: 'Build Electron'
+            env:
+              APPLE_ID: $(APPLE_ID)
+              APPLE_APP_SPECIFIC_PASSWORD: $(APPLE_APP_SPECIFIC_PASSWORD)
+              APPLE_TEAM_ID: $(APPLE_TEAM_ID)
+              CSC_LINK: $(CSC_KEY)
+              CSC_KEY_PASSWORD: $(CSC_KEY_PASSWORD)
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'release'
+              Contents: '**/*'
+              TargetFolder: $(Build.ArtifactStagingDirectory)
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+              publishLocation: 'pipeline'
+              artifactName: 'mac'
+
+      - job: Linux
+        pool:
+          vmImage: 'ubuntu-latest'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSource: 'spec'
+              versionSpec: '18.x'
+          - script: npm install
+            displayName: 'install'
+          - script: npm run build
+            displayName: 'Build'
+          - script: npm run electron:buildPackage
+            displayName: 'Electron'
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'release'
+              Contents: '**/*'
+              TargetFolder: $(Build.ArtifactStagingDirectory)
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+              publishLocation: 'pipeline'
+              artifactName: 'linux'
+
+      - job: Windows
+        pool:
+          vmImage: 'windows-latest'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSource: 'spec'
+              versionSpec: '18.x'
+          - script: npm install
+            displayName: 'install'
+          - script: npm run build
+            displayName: 'Build'
+          - script: npm run electron:build
+            displayName: 'Build Electron'
+          - task: EsrpCodeSigning@4
+            displayName: Third Party OSS Sign
+            inputs:
+              ConnectedServiceName: 'gov4git ESRP Code Signing'
+              FolderPath: 'release/win-unpacked'
+              Pattern: |
+                **/*.exe
+                **/*.dll
+                !**/d3dcompiler_47.dll
+                !**/Gov4Git.exe
+              UseMinimatch: true
+              signConfigType: 'inlineSignParams'
+              inlineOperation: |
+                [
+                  {
+                    "KeyCode": "CP-231522",
+                    "OperationCode": "SigntoolSign",
+                    "ToolName": "sign",
+                    "ToolVersion": "1.0",
+                    "Parameters": {
+                    "OpusName": "Microsoft",
+                    "OpusInfo": "https://www.microsoft.com",
+                    "FileDigest": "/fd SHA256",
+                    "PageHash": "/NPH",
+                    "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                    }
+                  },
+                  {
+                    "KeyCode": "CP-231522",
+                    "OperationCode": "SigntoolVerify",
+                    "ToolName": "sign",
+                    "ToolVersion": "1.0",
+                    "Parameters": {}
+                  }
+                ]
+              SessionTimeout: '60'
+              MaxConcurrency: '50'
+              MaxRetryAttempts: '5'
+              PendingAnalysisWaitTimeoutMinutes: '5'
+          - task: EsrpCodeSigning@4
+            displayName: EXE Sign
+            inputs:
+              ConnectedServiceName: 'gov4git ESRP Code Signing'
+              FolderPath: 'release/win-unpacked'
+              Pattern: '*.exe'
+              UseMinimatch: true
+              signConfigType: 'inlineSignParams'
+              inlineOperation: |
+                [
+                {
+                  "KeyCode": "CP-230012",
+                  "OperationCode": "SigntoolSign",
+                  "ToolName": "sign",
+                  "ToolVersion": "1.0",
+                  "Parameters": {
+                  "OpusName": "Microsoft",
+                  "OpusInfo": "https://www.microsoft.com",
+                  "FileDigest": "/fd SHA256",
+                  "PageHash": "/NPH",
+                  "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                  }
+                },
+                {
+                  "KeyCode": "CP-230012",
+                  "OperationCode": "SigntoolVerify",
+                  "ToolName": "sign",
+                  "ToolVersion": "1.0",
+                  "Parameters": {}
+                }
+                ]
+              SessionTimeout: '60'
+              MaxConcurrency: '50'
+              MaxRetryAttempts: '5'
+              PendingAnalysisWaitTimeoutMinutes: '5'
+          - script: npm run electron:package -- release/win-unpacked
+            displayName: 'Package Electron'
+          - task: EsrpCodeSigning@4
+            inputs:
+              ConnectedServiceName: 'gov4git ESRP Code Signing'
+              FolderPath: 'release'
+              Pattern: '*.exe'
+              UseMinimatch: true
+              signConfigType: 'inlineSignParams'
+              inlineOperation: |
+                [
+                {
+                  "KeyCode": "CP-230012",
+                  "OperationCode": "SigntoolSign",
+                  "ToolName": "sign",
+                  "ToolVersion": "1.0",
+                  "Parameters": {
+                  "OpusName": "Microsoft",
+                  "OpusInfo": "https://www.microsoft.com",
+                  "FileDigest": "/fd SHA256",
+                  "PageHash": "/NPH",
+                  "TimeStamp": "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                  }
+                },
+                {
+                  "KeyCode": "CP-230012",
+                  "OperationCode": "SigntoolVerify",
+                  "ToolName": "sign",
+                  "ToolVersion": "1.0",
+                  "Parameters": {}
+                }
+                ]
+              SessionTimeout: '60'
+              MaxConcurrency: '50'
+              MaxRetryAttempts: '5'
+              PendingAnalysisWaitTimeoutMinutes: '5'
+          - script: npm run electron:hash -- ./release/gov4git-desktop-app-setup.exe ./release/latest.yml
+            displayName: Hash Release
+          - task: CopyFiles@2
+            inputs:
+              SourceFolder: 'release'
+              Contents: '*'
+              TargetFolder: $(Build.ArtifactStagingDirectory)
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: '$(Build.ArtifactStagingDirectory)'
+              publishLocation: 'pipeline'
+              artifactName: 'win'
+
+      - job: Release
+        dependsOn:
+          - Windows
+          - Mac
+          - Linux
+        pool:
+          vmImage: 'windows-latest'
+        steps:
+          - task: NodeTool@0
+            inputs:
+              versionSource: 'spec'
+              versionSpec: '18.x'
+          - script: npm install
+            displayName: 'install'
+          - task: DownloadPipelineArtifact@2
+            inputs:
+              patterns: '**/*'
+              path: releases
+          - script: npm run electron:publish -- $(Build.SourceBranchName) ./releases/
+            displayName: Release
+            env:
+              GH_TOKEN: $(GH_TOKEN)

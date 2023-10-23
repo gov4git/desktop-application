@@ -1,0 +1,10 @@
+node_modules
+build
+release
+.electron-cache
+dev.md
+.env
+*.env
+.env.*
+data
+test/config

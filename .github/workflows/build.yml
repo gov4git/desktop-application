@@ -1,0 +1,54 @@
+name: Build
+on:
+  pull_request:
+    branches:
+      - 'main'
+  workflow_call:
+    inputs:
+      release:
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: ${{ matrix.settings.os }}
+
+    strategy:
+      matrix:
+        settings:
+          [
+            { os: ubuntu-latest, dir: 'release/linux-unpacked' },
+            { os: macos-latest, dir: 'release/mac' },
+            { os: windows-latest, dir: 'release/win-upacked' },
+          ]
+
+    steps:
+      - name: Configure git to checkout as-is and commit as-is
+        if: matrix.settings.os == 'windows-latest'
+        run: git config --global core.autocrlf false
+
+      - name: Check out Git repository
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: CI Check
+        run: npm run ci:check
+
+      - name: Build Electron
+        if: ${{ !inputs.release }}
+        run: |
+          npm run electron:buildPackage
+
+      - name: Publish
+        if: ${{ inputs.release }}
+        run: npm run publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
