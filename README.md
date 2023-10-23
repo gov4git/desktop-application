@@ -2,6 +2,10 @@
 
 A desktop application for https://github.com/gov4git/gov4git
 
+## Demo
+
+[![gov4git walkthrough](https://img.youtube.com/vi/l0Cz-2xaajY/maxresdefault.jpg)](https://www.youtube.com/watch?v=l0Cz-2xaajY)
+
 ## Install
 
 **Windows**
