@@ -55,8 +55,11 @@ export class LogService extends AbstractLogService {
       .map((v) => {
         if (isRecord(v)) {
           return this.redact(structuredClone(v))
+        } else if (Array.isArray(v)) {
+          return `${JSON.stringify(v, undefined, 2)}`
+        } else {
+          return `${v}`
         }
-        return `${JSON.stringify(v, undefined, 2)}`
       })
       .join(' ')
   }
