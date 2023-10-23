@@ -127,7 +127,9 @@ export const DataLoader: FC = function DataLoader() {
     addToQueue(getUser())
     addToQueue(getBallots())
 
-    const interval = setInterval(updateBallotCache, 60 * 1000)
+    const interval = setInterval(async () => {
+      return await updateBallotCache().then(getUser)
+    }, 60 * 1000)
 
     listeners.push(() => {
       clearInterval(interval)
