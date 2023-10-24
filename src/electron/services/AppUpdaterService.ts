@@ -64,12 +64,14 @@ export class AppUpdaterService extends AbstractAppUpdaterService {
           version: updateInfo.updateInfo.version,
         }
       })
+      return {
+        ready: false,
+        version: updateInfo.updateInfo.version,
+      }
     }
-    return {
-      ready: false,
-      version: updateInfo.updateInfo.version,
-    }
+    return null
   }
+
   public override restartAndUpdate = (): void => {
     autoUpdater.quitAndInstall()
   }
