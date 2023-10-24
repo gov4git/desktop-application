@@ -1,3 +1,5 @@
 import { atom } from 'jotai'
 
-export const updatesAtom = atom<boolean>(false)
+import { AppUpdateInfo } from '~/shared'
+
+export const updatesAtom = atom<AppUpdateInfo | null>(null)

@@ -3,7 +3,7 @@ import { useAtomValue } from 'jotai'
 import { FC, useCallback } from 'react'
 
 import { useCatchError } from '../hooks/useCatchError.js'
-import { restartAndUpdate } from '../services/updates.js'
+import { appUpdaterService } from '../services/AppUpdaterService.js'
 import { updatesAtom } from '../state/updates.js'
 import { useUpdateNotificationStyles } from './UpdateNotification.styles.js'
 
@@ -13,12 +13,12 @@ export const UpdateNotification: FC = function UpdateNotification() {
   const styles = useUpdateNotificationStyles()
 
   const update = useCallback(() => {
-    restartAndUpdate().catch(async (ex) => {
+    appUpdaterService.restartAndUpdate().catch(async (ex) => {
       await catchError(`Failed to restart for updates. ${ex}`)
     })
   }, [catchError])
 
-  if (updates === false) {
+  if (updates === null) {
     return <></>
   }
 
@@ -27,13 +27,26 @@ export const UpdateNotification: FC = function UpdateNotification() {
       <Card>
         <p>
           <Text size={300} weight="medium">
-            A new version of Gov4Git is available. Restart to get the latest
-            update.
+            {!updates.ready && (
+              <span>
+                A new version of Gov4Git is available. Downloading{' '}
+                {updates.version}.
+              </span>
+            )}
+            {updates.ready && (
+              <span>
+                A new version of Gov4Git is available. Restart to install{' '}
+                {updates.version}.
+              </span>
+            )}
           </Text>
         </p>
         <div className={styles.updateRow}>
-          <Button size="small" onClick={update}>
-            Update Now
+          <Button size="small" onClick={update} disabled={!updates.ready}>
+            {!updates.ready && (
+              <i className="codicon codicon-loading codicon-modifier-spin" />
+            )}
+            {updates.ready && 'Update Now'}
           </Button>
         </div>
       </Card>

@@ -6,6 +6,7 @@ import { routes } from '../App/Router.js'
 import { useCatchError } from '../hooks/useCatchError.js'
 import { eventBus } from '../lib/eventBus.js'
 import { debounceAsync } from '../lib/functions.js'
+import { appUpdaterService } from '../services/AppUpdaterService.js'
 import { ballotService } from '../services/BallotService.js'
 import { configService } from '../services/ConfigService.js'
 import { userService } from '../services/UserService.js'
@@ -34,6 +35,19 @@ export const DataLoader: FC = function DataLoader() {
     },
     [setLoadingQueue],
   )
+
+  const _checkForUpdates = useCallback(async () => {
+    try {
+      const updateInfo = await appUpdaterService.checkForUpdates()
+      setUpdates(updateInfo)
+    } catch (ex) {
+      await catchError(`Failed to check for updates. ${ex}`)
+    }
+  }, [setUpdates, catchError])
+
+  const checkForUpdates = useMemo(() => {
+    return debounceAsync(_checkForUpdates)
+  }, [_checkForUpdates])
 
   const _getConfig = useCallback(async () => {
     try {
@@ -127,19 +141,28 @@ export const DataLoader: FC = function DataLoader() {
     addToQueue(getUser())
     addToQueue(getBallots())
 
-    const interval = setInterval(async () => {
+    const updateCacheInterval = setInterval(async () => {
       return await updateBallotCache().then(getUser)
     }, 60 * 1000)
 
     listeners.push(() => {
-      clearInterval(interval)
+      clearInterval(updateCacheInterval)
     })
 
-    listeners.push(
-      window.ipcTunnel.onUpdate(() => {
-        setUpdates(true)
-      }),
-    )
+    void checkForUpdates()
+    const checkForUpdatesInterval = setInterval(async () => {
+      return await checkForUpdates()
+    }, 60 * 1000)
+
+    listeners.push(() => {
+      clearInterval(checkForUpdatesInterval)
+    })
+
+    // listeners.push(
+    //   window.ipcTunnel.onUpdate((updateInfo: AppUpdateInfo) => {
+    //     setUpdates(updateInfo)
+    //   }),
+    // )
     listeners.push(
       eventBus.subscribe('user-logged-in', async () => {
         // const prom = Promise.all([getConfig(), getUser(), updateBallotCache()])
@@ -170,6 +193,7 @@ export const DataLoader: FC = function DataLoader() {
     getBallot,
     updateBallotCache,
     navigate,
+    checkForUpdates,
   ])
 
   useEffect(() => {
