@@ -1,5 +1,16 @@
 # gov4git-desktop-app
 
+## 0.2.0
+
+### Minor Changes
+
+- 48fd225: Add AppUpdater service
+
+### Patch Changes
+
+- 1228758: Auto refresh user info
+- b09a034: Wrap gov service cli in error boundary
+
 ## 0.1.1
 
 ### Patch Changes
