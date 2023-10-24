@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.2.1
+
+### Patch Changes
+
+- c341762: Fix AppUpdater service
+
 ## 0.2.0
 
 ### Minor Changes
