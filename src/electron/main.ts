@@ -1,7 +1,6 @@
 import path, { resolve } from 'node:path'
 
 import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron'
-import { autoUpdater } from 'electron-updater'
 
 import type { InvokeServiceProps } from '~/shared'
 
@@ -10,6 +9,7 @@ import { DB, loadDb } from './db/db.js'
 import { migrateDb } from './db/migrate.js'
 import { Gov4GitService } from './services/Gov4GitService.js'
 import {
+  AppUpdaterService,
   BallotService,
   ConfigService,
   GitService,
@@ -37,6 +37,9 @@ async function setup(): Promise<void> {
     logService.error(ex)
   }
 
+  const appUpdaterService = new AppUpdaterService(services)
+  services.register('appUpdater', appUpdaterService)
+
   const gov4GitService = new Gov4GitService(services)
   services.register('gov4git', gov4GitService)
 
@@ -51,43 +54,6 @@ async function setup(): Promise<void> {
 
   const userService = new UserService(services)
   services.register('user', userService)
-}
-
-function setupUpdater() {
-  autoUpdater.logger = logService
-  autoUpdater.disableWebInstaller = true
-
-  autoUpdater.on('checking-for-update', () => {
-    logService.info('Checking for update...')
-  })
-
-  autoUpdater.on('update-available', (info) => {
-    logService.info(`New Update available. Found version ${info.version}`)
-  })
-  autoUpdater.on('update-not-available', (info) => {
-    logService.info(
-      `Update not available. ${info.version} is the latest version`,
-    )
-  })
-  autoUpdater.on('error', (err) => {
-    logService.error('Error updating' + err)
-  })
-  autoUpdater.on('download-progress', (progressObj) => {
-    let log_message = 'Download speed: ' + progressObj.bytesPerSecond
-    log_message = log_message + ' - Downloaded ' + progressObj.percent + '%'
-    log_message =
-      log_message +
-      ' (' +
-      progressObj.transferred +
-      '/' +
-      progressObj.total +
-      ')'
-    logService.info(log_message)
-  })
-  autoUpdater.on('update-downloaded', (info) => {
-    logService.info(`Update downloaded. New version ${info.version}`)
-    win.webContents.send('update-available')
-  })
 }
 
 async function serviceHandler(
@@ -148,15 +114,10 @@ const createWindow = async () => {
 }
 
 app.whenReady().then(async () => {
-  setupUpdater()
-  autoUpdater.checkForUpdates()
   app.setAccessibilitySupportEnabled(true)
   setup()
 
   ipcMain.handle('serviceHandler', serviceHandler)
-  ipcMain.handle('restart-and-update', () => {
-    autoUpdater.quitAndInstall()
-  })
   await createWindow()
 
   app.on('window-all-closed', () => {

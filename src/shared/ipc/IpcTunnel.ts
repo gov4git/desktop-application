@@ -8,6 +8,4 @@ export type InvokeServiceProps = {
 
 export type IpcTunnel = {
   invokeService: (invokeProps: InvokeServiceProps) => Promise<unknown>
-  onUpdate: (cb: () => void) => () => void
-  restartAndUpdate: () => Promise<void>
 }

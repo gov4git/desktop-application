@@ -8,6 +8,7 @@ export type ServiceId =
   | 'gov4git'
   | 'log'
   | 'db'
+  | 'appUpdater'
 
 export type ObjectProxy<T> = {
   [P in keyof T]: ServiceProxy<T[P]>
