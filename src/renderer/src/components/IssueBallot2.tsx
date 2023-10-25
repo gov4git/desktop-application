@@ -1,5 +1,6 @@
 import {
   Button,
+  Card,
   Dialog,
   DialogActions,
   DialogBody,
@@ -200,78 +201,82 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
   }, [left])
 
   return (
-    <div className={styles.root} key={ballot.identifier}>
-      <div className={styles.votingArea}>
-        {fetchingNewBallot && <Spinner />}
-        {!fetchingNewBallot && (
-          <>
-            <Text>{formatDecimal(ballot.score)}</Text>
-            <div
-              style={{
-                fontSize: '.8rem',
-                marginBottom: '12px',
-              }}
-              dangerouslySetInnerHTML={{
-                __html: ballot.user.contributionMessage,
-              }}
-            />
-            <div className={styles.sliderArea}>
-              {/* <i className="codicon codicon-chevron-down" /> */}
-              <input
-                className={styles.slider}
-                id={`vote-slider-${ballot.identifier}`}
-                aria-label={`Vote stength is ${voteScore}`}
-                step="1"
-                type="range"
-                min={Math.ceil(minScore)}
-                max={Math.floor(maxScore)}
-                value={voteScore}
-                onChange={onSlide}
-              ></input>
-              {voteScore !== 0 && (
-                <div style={bubbleStyles} className={styles.bubble}>
-                  {formatDecimal(voteScore)}
-                </div>
-              )}
-              {/* <i className="codicon codicon-chevron-up" /> */}
-            </div>
-            <div className={styles.buttonArea}>
-              {voteScore !== 0 && (
-                <Dialog open={dialogOpen} modalType="alert">
-                  {/* <DialogTrigger disableButtonEnhancement> */}
-                  <Button onClick={() => setDialogOpen(true)}>Vote</Button>
-                  {/* </DialogTrigger> */}
-                  <DialogSurface>
-                    <DialogBody>
-                      <DialogTitle>Confirm Vote</DialogTitle>
-                      <DialogContent>{voteConfirmationMessage}</DialogContent>
-                      <DialogActions>
-                        <Button onClick={cancelVote}>Cancel Vote</Button>
-                        <Button onClick={vote} className={buttonStyles.primary}>
-                          Vote
-                        </Button>
-                      </DialogActions>
-                    </DialogBody>
-                  </DialogSurface>
-                </Dialog>
-              )}
-            </div>
-          </>
-        )}
-      </div>
-      <div className={styles.issueArea}>
-        <h2 className={styles.title}>{ballot.title}</h2>
-        <div
-          className={styles.description}
-          dangerouslySetInnerHTML={{
-            __html: parse(ballot.description, {
-              headerIds: false,
-              mangle: false,
-            }),
-          }}
-        ></div>
-      </div>
-      {/* {user?.is_maintainer && (
+    <Card className={styles.card}>
+      <div className={styles.root} key={ballot.identifier}>
+        <div className={styles.votingArea}>
+          {fetchingNewBallot && <Spinner />}
+          {!fetchingNewBallot && (
+            <>
+              <Text>{formatDecimal(ballot.score)}</Text>
+              <div
+                style={{
+                  fontSize: '.8rem',
+                  marginBottom: '12px',
+                }}
+                dangerouslySetInnerHTML={{
+                  __html: ballot.user.contributionMessage,
+                }}
+              />
+              <div className={styles.sliderArea}>
+                {/* <i className="codicon codicon-chevron-down" /> */}
+                <input
+                  className={styles.slider}
+                  id={`vote-slider-${ballot.identifier}`}
+                  aria-label={`Vote stength is ${voteScore}`}
+                  step="1"
+                  type="range"
+                  min={Math.ceil(minScore)}
+                  max={Math.floor(maxScore)}
+                  value={voteScore}
+                  onChange={onSlide}
+                ></input>
+                {voteScore !== 0 && (
+                  <div style={bubbleStyles} className={styles.bubble}>
+                    {formatDecimal(voteScore)}
+                  </div>
+                )}
+                {/* <i className="codicon codicon-chevron-up" /> */}
+              </div>
+              <div className={styles.buttonArea}>
+                {voteScore !== 0 && (
+                  <Dialog open={dialogOpen} modalType="alert">
+                    {/* <DialogTrigger disableButtonEnhancement> */}
+                    <Button onClick={() => setDialogOpen(true)}>Vote</Button>
+                    {/* </DialogTrigger> */}
+                    <DialogSurface>
+                      <DialogBody>
+                        <DialogTitle>Confirm Vote</DialogTitle>
+                        <DialogContent>{voteConfirmationMessage}</DialogContent>
+                        <DialogActions>
+                          <Button onClick={cancelVote}>Cancel Vote</Button>
+                          <Button
+                            onClick={vote}
+                            className={buttonStyles.primary}
+                          >
+                            Vote
+                          </Button>
+                        </DialogActions>
+                      </DialogBody>
+                    </DialogSurface>
+                  </Dialog>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+        <div className={styles.issueArea}>
+          <h2 className={styles.title}>{ballot.title}</h2>
+          <div
+            className={styles.description}
+            dangerouslySetInnerHTML={{
+              __html: parse(ballot.description, {
+                headerIds: false,
+                mangle: false,
+              }),
+            }}
+          ></div>
+        </div>
+        {/* {user?.is_maintainer && (
         <div>
           <Button
             className={buttonStyles.primary}
@@ -281,6 +286,7 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
           </Button>
         </div>
       )} */}
-    </div>
+      </div>
+    </Card>
   )
 }

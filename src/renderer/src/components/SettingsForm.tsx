@@ -3,6 +3,7 @@ import {
   Card,
   Field,
   Input,
+  Label,
   LabelProps,
 } from '@fluentui/react-components'
 import { InfoLabel } from '@fluentui/react-components/unstable'
@@ -97,11 +98,14 @@ export const SettingsForm = function SettingsForm() {
           // @ts-expect-error children signature
           label={{
             children: () => (
-              <span className={styles.labelText}>Github Username</span>
+              <label htmlFor="username" className={styles.labelText}>
+                GitHub Username
+              </label>
             ),
           }}
         >
           <Input
+            width="100%"
             type="text"
             id="username"
             value={formConfig.user?.username ?? ''}
@@ -114,19 +118,13 @@ export const SettingsForm = function SettingsForm() {
           // @ts-expect-error children signature
           label={{
             children: (_: unknown, slotProps: LabelProps) => (
-              <InfoLabel
-                {...slotProps}
-                // @ts-expect-error Complaining about incompatible ReactElement types
-                info={{
-                  children: PATMoreInfo,
-                }}
-                aria-label="Please provide your GitHub access token."
-              >
-                <span className={styles.labelText}>Personal Access Token</span>
-              </InfoLabel>
+              <label htmlFor="PAT" className={styles.labelText}>
+                Personal Access Token
+              </label>
             ),
           }}
         >
+          <PATMoreInfo />
           <Input
             type="password"
             id="PAT"
@@ -140,18 +138,13 @@ export const SettingsForm = function SettingsForm() {
           // @ts-expect-error children signature
           label={{
             children: (_: unknown, slotProps: LabelProps) => (
-              <InfoLabel
-                {...slotProps}
-                // @ts-expect-error Complaining about incompatible ReactElement types
-                info={{
-                  children: CommunityUrlMoreInfo,
-                }}
-              >
-                <span className={styles.labelText}>Community URL</span>
-              </InfoLabel>
+              <label htmlFor="communityRepoUrl" className={styles.labelText}>
+                Community URL
+              </label>
             ),
           }}
         >
+          <CommunityUrlMoreInfo />
           <Input
             type="url"
             id="communityRepoUrl"
@@ -194,6 +187,14 @@ const PATMoreInfo: FC = function PATMoreInfo() {
         >
           How to create a GitHub personal access token
         </a>
+        . Provide a description for the token and an Expiration period. Tokens
+        with expirations will need to be regenerated and provided, here in the
+        settings, after expiration for continued use of this application. Under
+        &quot;Select scopes&quot;, check the top-level repo option. Select
+        Generate token and copy the token to provide here. <br />
+        <img src="/github-token-rights.png" alt="GitHub Access Tokens rights" />
+        <br />
+        <br />
       </p>
     </div>
   )
