@@ -27,5 +27,6 @@ export const useLayoutStyles = makeStyles({
     flexGrow: 1,
     flexShrink: 1,
     flexBasis: 'auto',
+    position: 'relative',
   },
 })

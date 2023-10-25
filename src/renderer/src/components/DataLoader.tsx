@@ -56,8 +56,6 @@ export const DataLoader: FC = function DataLoader() {
     } catch (ex) {
       await catchError(`Failed to load config. ${ex}`)
     }
-
-    // addToQueue(run())
   }, [catchError, setConfig])
 
   const getConfig = useMemo(() => {
@@ -72,7 +70,6 @@ export const DataLoader: FC = function DataLoader() {
     } catch (ex) {
       await catchError(`Failed to load user information. ${ex}`)
     }
-    // addToQueue(run())
   }, [catchError, setUser, setUserLoaded])
 
   const getUser = useMemo(() => {
@@ -86,7 +83,6 @@ export const DataLoader: FC = function DataLoader() {
     } catch (ex) {
       await catchError(`Failed to load ballots. ${ex}`)
     }
-    // addToQueue(run())
   }, [setBallots, catchError])
 
   const getBallots = useMemo(() => {
@@ -100,7 +96,6 @@ export const DataLoader: FC = function DataLoader() {
     } catch (ex) {
       await catchError(`Failed to load ballots. ${ex}`)
     }
-    // addToQueue(run())
   }, [setBallots, catchError])
 
   const updateBallotCache = useMemo(() => {
@@ -158,14 +153,8 @@ export const DataLoader: FC = function DataLoader() {
       clearInterval(checkForUpdatesInterval)
     })
 
-    // listeners.push(
-    //   window.ipcTunnel.onUpdate((updateInfo: AppUpdateInfo) => {
-    //     setUpdates(updateInfo)
-    //   }),
-    // )
     listeners.push(
       eventBus.subscribe('user-logged-in', async () => {
-        // const prom = Promise.all([getConfig(), getUser(), updateBallotCache()])
         const prom = getConfig().then(updateBallotCache).then(getUser)
         addToQueue(prom)
         await prom
@@ -175,7 +164,11 @@ export const DataLoader: FC = function DataLoader() {
     listeners.push(
       eventBus.subscribe('voted', async (e) => {
         await getBallot(e).then(getUser)
-        // await Promise.all([getUser(), getBallot(e)])
+      }),
+    )
+    listeners.push(
+      eventBus.subscribe('refresh', async (e) => {
+        addToQueue(updateBallotCache())
       }),
     )
 
