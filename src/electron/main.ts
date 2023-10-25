@@ -37,9 +37,6 @@ async function setup(): Promise<void> {
     logService.error(ex)
   }
 
-  const appUpdaterService = new AppUpdaterService(services)
-  services.register('appUpdater', appUpdaterService)
-
   const gov4GitService = new Gov4GitService(services)
   services.register('gov4git', gov4GitService)
 
@@ -51,6 +48,9 @@ async function setup(): Promise<void> {
 
   const ballotService = new BallotService(services)
   services.register('ballots', ballotService)
+
+  const appUpdaterService = new AppUpdaterService(services)
+  services.register('appUpdater', appUpdaterService)
 
   const userService = new UserService(services)
   services.register('user', userService)

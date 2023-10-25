@@ -35,6 +35,7 @@ export abstract class AbstractBallotService {
   public abstract getBallot(ballotId: string): Promise<Ballot>
   public abstract getOpen(): Promise<Ballot[]>
   public abstract updateCache(): Promise<Ballot[]>
+  public abstract clearCache(): Promise<void>
   public abstract vote(voteOptions: VoteOption): Promise<void>
   public abstract createBallot(options: CreateBallotOptions): Promise<void>
   public abstract tallyBallot(ballotName: string): Promise<void>

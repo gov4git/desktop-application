@@ -309,8 +309,12 @@ export class BallotService extends AbstractBallotService {
     })
   }
 
-  public updateCache = async (): Promise<Ballot[]> => {
+  public override clearCache = async (): Promise<void> => {
     await this.db.delete(ballots)
+  }
+
+  public override updateCache = async (): Promise<Ballot[]> => {
+    await this.clearCache()
     return await this._getOpen()
   }
 
