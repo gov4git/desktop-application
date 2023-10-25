@@ -6,6 +6,7 @@ import {
   DataLoader,
   Header,
   Loader,
+  RefreshButton,
   SiteNav,
   UpdateNotification,
 } from '../components/index.js'
@@ -27,6 +28,7 @@ export const Layout = function Layout() {
             <ErrorScreen message={errorMessage} showClose={true} />
           )}
           <Loader>
+            <RefreshButton />
             <Outlet />
           </Loader>
         </main>
