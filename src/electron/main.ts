@@ -1,6 +1,12 @@
 import path, { resolve } from 'node:path'
 
-import { app, BrowserWindow, ipcMain, IpcMainInvokeEvent } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  IpcMainInvokeEvent,
+  shell,
+} from 'electron'
 
 import type { InvokeServiceProps } from '~/shared'
 
@@ -103,6 +109,11 @@ const createWindow = async () => {
     webPreferences: {
       preload: path.resolve(__dirname, 'preload.js'),
     },
+  })
+
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url)
+    return { action: 'deny' }
   })
 
   // port indicates that a vite dev server is running
