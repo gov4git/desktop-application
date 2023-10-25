@@ -5,5 +5,5 @@ export type AppUpdateInfo = {
 
 export abstract class AbstractAppUpdaterService {
   public abstract checkForUpdates(): Promise<AppUpdateInfo | null>
-  public abstract restartAndUpdate(): void
+  public abstract restartAndUpdate(): Promise<void>
 }
