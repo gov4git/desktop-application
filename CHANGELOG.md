@@ -1,5 +1,25 @@
 # gov4git-desktop-app
 
+## 0.4.0
+
+### Minor Changes
+
+- a016e2a: List individual ballots as cards
+- 118060f: Add app refresh button
+- 5d05ba9: Add login instructions
+- 336ecc3: Add page headings
+
+### Patch Changes
+
+- c6525ca: Catch ballot is closed exception and present friendlier message.
+- 6acd879: Update confirmation message
+
+  - Notify users when credits are being restored/returned.
+  - Present cost as an absolute value, removing negative sign
+    for down voting.
+
+- 30845c9: Fix typo
+
 ## 0.3.0
 
 ### Minor Changes
