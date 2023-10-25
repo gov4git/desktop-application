@@ -187,7 +187,7 @@ const PATMoreInfo: FC = function PATMoreInfo() {
         >
           How to create a GitHub personal access token
         </a>
-        . Provide a description for the token and an Expiration period. Tokens
+        . Provide a description for the token and an expiration period. Tokens
         with expirations will need to be regenerated and provided, here in the
         settings, after expiration for continued use of this application. Under
         &quot;Select scopes&quot;, check the top-level repo option. Select
