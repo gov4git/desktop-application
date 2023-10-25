@@ -13,9 +13,11 @@ export const useSettingsFormsStyles = makeStyles({
     ...shorthands.borderRadius(gov4GitTokens.borderRadiusLarge),
   },
   field: {
-    marginBottom: gov4GitTokens.spacingVerticalL,
+    paddingBottom: '2rem',
   },
   labelText: {
-    fontSize: '1.15rem',
+    fontSize: '1.25rem',
+    display: 'block',
+    ...shorthands.padding(0, 0, '0.5rem', 0),
   },
 })
