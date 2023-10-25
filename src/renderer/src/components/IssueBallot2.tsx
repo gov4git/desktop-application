@@ -41,6 +41,8 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
   const styles = useIssueBallotStyles()
   const [voteScore, setVoteScore] = useState(0.0)
   const [voteStrengthInCredits, setVoteStrengthInCredits] = useState(0)
+  const [additionalCostInCredits, setAdditionalCostInCredits] = useState(0)
+  const [totalCostInCredits, setTotalCostInCredits] = useState(0)
   const [newTotalVoteScore, setNewTotalVoteScore] = useState(0)
   const [existingSpentCredits, setExistingSpentCredits] = useState(0)
   const catchError = useCatchError()
@@ -92,26 +94,40 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
     const change = voteScore >= 0 ? 'Increasing' : 'Decreasing'
 
     if (ballot.user.pendingScoreDiff === 0 && ballot.user.talliedScore === 0) {
-      return `Voting ${voteScore} points will cost a total of ${voteStrengthInCredits} credits`
+      return `Voting ${voteScore} points will cost a total of ${additionalCostInCredits} credits`
+    }
+
+    let additionalCostMessage = ''
+    if (additionalCostInCredits < 0) {
+      additionalCostMessage = `restoring ${formatDecimal(
+        Math.abs(additionalCostInCredits),
+      )} of the ${formatDecimal(
+        existingSpentCredits,
+      )} voting credits allocated to this ballot.`
+    } else {
+      additionalCostMessage = `${formatDecimal(
+        additionalCostInCredits,
+      )} credits in addition to the ${formatDecimal(
+        existingSpentCredits,
+      )} credits allocated to this ballot`
     }
 
     const message = `${change} your vote by ${formatDecimal(
       voteScore,
     )} brings your total vote to ${formatDecimal(
       newTotalVoteScore,
-    )}, costing an additional ${formatDecimal(
-      voteStrengthInCredits,
-    )} voting credits in addition to the ${formatDecimal(
-      existingSpentCredits,
-    )} credits allocated to this ballot`
+    )} and costing a total of ${formatDecimal(
+      totalCostInCredits,
+    )} voting credits, ${additionalCostMessage}`
     return message
   }, [
     voteScore,
     ballot,
     user,
     newTotalVoteScore,
-    voteStrengthInCredits,
+    additionalCostInCredits,
     existingSpentCredits,
+    totalCostInCredits,
   ])
 
   useEffect(() => {
@@ -120,8 +136,14 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
     setNewTotalVoteScore(score)
     const sign = score < 0 ? -1 : 1
     const spentCredits = ballot.user.talliedCredits + ballot.user.pendingCredits
-    setExistingSpentCredits(spentCredits)
+    setExistingSpentCredits(Math.abs(spentCredits))
     const totalCredits = sign * Math.pow(score, 2)
+    setTotalCostInCredits(Math.abs(totalCredits))
+    const additionalCosts = Math.abs(totalCredits) - Math.abs(spentCredits)
+    // if (additionalCosts < 0) {
+    //   additionalCosts = Math.abs(spentCredits) - Math.abs(additionalCosts)
+    // }
+    setAdditionalCostInCredits(additionalCosts)
     const newCreditsToVote = totalCredits - spentCredits
     setVoteStrengthInCredits(newCreditsToVote)
   }, [
@@ -130,6 +152,7 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
     ballot,
     setNewTotalVoteScore,
     setExistingSpentCredits,
+    setTotalCostInCredits,
   ])
 
   const vote = useCallback(() => {
