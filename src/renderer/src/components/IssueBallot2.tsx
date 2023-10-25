@@ -39,11 +39,13 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
 }) {
   const styles = useIssueBallotStyles()
   const [voteScore, setVoteScore] = useState(0.0)
+  const [voteStrengthInCredits, setVoteStrengthInCredits] = useState(0)
+  const [newTotalVoteScore, setNewTotalVoteScore] = useState(0)
+  const [existingSpentCredits, setExistingSpentCredits] = useState(0)
   const catchError = useCatchError()
   const [left, setLeft] = useState('50%')
   const buttonStyles = useButtonStyles()
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [voteStrength, setVoteStrength] = useState(0)
   const user = useAtomValue(userAtom)
   const [fetchingNewBallot, setFetchingNewBallot] = useState(false)
 
@@ -87,39 +89,51 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
   const voteConfirmationMessage = useMemo(() => {
     if (user == null) return ''
     const change = voteScore >= 0 ? 'Increasing' : 'Decreasing'
-    const totalVote =
-      voteScore + ballot.user.pendingScoreDiff + ballot.user.talliedScore
-    const totalCost = Math.pow(totalVote, 2)
-    const currentSpent = ballot.user.talliedCredits + ballot.user.pendingCredits
-    const additionalCost = totalCost - currentSpent
 
     if (ballot.user.pendingScoreDiff === 0 && ballot.user.talliedScore === 0) {
-      return `Voting ${totalVote} points will cost a total of ${totalCost} credits`
+      return `Voting ${voteScore} points will cost a total of ${voteStrengthInCredits} credits`
     }
 
     const message = `${change} your vote by ${formatDecimal(
       voteScore,
     )} brings your total vote to ${formatDecimal(
-      totalVote,
+      newTotalVoteScore,
     )}, costing an additional ${formatDecimal(
-      additionalCost,
+      voteStrengthInCredits,
     )} voting credits in addition to the ${formatDecimal(
-      currentSpent,
+      existingSpentCredits,
     )} credits allocated to this ballot`
     return message
-  }, [voteScore, ballot, user])
+  }, [
+    voteScore,
+    ballot,
+    user,
+    newTotalVoteScore,
+    voteStrengthInCredits,
+    existingSpentCredits,
+  ])
 
   useEffect(() => {
     const score =
       voteScore + ballot.user.pendingScoreDiff + ballot.user.talliedScore
-    const strength =
-      score * score - (ballot.user.talliedCredits + ballot.user.pendingCredits)
-    setVoteStrength(strength)
-  }, [voteScore, setVoteStrength, ballot])
+    setNewTotalVoteScore(score)
+    const sign = score < 0 ? -1 : 1
+    const spentCredits = ballot.user.talliedCredits + ballot.user.pendingCredits
+    setExistingSpentCredits(spentCredits)
+    const totalCredits = sign * Math.pow(score, 2)
+    const newCreditsToVote = totalCredits - spentCredits
+    setVoteStrengthInCredits(newCreditsToVote)
+  }, [
+    voteScore,
+    setVoteStrengthInCredits,
+    ballot,
+    setNewTotalVoteScore,
+    setExistingSpentCredits,
+  ])
 
   const vote = useCallback(() => {
     async function run() {
-      if (voteStrength !== 0) {
+      if (voteStrengthInCredits !== 0) {
         setDialogOpen(false)
         setFetchingNewBallot(true)
         setVoteScore(0)
@@ -127,7 +141,7 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
           .vote({
             name: ballot.identifier,
             choice: ballot.choices[0] ?? '',
-            strength: `${voteStrength}`,
+            strength: `${voteStrengthInCredits}`,
           })
           .catch(async (ex) => {
             await catchError(`Failed to cast vote. ${ex}`)
@@ -138,7 +152,7 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
     void run()
   }, [
     ballot,
-    voteStrength,
+    voteStrengthInCredits,
     catchError,
     setDialogOpen,
     setVoteScore,

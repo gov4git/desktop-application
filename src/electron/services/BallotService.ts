@@ -238,13 +238,16 @@ export class BallotService extends AbstractBallotService {
     if (talliedVotes != null) {
       talliedScore = talliedVotes[choice]?.score ?? 0
     }
-    const talliedCredits = Math.pow(talliedScore, 2)
+    const talliedScoreSign = talliedScore < 0 ? -1 : 1
+    const talliedCredits = talliedScoreSign * Math.pow(talliedScore, 2)
 
     const pendingCredits = pendingVotes.reduce((acc, cur) => {
       return acc + cur.vote_strength_change
     }, 0)
 
-    const newScore = Math.sqrt(talliedCredits + pendingCredits)
+    const creditsSign = talliedCredits + pendingCredits < 0 ? -1 : 1
+    const newScore =
+      creditsSign * Math.sqrt(Math.abs(talliedCredits + pendingCredits))
     const pendingScoreDiff = newScore - talliedScore
 
     let message = ``
