@@ -82,4 +82,7 @@ export const useIssueBallotStyles = makeStyles({
   down: {
     color: gov4GitTokens.colorPaletteRedForeground1,
   },
+  issueLinkArea: {
+    ...shorthands.padding('8px', 0, 0, 0),
+  },
 })
