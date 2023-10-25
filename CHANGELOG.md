@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.4.1
+
+### Patch Changes
+
+- 5dd1de9: Fix path reference. Static assets need to be references relatively for electron fs.
+
 ## 0.4.0
 
 ### Minor Changes
