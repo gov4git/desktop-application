@@ -1,5 +1,19 @@
 # gov4git-desktop-app
 
+## 0.2.2
+
+### Patch Changes
+
+- f35ec44: fix negative voting
+
+  - account for the sign/direction of votes
+
+- ad7863e: remove pending ballots that have been tallied
+
+  - Due to timing, ballots may still appear pending after
+    being tallied by the community. Remove them from being double
+    counted.
+
 ## 0.2.1
 
 ### Patch Changes
