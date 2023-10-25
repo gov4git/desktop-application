@@ -192,7 +192,10 @@ const PATMoreInfo: FC = function PATMoreInfo() {
         settings, after expiration for continued use of this application. Under
         &quot;Select scopes&quot;, check the top-level repo option. Select
         Generate token and copy the token to provide here. <br />
-        <img src="/github-token-rights.png" alt="GitHub Access Tokens rights" />
+        <img
+          src="./github-token-rights.png"
+          alt="GitHub Access Tokens rights"
+        />
         <br />
         <br />
       </p>
