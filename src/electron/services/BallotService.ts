@@ -151,7 +151,7 @@ export class BallotService extends AbstractBallotService {
     return path.join('/')
   }
 
-  protected getBallotInfo = async (ballotPath: string) => {
+  protected getBallotInfo = async (ballotPath: string, username: string) => {
     const ballotInfoCommand = ['ballot', 'show', '--name', ballotPath]
     const ballotInfo = await this.gov4GitService.mustRun<RemoteBallotInfo>(
       ...ballotInfoCommand,
@@ -162,6 +162,23 @@ export class BallotService extends AbstractBallotService {
       ballotTracking = await this.gov4GitService.mustRun<RemoteBallotTrack>(
         ...ballotTrackingCommand,
       )
+      if (ballotTracking != null && ballotTracking.pending_votes != null) {
+        const userAcceptedVotes =
+          ballotInfo.ballot_tally.ballot_accepted_votes[username]
+        if (userAcceptedVotes != null) {
+          ballotTracking.pending_votes = ballotTracking.pending_votes.reduce<
+            any[]
+          >((acc, cur) => {
+            const existingInd = userAcceptedVotes.findIndex((vote) => {
+              return vote.accepted_vote.vote_id === cur.vote_id
+            })
+            if (existingInd === -1) {
+              acc.push(cur)
+            }
+            return acc
+          }, [])
+        }
+      }
     } catch (er) {
       // skip
     }
@@ -190,7 +207,7 @@ export class BallotService extends AbstractBallotService {
         `Unable to load ballot info for ${ballotId} as config is null.`,
       )
     }
-    const b = await this.getBallotInfo(ballotId)
+    const b = await this.getBallotInfo(ballotId, config.user.username)
     const ballot: Record<string, unknown> = {}
     ballot['communityUrl'] = config.gov_public_url
     ballot['label'] = this.getBallotLabel(
