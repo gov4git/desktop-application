@@ -1,5 +1,16 @@
 # gov4git-desktop-app
 
+## 0.3.0
+
+### Minor Changes
+
+- 6d48077: Clear cache on app update
+
+  - Client side code may be expecting new data
+    types after updates so clear cache when updating.
+
+- 7e955ea: Add cache clearing
+
 ## 0.2.2
 
 ### Patch Changes
