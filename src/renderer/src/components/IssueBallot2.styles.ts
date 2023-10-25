@@ -7,16 +7,12 @@ export const useIssueBallotStyles = makeStyles({
     display: 'flex',
     alignItems: 'center',
     ...shorthands.gap('8px'),
-    ...shorthands.borderBottom(
-      '1px',
-      'solid',
-      gov4GitTokens.g4gColorNeutralDark,
-    ),
-    paddingBottom: gov4GitTokens.spacingVerticalM,
-    marginBottom: gov4GitTokens.spacingVerticalM,
   },
   title: {
     paddingBottom: gov4GitTokens.spacingVerticalXL,
+  },
+  card: {
+    marginBottom: '1rem',
   },
   description: {
     '& ul': {
