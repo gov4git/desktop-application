@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.5.1
+
+### Patch Changes
+
+- dc265b5: Fix pull request page heading
+
 ## 0.5.0
 
 ### Minor Changes
