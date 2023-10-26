@@ -12,15 +12,7 @@ import {
 } from '@fluentui/react-components'
 import { useAtomValue } from 'jotai'
 import { parse } from 'marked'
-import {
-  ChangeEventHandler,
-  FC,
-  memo,
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { Ballot } from '~/shared'
 
@@ -31,6 +23,7 @@ import { ballotService } from '../services/index.js'
 import { configAtom } from '../state/config.js'
 import { userAtom } from '../state/user.js'
 import { useButtonStyles } from '../styles/buttons.js'
+import { BubbleSlider } from './BubbleSlider.js'
 import { useIssueBallotStyles } from './IssueBallot2.styles.js'
 
 export type IssueBallotProps = {
@@ -47,7 +40,6 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
   const [newTotalVoteScore, setNewTotalVoteScore] = useState(0)
   const [existingSpentCredits, setExistingSpentCredits] = useState(0)
   const catchError = useCatchError()
-  const [left, setLeft] = useState('50%')
   const buttonStyles = useButtonStyles()
   const [dialogOpen, setDialogOpen] = useState(false)
   const user = useAtomValue(userAtom)
@@ -202,44 +194,17 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
     setFetchingNewBallot,
   ])
 
-  const tally = useCallback(
-    (name: string) => {
-      async function run() {
-        await ballotService.tallyBallot(name).catch(async (ex) => {
-          await catchError(`Failed to tally votes. Error ${ex}`)
-        })
-      }
-      void run()
+  const onSlideChange = useCallback(
+    (newValue: number) => {
+      setVoteScore(newValue)
     },
-    [catchError],
-  )
-
-  const onSlide: ChangeEventHandler<HTMLInputElement> = useCallback(
-    (e) => {
-      if (user != null) {
-        const rangeVal = +e.target.value
-        const slideVal = Number(
-          ((rangeVal - minScore) * 100) / (maxScore - minScore),
-        )
-        const newPosition = 10 - slideVal * 0.2
-        setVoteScore(rangeVal)
-        setLeft(`calc(${slideVal}% + (${newPosition}px))`)
-      }
-    },
-    [setVoteScore, setLeft, user, minScore, maxScore],
+    [setVoteScore],
   )
 
   const cancelVote = useCallback(() => {
     setVoteScore(0)
     setDialogOpen(false)
-    setLeft('50%')
-  }, [setVoteScore, setDialogOpen, setLeft])
-
-  const bubbleStyles = useMemo(() => {
-    return {
-      left: left,
-    }
-  }, [left])
+  }, [setVoteScore, setDialogOpen])
 
   return (
     <Card className={styles.card}>
@@ -260,26 +225,15 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
                     __html: ballot.user.contributionMessage,
                   }}
                 />
-                <div className={styles.sliderArea}>
-                  {/* <i className="codicon codicon-chevron-down" /> */}
-                  <input
-                    className={styles.slider}
-                    id={`vote-slider-${ballot.identifier}`}
-                    aria-label={`Vote stength is ${voteScore}`}
-                    step="1"
-                    type="range"
-                    min={Math.ceil(minScore)}
-                    max={Math.floor(maxScore)}
-                    value={voteScore}
-                    onChange={onSlide}
-                  ></input>
-                  {voteScore !== 0 && (
-                    <div style={bubbleStyles} className={styles.bubble}>
-                      {formatDecimal(voteScore)}
-                    </div>
-                  )}
-                  {/* <i className="codicon codicon-chevron-up" /> */}
-                </div>
+                <BubbleSlider
+                  ariaLabel={`Vote strength is ${voteScore}`}
+                  min={Math.ceil(minScore)}
+                  max={Math.floor(maxScore)}
+                  step="1"
+                  value={voteScore}
+                  onChange={onSlideChange}
+                  hideBubble={voteScore === 0}
+                />
                 <div className={styles.buttonArea}>
                   {voteScore !== 0 && (
                     <Dialog open={dialogOpen} modalType="alert">
@@ -329,16 +283,6 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
             </div>
           )}
         </div>
-        {/* {user?.is_maintainer && (
-        <div>
-          <Button
-            className={buttonStyles.primary}
-            onClick={() => tally(ballot.identifier)}
-          >
-            Tally
-          </Button>
-        </div>
-      )} */}
       </div>
     </Card>
   )
