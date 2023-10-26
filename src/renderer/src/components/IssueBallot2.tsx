@@ -28,6 +28,7 @@ import { useCatchError } from '../hooks/useCatchError.js'
 import { eventBus } from '../lib/eventBus.js'
 import { formatDecimal } from '../lib/index.js'
 import { ballotService } from '../services/index.js'
+import { configAtom } from '../state/config.js'
 import { userAtom } from '../state/user.js'
 import { useButtonStyles } from '../styles/buttons.js'
 import { useIssueBallotStyles } from './IssueBallot2.styles.js'
@@ -50,6 +51,7 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
   const buttonStyles = useButtonStyles()
   const [dialogOpen, setDialogOpen] = useState(false)
   const user = useAtomValue(userAtom)
+  const config = useAtomValue(configAtom)
   const [fetchingNewBallot, setFetchingNewBallot] = useState(false)
   const [voteError, setVoteError] = useState<string | null>(null)
 
@@ -64,6 +66,11 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
     )
   }, [setFetchingNewBallot, ballot])
 
+  const githubLink = useMemo(() => {
+    if (config == null) return null
+    const linkComponent = ballot.identifier.split('/').slice(1).join('/')
+    return `${config.project_repo}/${linkComponent}`
+  }, [config, ballot])
   const maxScore = useMemo(() => {
     if (user == null) return 0
     return (
@@ -315,6 +322,13 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
               }),
             }}
           ></div>
+          {githubLink != null && (
+            <div className={styles.issueLinkArea}>
+              <a href={githubLink} target="_blank" rel="noreferrer">
+                View in GitHub
+              </a>
+            </div>
+          )}
         </div>
         {/* {user?.is_maintainer && (
         <div>
