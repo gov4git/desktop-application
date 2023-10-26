@@ -1,5 +1,15 @@
 # gov4git-desktop-app
 
+## 0.5.0
+
+### Minor Changes
+
+- 52fd07f: Provide context
+
+  - Provide links for viewing issues and pull requests in GitHub
+
+- f49225b: Open external links in default web browser
+
 ## 0.4.1
 
 ### Patch Changes
