@@ -58,19 +58,24 @@ export class AppUpdaterService extends AbstractAppUpdaterService {
 
   public override checkForUpdates = async (): Promise<AppUpdateInfo | null> => {
     if (this.updating != null) return this.updating
-    const updateInfo = await autoUpdater.checkForUpdates()
-    if (updateInfo == null) return null
-    if (updateInfo.downloadPromise != null) {
-      this.updating = updateInfo.downloadPromise.then((r) => {
+    try {
+      const updateInfo = await autoUpdater.checkForUpdates()
+      if (updateInfo == null) return null
+      if (updateInfo.downloadPromise != null) {
+        this.updating = updateInfo.downloadPromise.then((r) => {
+          return {
+            ready: true,
+            version: updateInfo.updateInfo.version,
+          }
+        })
         return {
-          ready: true,
+          ready: false,
           version: updateInfo.updateInfo.version,
         }
-      })
-      return {
-        ready: false,
-        version: updateInfo.updateInfo.version,
       }
+    } catch (ex) {
+      this.log.error(`Error checking for updates`)
+      this.log.error(ex)
     }
     return null
   }
