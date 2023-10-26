@@ -20,7 +20,7 @@ export const PullRequests: FC = function PullRequests() {
 
   return (
     <>
-      <h1 className={headingStyles.pageHeading}>Prioritize Issues</h1>
+      <h1 className={headingStyles.pageHeading}>Prioritize Pull Requests</h1>
 
       <div className={styles.controls}>
         {issuesLink != null && (
