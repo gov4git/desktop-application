@@ -24,7 +24,7 @@ export const useIssueBallotStyles = makeStyles({
     },
   },
   votingArea: {
-    width: '220px',
+    width: '250px',
     ...shorthands.padding('0'),
     ...shorthands.margin('0'),
     flexShrink: '0',
@@ -39,8 +39,7 @@ export const useIssueBallotStyles = makeStyles({
   sliderArea: {
     position: 'relative',
     marginBottom: '36px',
-    // display: 'flex',
-    // alignItems: 'center',
+    width: '90%',
   },
   bubble: {
     fontSize: '0.7rem',
@@ -59,6 +58,7 @@ export const useIssueBallotStyles = makeStyles({
     display: 'block',
     appearance: 'none',
     height: '4px',
+    width: '100%',
     backgroundColor: gov4GitTokens.g4gColorPrimaryGreen2,
     ...shorthands.outline('none'),
     ...shorthands.borderRadius(gov4GitTokens.borderRadiusLarge),

@@ -219,15 +219,14 @@ export const IssueBallot2: FC<IssueBallotProps> = function IssueBallot2({
       if (user != null) {
         const rangeVal = +e.target.value
         const slideVal = Number(
-          ((rangeVal - -user.voting_score) * 100) /
-            (user.voting_score - -user.voting_score),
+          ((rangeVal - minScore) * 100) / (maxScore - minScore),
         )
         const newPosition = 10 - slideVal * 0.2
         setVoteScore(rangeVal)
         setLeft(`calc(${slideVal}% + (${newPosition}px))`)
       }
     },
-    [setVoteScore, setLeft, user],
+    [setVoteScore, setLeft, user, minScore, maxScore],
   )
 
   const cancelVote = useCallback(() => {
