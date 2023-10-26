@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.5.2
+
+### Patch Changes
+
+- bac97e5: Fix scroller bubble position
+
 ## 0.5.1
 
 ### Patch Changes
