@@ -51,7 +51,12 @@ export class UserService extends AbstractUserService {
     const credits = await this.gov4GitService.mustRun<number>(...command)
     const ballots = await this.ballotService.getOpen()
     const totalPendingSpentCredits = ballots.reduce((acc, cur) => {
-      return acc + cur.user.pendingCredits
+      const spentCredits = cur.user.talliedCredits
+      const score = cur.user.newScore
+      const scoreSign = score < 0 ? -1 : 1
+      const totalCredits = scoreSign * Math.pow(score, 2)
+      const additionalCosts = Math.abs(totalCredits) - Math.abs(spentCredits)
+      return acc + additionalCosts
     }, 0)
     return credits - totalPendingSpentCredits
   }

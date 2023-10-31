@@ -1,20 +1,22 @@
 import type { FC } from 'react'
 
-import { userShowErrorStyles } from './Error.styles.js'
+import { userShowErrorStyles } from './Message.styles.js'
 
 export type ShowErrorProps = {
   messages: string[]
   onClose?: () => void
+  className?: string
 }
 
-export const ShowError: FC<ShowErrorProps> = function ShowError({
+export const Message: FC<ShowErrorProps> = function Message({
   messages,
   // eslint-disable-next-line
   onClose = () => {},
+  className,
 }) {
   const styles = userShowErrorStyles()
   return (
-    <div className={styles.error}>
+    <div className={className}>
       <button title="close errors" className={styles.close} onClick={onClose}>
         <i className="codicon codicon-chrome-close" />
       </button>

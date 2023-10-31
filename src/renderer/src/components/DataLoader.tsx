@@ -168,7 +168,7 @@ export const DataLoader: FC = function DataLoader() {
     )
     listeners.push(
       eventBus.subscribe('refresh', async (e) => {
-        addToQueue(updateBallotCache())
+        addToQueue(updateBallotCache().then(getUser))
       }),
     )
 

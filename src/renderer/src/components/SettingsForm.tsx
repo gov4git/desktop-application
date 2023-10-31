@@ -20,7 +20,8 @@ import { createNestedRecord, mergeDeep } from '../lib/index.js'
 import { configService } from '../services/ConfigService.js'
 import { configAtom, configErrorsAtom } from '../state/config.js'
 import { useButtonStyles } from '../styles/index.js'
-import { ShowError } from './Error.js'
+import { useMessageStyles } from '../styles/messages.js'
+import { Message } from './Message.js'
 import { useSettingsFormsStyles } from './SettingsForm.styles.js'
 
 export const SettingsForm = function SettingsForm() {
@@ -33,6 +34,7 @@ export const SettingsForm = function SettingsForm() {
   const config = useAtomValue(configAtom)
   const [configErrors, setConfigErrors] = useAtom(configErrorsAtom)
   const [loading, setLoading] = useState(false)
+  const messageStyles = useMessageStyles()
 
   useEffect(() => {
     if (config != null) {
@@ -90,7 +92,11 @@ export const SettingsForm = function SettingsForm() {
   return (
     <Card className={styles.card}>
       {configErrors.length > 0 && (
-        <ShowError messages={configErrors} onClose={onClose} />
+        <Message
+          messages={configErrors}
+          onClose={onClose}
+          className={messageStyles.error}
+        />
       )}
       <form onSubmit={save}>
         <Field
