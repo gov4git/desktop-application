@@ -5,7 +5,7 @@ import { type FC, useMemo } from 'react'
 import { ballotPullRequestsAtom } from '../state/ballots.js'
 import { configAtom } from '../state/config.js'
 import { useHeadingsStyles } from '../styles/headings.js'
-import { IssueBallot2 } from './IssueBallot2.js'
+import { IssueBallot } from './IssueBallot.js'
 import { usePullRequestsStyles } from './PullRequests.styles.js'
 
 export const PullRequests: FC = function PullRequests() {
@@ -37,7 +37,7 @@ export const PullRequests: FC = function PullRequests() {
       )}
       {ballots != null &&
         ballots.map((ballot) => {
-          return <IssueBallot2 key={ballot.identifier} ballot={ballot} />
+          return <IssueBallot key={ballot.identifier} ballot={ballot} />
         })}
     </>
   )

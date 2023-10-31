@@ -3,7 +3,7 @@ import { useAtomValue } from 'jotai'
 import type { FC } from 'react'
 
 import { ballotsOthersAtom } from '../state/ballots.js'
-import { IssueBallot2 } from './IssueBallot2.js'
+import { IssueBallot } from './IssueBallot.js'
 
 export const OtherBallots: FC = function OtherBallots() {
   const ballots = useAtomValue(ballotsOthersAtom)
@@ -19,7 +19,7 @@ export const OtherBallots: FC = function OtherBallots() {
   return (
     <Card>
       {ballots.map((ballot) => {
-        return <IssueBallot2 key={ballot.identifier} ballot={ballot} />
+        return <IssueBallot key={ballot.identifier} ballot={ballot} />
       })}
     </Card>
   )
