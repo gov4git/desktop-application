@@ -15,7 +15,6 @@ export type Ballot = {
     pendingScoreDiff: number
     pendingCredits: number
     newScore: number
-    contributionMessage: string
   }
 }
 

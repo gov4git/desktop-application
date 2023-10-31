@@ -250,36 +250,12 @@ export class BallotService extends AbstractBallotService {
       creditsSign * Math.sqrt(Math.abs(talliedCredits + pendingCredits))
     const pendingScoreDiff = newScore - talliedScore
 
-    let message = ``
-    if (talliedScore !== 0) {
-      const isUp = talliedScore > 0
-      const symbol = isUp ? '+' : ''
-      message += `<span>Your contribution: ${symbol}${formatDecimal(
-        talliedScore,
-      )}`
-    }
-    if (pendingScoreDiff !== 0) {
-      const isUp = pendingScoreDiff > 0
-      const symbol = isUp ? '+' : ''
-      message += message !== '' ? '<br />' : '<span>'
-      message += `Your pending contribution: ${symbol}${formatDecimal(
-        pendingScoreDiff,
-      )}`
-    }
-    message += message !== '' ? '</span>' : ''
-
-    // const userVotingCredits = await this.getVotingCredits(config.user.username)
-    // const maxScoreLeft = Math.sqrt(userVotingCredits) //- acceptedUserScore - pendingScoreDiff
-
     ballot['user'] = {
       talliedScore: talliedScore,
       talliedCredits: talliedCredits,
       newScore: newScore,
       pendingScoreDiff: pendingScoreDiff,
       pendingCredits: pendingCredits,
-      contributionMessage: message,
-      // maxScoreLeft: maxScoreLeft,
-      // minScoreLeft: -maxScoreLeft,
     }
 
     await this.db
