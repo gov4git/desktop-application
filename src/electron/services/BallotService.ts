@@ -188,18 +188,6 @@ export class BallotService extends AbstractBallotService {
     }
   }
 
-  protected getVotingCredits = async (username: string): Promise<number> => {
-    const command = [
-      'balance',
-      'get',
-      '--user',
-      username,
-      '--key',
-      'voting_credits',
-    ]
-    return await this.gov4GitService.mustRun(...command)
-  }
-
   public getBallot = async (ballotId: string): Promise<Ballot> => {
     const config = await this.configService.getConfig()
     if (config == null) {

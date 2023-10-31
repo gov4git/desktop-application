@@ -61,12 +61,28 @@ export class ConfigService extends AbstractConfigService {
     }
   }
 
+  protected _getUserName = async (username: string) => {
+    if (username === '') return ''
+    const command = ['group', 'list', '--name', 'everybody']
+    const users = await this.govService.mustRun<string[]>(...command)
+    const existingInd = users.findIndex((u) => {
+      return u.toLocaleLowerCase() === username.toLocaleLowerCase()
+    })
+    if (existingInd !== -1) {
+      return users[existingInd]!
+    }
+    return username
+  }
+
   public getConfig = async (): Promise<Config | null> => {
     const selectedConfig = await this.getSelectedConfig()
     if (selectedConfig == null) return null
     const config = await this.readConfig(selectedConfig.path)
     if (config != null) {
       this.govService.setConfigPath(selectedConfig.path)
+      config.user.username = await this._getUserName(
+        config.user?.username ?? '',
+      )
       const configRecord = {
         communityUrl: selectedConfig.communityUrl,
         path: selectedConfig.path,
@@ -315,7 +331,7 @@ export class ConfigService extends AbstractConfigService {
     config: Partial<Config>,
   ): Promise<string[]> => {
     const errors: string[] = []
-    const user = config.user ?? {}
+    const user = config.user!
 
     if (!(await this.gitService.doesUserExist(user as GitUserInfo))) {
       errors.push(`Invalid user credentials`)
