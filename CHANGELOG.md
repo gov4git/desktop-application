@@ -1,5 +1,50 @@
 # gov4git-desktop-app
 
+## 0.6.0
+
+### Minor Changes
+
+- a7e0fa1: Generalize dismiss message and message styling
+- 21b416b: Update voting mechanism
+
+  - Cleanup rank column so show current priority
+    and user contribution/pending contribution
+  - Move voting to ballot description for more space
+  - Switch from slider mechanism to input box for better
+    control and accessibility
+  - Add increment and decrement buttons for easy control
+  - Show quadratic relationship between vote and cost
+    in credits via a slider
+  - Show success message upon voting and indicate
+    pending status of the new vote
+
+### Patch Changes
+
+- 3897078: Fix bubble style and support disabled state
+- 032d881: Do not log logging activity
+
+  - Previous versions logged logging activity
+    creating an explosion of data to be written to files
+    and degrading performance.
+
+- 7600944: Correct pending credit calculation
+
+  - Should cost the difference in new credits spent
+    and previous credits spent when switching vote from
+    negative to positive or vice versa and should
+    refund credits if that new cost is less than
+    previous cost.
+  - Should refund credits when decreasing vote
+
+- 1a5372a: Support mismatched username cases
+
+  - Use the casing as listed in the g4g CLI
+    protocol as the CLI is case sensitive
+
+- 2bb1dfc: Catch app update errors
+- 3cd1a8b: Remove calculating confirmation message on backend
+- 8835b1c: Fetch user data after refreshing ballot cache
+
 ## 0.5.2
 
 ### Patch Changes
