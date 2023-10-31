@@ -18,6 +18,7 @@ export type BubbleSliderProps = {
   onChange: (value: number) => void
   ariaLabel: string
   hideBubble?: boolean
+  disabled?: boolean
 }
 
 export const BubbleSlider: FC<BubbleSliderProps> = function BubbleSilder({
@@ -28,6 +29,7 @@ export const BubbleSlider: FC<BubbleSliderProps> = function BubbleSilder({
   onChange,
   ariaLabel,
   hideBubble = false,
+  disabled = false,
 }) {
   const styles = useBubbleSliderStyles()
   const [value, setValue] = useState(v)
@@ -76,9 +78,14 @@ export const BubbleSlider: FC<BubbleSliderProps> = function BubbleSilder({
         max={max}
         value={value}
         onChange={onSlide}
+        disabled={disabled}
       />
       {!hideBubble && (
-        <div style={bubbleStyles} className={styles.bubble}>
+        <div
+          aria-disabled={disabled}
+          style={bubbleStyles}
+          className={styles.bubble}
+        >
           {formatDecimal(value)}
         </div>
       )}

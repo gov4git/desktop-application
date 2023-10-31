@@ -6,7 +6,6 @@ export const useBubbleSliderStyles = makeStyles({
   sliderArea: {
     position: 'relative',
     marginBottom: '36px',
-    width: '90%',
   },
   slider: {
     display: 'block',
@@ -25,6 +24,12 @@ export const useBubbleSliderStyles = makeStyles({
       ...shorthands.borderRadius(gov4GitTokens.borderRadiusCircular),
       ...shorthands.border('2px', 'solid', gov4GitTokens.g4gColorNeutral),
     },
+    ':disabled': {
+      backgroundColor: gov4GitTokens.g4gColorNeutralDark,
+      '::-webkit-slider-thumb': {
+        backgroundColor: gov4GitTokens.colorNeutralForeground4,
+      },
+    },
   },
   bubble: {
     fontSize: '0.7rem',
@@ -35,5 +40,8 @@ export const useBubbleSliderStyles = makeStyles({
     position: 'absolute',
     top: '0.8rem',
     transform: 'translateX(-50%)',
+    '[aria-disabled]': {
+      backgroundColor: gov4GitTokens.colorNeutralForeground4,
+    },
   },
 })
