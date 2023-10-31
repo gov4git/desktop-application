@@ -64,7 +64,10 @@ export class UserService extends AbstractUserService {
   protected isCommunityMember = async (user: User): Promise<boolean> => {
     const command = ['group', 'list', '--name', 'everybody']
     const users = await this.gov4GitService.mustRun<string[]>(...command)
-    return users.includes(user.username)
+    const existingInd = users.findIndex((u) => {
+      return u.toLocaleLowerCase() === user.username.toLocaleLowerCase()
+    })
+    return existingInd !== -1
   }
 
   protected isCommunityMaintainer = (config: Config): boolean => {
