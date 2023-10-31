@@ -118,6 +118,9 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
             choice: ballot.choices[0] ?? '',
             strength: `${voteStrengthInCredits}`,
           })
+          .then(() => {
+            eventBus.emit('voted', { ballotId: ballot.identifier })
+          })
           .catch(async (ex) => {
             if (
               ex != null &&
@@ -125,14 +128,18 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
               typeof ex.message === 'string' &&
               (ex.message as string).toLowerCase().endsWith('ballot is closed')
             ) {
+              setFetchingNewBallot(false)
               setVoteError(
                 'Sorry, this ballot is closed to voting. Please refresh the page to get the latest list of ballots.',
               )
             } else {
               await catchError(`Failed to cast vote. ${ex}`)
+              setFetchingNewBallot(false)
+              setVoteError(
+                `There was an error voting. Please view the full logs at the top of the page.`,
+              )
             }
           })
-        eventBus.emit('voted', { ballotId: ballot.identifier })
       }
     }
     void run()

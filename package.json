@@ -96,7 +96,7 @@
   "dependencies": {
     "@fluentui/react-components": "^9.22.0",
     "@fluentui/react-icons": "^2.0.204",
-    "@gov4git/js-client": "1.1.12",
+    "@gov4git/js-client": "1.1.13",
     "@vscode/codicons": "^0.0.33",
     "better-sqlite3": "^9.0.0",
     "drizzle-orm": "^0.28.6",
