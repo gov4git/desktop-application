@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.6.2
+
+### Patch Changes
+
+- 84fab8d: Update docs
+
 ## 0.6.1
 
 ### Patch Changes
