@@ -1,6 +1,6 @@
 # Gov4Git Desktop Application
 
-A desktop application for https://github.com/gov4git/gov4git
+A desktop application for [https://github.com/gov4git/gov4git](https://github.com/gov4git/gov4git)
 
 ## Demo
 
