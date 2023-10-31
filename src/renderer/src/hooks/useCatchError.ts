@@ -20,9 +20,11 @@ export function useCatchError() {
           setConfigErrors(configErrors)
           navigate(routes.settings.path)
         } else {
+          window.scrollTo(0, 0)
           setErrorMessage(error)
         }
       } catch (ex) {
+        window.scrollTo(0, 0)
         setErrorMessage(error)
       }
     },
