@@ -1,5 +1,15 @@
 # gov4git-desktop-app
 
+## 0.6.1
+
+### Patch Changes
+
+- 03ecd06: Update gov4git dependency to v1.1.13
+- 421c403: Improve error handling
+
+  - Report voting errors within the vote window
+  - Scroll to top of the page when error logs are presented
+
 ## 0.6.0
 
 ### Minor Changes
