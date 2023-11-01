@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.6.3
+
+### Patch Changes
+
+- aa3dd3e: Update gov4git cli to v1.1.14
+
 ## 0.6.2
 
 ### Patch Changes
