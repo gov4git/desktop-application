@@ -9,6 +9,7 @@ import { AbstractConfigService, Config, ConfigMeta } from '~/shared'
 
 import { DB } from '../db/db.js'
 import {
+  ballots,
   configs,
   configStore,
   ConfigStoreDB,
@@ -241,6 +242,7 @@ export class ConfigService extends AbstractConfigService {
       set: insertRecord,
     })
     await this.runGov4GitInit(fullConfig)
+    await this.db.delete(ballots)
     return errors
   }
 
