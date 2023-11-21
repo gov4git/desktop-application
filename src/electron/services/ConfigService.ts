@@ -333,6 +333,14 @@ export class ConfigService extends AbstractConfigService {
     const errors: string[] = []
     const user = config.user!
 
+    const scopes = await this.gitService.getOAuthScopes(user.pat)
+    if (!scopes.includes('repo')) {
+      errors.push(
+        'Personal Access Token has insufficient privileges. Please ensure PAT has rights to top-level repo scope.',
+      )
+      return errors
+    }
+
     if (!(await this.gitService.doesUserExist(user as GitUserInfo))) {
       errors.push(`Invalid user credentials`)
     }
