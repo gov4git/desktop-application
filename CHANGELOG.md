@@ -1,5 +1,13 @@
 # gov4git-desktop-app
 
+## 0.6.4
+
+### Patch Changes
+
+- a5677c4: Check PAT privileges prior to logging in.
+
+  - Addresses #39, #40, and gov4git/gov4git#133
+
 ## 0.6.3
 
 ### Patch Changes
