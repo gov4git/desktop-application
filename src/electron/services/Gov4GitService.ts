@@ -24,24 +24,21 @@ export class Gov4GitService {
       command.push('--config', this.configPath)
     }
 
-    let results: { stdout: string; stderr: string }
+    command.push('-v')
+
     try {
-      results = await runGov4Git(...command)
-    } catch (ex) {
+      const { stdout, stderr } = await runGov4Git(...command)
+      this.log.info('Running Gov4Git')
+      this.log.info(`Command: ${command.join(' ')}`)
+      this.log.info('Gov4Git Logs:', stderr)
+      const output = parseStdout<T>(command, stdout)
+      this.log.info('Gov4Git Response:', output)
+      return output
+    } catch (ex: any) {
       this.log.error('Exception running Gov4Git')
       this.log.error(`Command: ${command.join(' ')}`)
-      this.log.error(ex)
+      this.log.error(ex.stderr)
       throw ex
     }
-    this.log.info('Running Gov4Git')
-    this.log.info(`Command: ${command.join(' ')}`)
-    if (results.stderr != null && results.stderr.trim() !== '') {
-      this.log.error('Gov4Git Error')
-      this.log.error(`Error: ${results.stderr}`)
-      throw new Error(results.stderr)
-    }
-    const output = parseStdout<T>(command, results.stdout)
-    this.log.info('Gov4Git Response:', output)
-    return output
   }
 }
