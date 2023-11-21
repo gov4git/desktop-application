@@ -36,6 +36,17 @@ export class GitService {
     }
   }
 
+  public getOAuthScopes = async (token: string): Promise<string[]> => {
+    const response = await fetch(`${this.apiBaseUrl}`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Token ${token}`,
+      },
+    })
+    const scopes = (response.headers.get('X-OAuth-Scopes') ?? '').split(', ')
+    return scopes
+  }
+
   protected throwIfUserDoesNotExist = async (
     user: GitUserInfo,
     from: string,

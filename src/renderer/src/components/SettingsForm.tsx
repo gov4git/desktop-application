@@ -73,6 +73,7 @@ export const SettingsForm = function SettingsForm() {
           eventBus.emit('user-logged-in')
         }
       } catch (ex) {
+        setLoading(false)
         await catchError(`Failed to save config. ${ex}`)
       }
     },
