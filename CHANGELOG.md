@@ -1,5 +1,17 @@
 # gov4git-desktop-app
 
+## 0.7.0
+
+### Minor Changes
+
+- 4c69872: Run Gov$git CLI with verbose flag
+
+  - Addresses gov4git/gov4it#128
+
+### Patch Changes
+
+- 4c0fb7d: Reset cache on user updates
+
 ## 0.6.4
 
 ### Patch Changes
