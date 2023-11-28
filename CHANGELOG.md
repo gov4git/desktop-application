@@ -1,5 +1,13 @@
 # gov4git-desktop-app
 
+## 0.8.0
+
+### Minor Changes
+
+- e2b17d2: Improve cache layer
+
+  - Cache user, communities, and settings
+
 ## 0.7.0
 
 ### Minor Changes
