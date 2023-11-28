@@ -10,32 +10,38 @@ import {
 
 import type { InvokeServiceProps } from '~/shared'
 
-import { CONFIG_PATH, DB_PATH } from './configs.js'
+import { COMMUNITY_REPO_NAME, CONFIG_PATH, DB_PATH } from './configs.js'
 import { DB, loadDb } from './db/db.js'
 import { migrateDb } from './db/migrate.js'
+import { BallotService } from './services/BallotService.js'
+import { CacheService } from './services/CacheService.js'
+import { CommunityService } from './services/CommunityService.js'
 import { Gov4GitService } from './services/Gov4GitService.js'
 import {
   AppUpdaterService,
-  BallotService,
-  ConfigService,
   GitService,
   LogService,
   Services,
-  UserService,
 } from './services/index.js'
+import { SettingsService } from './services/SettingsService.js'
+import { UserService } from './services/UserService.js'
 
 const port = process.env['PORT']
 
 const services = new Services()
 const logService = new LogService(resolve(CONFIG_PATH, 'logs.txt'))
+services.register('log', logService)
 
 logService.info(`Gov4Git Version ${logService.getAppVersion()}`)
 
 async function setup(): Promise<void> {
-  services.register('log', logService)
-
-  const db = await loadDb(DB_PATH)
-  services.register('db', db)
+  try {
+    logService.info(`Initializing DB: ${DB_PATH}`)
+    const db = await loadDb(DB_PATH)
+    services.register('db', db)
+  } catch (ex) {
+    logService.error(`Failed to load DB. ${ex}`)
+  }
   try {
     await migrateDb(DB_PATH, app.isPackaged)
   } catch (ex) {
@@ -43,23 +49,39 @@ async function setup(): Promise<void> {
     logService.error(ex)
   }
 
-  const gov4GitService = new Gov4GitService(services)
-  services.register('gov4git', gov4GitService)
-
   const gitService = new GitService()
   services.register('git', gitService)
 
-  const configService = new ConfigService(services)
-  services.register('config', configService)
+  const gov4GitService = new Gov4GitService(services)
+  services.register('gov4git', gov4GitService)
 
-  const ballotService = new BallotService(services)
+  const userService = new UserService({
+    services,
+    identityRepoName: COMMUNITY_REPO_NAME,
+  })
+  services.register('user', userService)
+
+  const ballotService = new BallotService({
+    services,
+  })
   services.register('ballots', ballotService)
+
+  const communityService = new CommunityService({
+    services,
+    configDir: CONFIG_PATH,
+  })
+  services.register('community', communityService)
+
+  const settingsService = new SettingsService({
+    services,
+  })
+  services.register('settings', settingsService)
 
   const appUpdaterService = new AppUpdaterService(services)
   services.register('appUpdater', appUpdaterService)
 
-  const userService = new UserService(services)
-  services.register('user', userService)
+  const cacheService = new CacheService({ services })
+  services.register('cache', cacheService)
 }
 
 async function serviceHandler(

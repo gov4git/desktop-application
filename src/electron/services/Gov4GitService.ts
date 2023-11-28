@@ -1,28 +1,50 @@
 import { runGov4Git } from '@gov4git/js-client'
+import { eq } from 'drizzle-orm'
+import { existsSync } from 'fs'
 
+import { DB } from '../db/db.js'
+import { communities } from '../db/schema.js'
 import { parseStdout } from '../lib/stdout.js'
 import { LogService } from './LogService.js'
 import { Services } from './Services.js'
 
 export class Gov4GitService {
-  protected declare configPath: string
-  protected declare services: Services
-  protected declare log: LogService
+  protected declare readonly services: Services
+  protected declare readonly log: LogService
+  protected declare readonly db: DB
 
   constructor(services: Services) {
-    this.configPath = ''
     this.services = services
     this.log = this.services.load<LogService>('log')
-  }
-
-  public setConfigPath = (configPath: string): void => {
-    this.configPath = configPath
+    this.db = this.services.load<DB>('db')
   }
 
   public mustRun = async <T>(...command: string[]): Promise<T> => {
-    if (this.configPath !== '') {
-      command.push('--config', this.configPath)
+    const selectedCommunity = (
+      await this.db
+        .select()
+        .from(communities)
+        .where(eq(communities.selected, true))
+        .limit(1)
+    )[0]
+
+    if (selectedCommunity == null) {
+      throw new Error(
+        `Unable to run Gov4Git command ${command.join(
+          ' ',
+        )} as config is not provided.`,
+      )
     }
+
+    if (!existsSync(selectedCommunity.configPath)) {
+      throw new Error(
+        `Unable to run Gov4Git command ${command.join(' ')} as config ${
+          selectedCommunity.configPath
+        } does not exist`,
+      )
+    }
+
+    command.push('--config', selectedCommunity.configPath)
 
     command.push('-v')
 

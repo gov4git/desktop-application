@@ -3,7 +3,7 @@ import { homedir } from 'node:os'
 import { resolve } from 'node:path'
 
 export function toResolvedPath(path: string): string {
-  return resolve(path.replace('~', homedir()))
+  return resolve(path.replace(/^~/, homedir()))
 }
 
 export async function hashString(value: string): Promise<string> {

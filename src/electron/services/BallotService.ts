@@ -1,17 +1,20 @@
-import { desc } from 'drizzle-orm'
+import { and, asc, desc, eq, sql } from 'drizzle-orm'
 
 import {
   AbstractBallotService,
   Ballot,
-  BallotLabel,
   CreateBallotOptions,
   VoteOption,
 } from '~/shared'
 
 import { DB } from '../db/db.js'
-import { ballots } from '../db/schema.js'
-import { formatDecimal } from '../lib/numbers.js'
-import { ConfigService } from './ConfigService.js'
+import {
+  BallotDBInsert,
+  ballots,
+  communities,
+  userCommunities,
+  users,
+} from '../db/schema.js'
 import { Gov4GitService } from './Gov4GitService.js'
 import { Services } from './Services.js'
 
@@ -27,9 +30,12 @@ type RemoteBallot = {
   strategy: string
   participants_group: string
   parent_commit: string
-  label: BallotLabel
+  label: 'issues' | 'pull' | 'other'
   identifier: string
   url: string
+  frozen: boolean
+  closed: boolean
+  cancelled: boolean
 }
 
 type RemoteBallotInfo = {
@@ -125,20 +131,23 @@ type RemoteBallotTrack = {
   }> | null
 }
 
-export class BallotService extends AbstractBallotService {
-  protected declare services: Services
-  protected declare db: DB
-  protected declare configService: ConfigService
-  protected declare gov4GitService: Gov4GitService
+export type BallotServiceOptions = {
+  services: Services
+}
 
-  constructor(services: Services) {
+export class BallotService extends AbstractBallotService {
+  private declare readonly services: Services
+  private declare readonly db: DB
+  private declare readonly govService: Gov4GitService
+
+  constructor({ services }: BallotServiceOptions) {
     super()
     this.services = services
     this.db = this.services.load<DB>('db')
-    this.configService = this.services.load<ConfigService>('config')
-    this.gov4GitService = this.services.load<Gov4GitService>('gov4git')
+    this.govService = this.services.load<Gov4GitService>('gov4git')
   }
-  protected getBallotLabel = (path: string[]): BallotLabel => {
+
+  private getBallotLabel = (path: string[]): 'issues' | 'pull' | 'other' => {
     if (path.length === 3 && path[1]?.toLowerCase() === 'issues') {
       return 'issues'
     } else if (path.length === 3 && path[1]?.toLowerCase() === 'pull') {
@@ -147,24 +156,31 @@ export class BallotService extends AbstractBallotService {
     return 'other'
   }
 
-  protected getBallotIdentifier = (path: string[]): string => {
+  private getBallotId = (path: string[]): string => {
     return path.join('/')
   }
 
-  protected getBallotInfo = async (ballotPath: string, username: string) => {
-    const ballotInfoCommand = ['ballot', 'show', '--name', ballotPath]
-    const ballotInfo = await this.gov4GitService.mustRun<RemoteBallotInfo>(
+  private fetchBallotInfo = async (
+    // communityUrl: string,
+    ballotId: string,
+  ): Promise<RemoteBallotInfo> => {
+    const ballotInfoCommand = ['ballot', 'show', '--name', ballotId]
+    const ballotInfo = await this.govService.mustRun<RemoteBallotInfo>(
       ...ballotInfoCommand,
     )
-    const ballotTrackingCommand = ['ballot', 'track', '--name', ballotPath]
+
+    return ballotInfo
+  }
+
+  private fetchBallotTracking = async (tallyId: string) => {
+    const ballotTrackingCommand = ['ballot', 'track', '--name', tallyId]
     let ballotTracking: RemoteBallotTrack | null = null
     try {
-      ballotTracking = await this.gov4GitService.mustRun<RemoteBallotTrack>(
+      ballotTracking = await this.govService.mustRun<RemoteBallotTrack>(
         ...ballotTrackingCommand,
       )
       if (ballotTracking != null && ballotTracking.pending_votes != null) {
-        const userAcceptedVotes =
-          ballotInfo.ballot_tally.ballot_accepted_votes[username]
+        const userAcceptedVotes = ballotTracking.accepted_votes
         if (userAcceptedVotes != null) {
           ballotTracking.pending_votes = ballotTracking.pending_votes.reduce<
             any[]
@@ -182,31 +198,34 @@ export class BallotService extends AbstractBallotService {
     } catch (er) {
       // skip
     }
-    return {
-      ballotInfo,
-      ballotTracking,
-    }
+    return ballotTracking
   }
 
-  public getBallot = async (ballotId: string): Promise<Ballot> => {
-    const config = await this.configService.getConfig()
-    if (config == null) {
-      throw new Error(
-        `Unable to load ballot info for ${ballotId} as config is null.`,
-      )
-    }
-    const b = await this.getBallotInfo(ballotId, config.user.username)
+  private loadBallot = async (
+    username: string,
+    communityUrl: string,
+    ballotId: string,
+  ) => {
+    const [ballotInfo, ballotTracking] = await Promise.all([
+      this.fetchBallotInfo(ballotId),
+      this.fetchBallotTracking(ballotId),
+    ])
+
     const ballot: Record<string, unknown> = {}
-    ballot['communityUrl'] = config.gov_public_url
-    ballot['label'] = this.getBallotLabel(
-      b.ballotInfo.ballot_advertisement.path,
+    ballot['communityUrl'] = communityUrl
+    ballot['label'] = this.getBallotLabel(ballotInfo.ballot_advertisement.path)
+    ballot['identifier'] = this.getBallotId(
+      ballotInfo.ballot_advertisement.path,
     )
-    ballot['identifier'] = this.getBallotIdentifier(
-      b.ballotInfo.ballot_advertisement.path,
-    )
-    ballot['title'] = b.ballotInfo.ballot_advertisement.title
-    ballot['description'] = b.ballotInfo.ballot_advertisement.description
-    ballot['choices'] = b.ballotInfo.ballot_advertisement.choices
+    ballot['title'] = ballotInfo.ballot_advertisement.title
+    ballot['description'] = ballotInfo.ballot_advertisement.description
+    ballot['choices'] = ballotInfo.ballot_advertisement.choices
+
+    const closed =
+      ballotInfo.ballot_advertisement.frozen ||
+      ballotInfo.ballot_advertisement.closed ||
+      ballotInfo.ballot_advertisement.cancelled
+    ballot['status'] = closed ? 'closed' : 'open'
 
     const choice = (ballot['choices'] as string[])[0]
 
@@ -216,11 +235,10 @@ export class BallotService extends AbstractBallotService {
       )
     }
     ballot['choice'] = choice
-    ballot['score'] = b.ballotInfo.ballot_tally.ballot_scores[choice] ?? 0
+    ballot['score'] = ballotInfo.ballot_tally.ballot_scores[choice] ?? 0
 
-    const talliedVotes =
-      b.ballotInfo.ballot_tally.ballot_votes_by_user[config.user.username]
-    const pendingVotes = b.ballotTracking?.pending_votes ?? []
+    const talliedVotes = ballotInfo.ballot_tally.ballot_votes_by_user[username]
+    const pendingVotes = ballotTracking?.pending_votes ?? []
 
     let talliedScore = 0
     if (talliedVotes != null) {
@@ -248,7 +266,7 @@ export class BallotService extends AbstractBallotService {
 
     await this.db
       .insert(ballots)
-      .values(ballot as Ballot)
+      .values(ballot as BallotDBInsert)
       .onConflictDoUpdate({
         target: ballots.identifier,
         set: ballot,
@@ -256,47 +274,121 @@ export class BallotService extends AbstractBallotService {
     return ballot as Ballot
   }
 
-  protected _getOpen = async () => {
-    const config = await this.configService.getConfig()
-    if (config == null) return []
-    const username = config.user!.username!
-    const command = ['ballot', 'list', '--open', '--participant', username]
-    const remoteBallots = await this.gov4GitService.mustRun<RemoteBallot[]>(
+  public getBallot = async (ballotId: string) => {
+    const [userRows, communityRows] = await Promise.all([
+      this.db.select().from(users).limit(1),
+      this.db
+        .select()
+        .from(communities)
+        .where(eq(communities.selected, true))
+        .limit(1),
+    ])
+
+    const user = userRows[0]
+    const community = communityRows[0]
+
+    if (user == null || community == null) {
+      return null
+    }
+
+    return this.loadBallot(user.username, community.url, ballotId)
+  }
+
+  public loadBallots = async () => {
+    const [userRows, communityRows] = await Promise.all([
+      this.db.select().from(users).limit(1),
+      this.db
+        .select()
+        .from(communities)
+        .where(eq(communities.selected, true))
+        .limit(1),
+    ])
+
+    const user = userRows[0]
+    const community = communityRows[0]
+
+    if (user == null || community == null) {
+      return
+    }
+
+    const command = ['ballot', 'list', '--participant', user.username]
+    const remoteBallots = await this.govService.mustRun<RemoteBallot[]>(
       ...command,
     )
 
-    const ballotPromises = remoteBallots.map((b) =>
-      this.getBallot(this.getBallotIdentifier(b.path)),
-    )
-    return await Promise.all(ballotPromises).then((results) => {
-      return results.sort((a, b) => (a.score > b.score ? -1 : 1))
-    })
+    const ballotPromises = []
+    for (const remoteBallot of remoteBallots) {
+      ballotPromises.push(
+        this.loadBallot(
+          user.username,
+          community.url,
+          this.getBallotId(remoteBallot.path),
+        ),
+      )
+    }
+
+    await Promise.all(ballotPromises)
   }
 
-  public override clearCache = async (): Promise<void> => {
-    await this.db.delete(ballots)
-  }
+  public getBallots = async () => {
+    const selectedCommunity = (
+      await this.db
+        .select()
+        .from(communities)
+        .where(eq(communities.selected, true))
+        .limit(1)
+    )[0]
 
-  public override updateCache = async (): Promise<Ballot[]> => {
-    await this.clearCache()
-    return await this._getOpen()
-  }
+    if (selectedCommunity == null) {
+      return []
+    }
 
-  public getOpen = async () => {
-    const blts = await this.db
+    const ballotCounts = await this.db
+      .select({
+        count: sql<number>`count(*)`,
+      })
+      .from(ballots)
+      .where(
+        and(
+          eq(ballots.communityUrl, selectedCommunity.url),
+          eq(ballots.status, 'open'),
+        ),
+      )
+
+    if (ballotCounts.length === 0 || ballotCounts[0]?.count === 0) {
+      await this.loadBallots()
+    }
+
+    return await this.db
       .select()
       .from(ballots)
-      .orderBy(desc(ballots.score))
-    if (blts.length > 0) {
-      // void this._getOpen()
-      return blts
-    }
-    return await this._getOpen()
+      .where(
+        and(
+          eq(ballots.communityUrl, selectedCommunity.url),
+          eq(ballots.status, 'open'),
+        ),
+      )
+      .orderBy(desc(ballots.score), asc(ballots.title))
   }
 
   public vote = async ({ name, choice, strength }: VoteOption) => {
-    // throw new Error(`FAILED TO VOTE!`)
-    await this.gov4GitService.mustRun(
+    const userInfo = (
+      await this.db
+        .select()
+        .from(communities)
+        .innerJoin(
+          userCommunities,
+          eq(communities.url, userCommunities.communityId),
+        )
+        .where(eq(communities.selected, true))
+        .limit(1)
+    )[0]
+
+    if (userInfo == null) {
+      return
+    }
+
+    await this.govService.mustRun(
       'ballot',
       'vote',
       '--name',
@@ -306,10 +398,21 @@ export class BallotService extends AbstractBallotService {
       '--strengths',
       strength,
     )
+
+    const votingCredits = userInfo.userCommunities.votingCredits - +strength
+    const votingScore = Math.sqrt(Math.abs(votingCredits))
+
+    await this.db
+      .update(userCommunities)
+      .set({
+        votingCredits,
+        votingScore,
+      })
+      .where(eq(userCommunities.id, userInfo.userCommunities.id))
   }
 
   public createBallot = async (options: CreateBallotOptions) => {
-    const name = `${options.type}/${options.title.replace(/\s/g, '')}`
+    const name = `github/${options.type}/${options.title.replace(/\s/g, '')}`
     const command = [
       'ballot',
       'open',
@@ -322,14 +425,14 @@ export class BallotService extends AbstractBallotService {
       '--group',
       'everybody',
       '--choices',
-      'Prioritize',
+      'prioritize',
       '--use_credits',
     ]
-    await this.gov4GitService.mustRun(...command)
+    await this.govService.mustRun(...command)
   }
 
   public tallyBallot = async (ballotName: string) => {
     const command = ['ballot', 'tally', '--name', ballotName]
-    await this.gov4GitService.mustRun(...command)
+    await this.govService.mustRun(...command)
   }
 }

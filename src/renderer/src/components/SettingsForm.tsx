@@ -11,14 +11,15 @@ import { useAtom, useAtomValue } from 'jotai'
 import { FC, FormEvent, useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { Config } from '~/shared'
-
 import { routes } from '../App/index.js'
 import { useCatchError } from '../hooks/useCatchError.js'
 import { eventBus } from '../lib/eventBus.js'
-import { createNestedRecord, mergeDeep } from '../lib/index.js'
-import { configService } from '../services/ConfigService.js'
-import { configAtom, configErrorsAtom } from '../state/config.js'
+import { communityService } from '../services/CommunityService.js'
+import { settingsService } from '../services/SettingsService.js'
+import { userService } from '../services/UserService.js'
+import { communityAtom } from '../state/community.js'
+import { configErrorsAtom } from '../state/config.js'
+import { userAtom } from '../state/user.js'
 import { useButtonStyles } from '../styles/index.js'
 import { useMessageStyles } from '../styles/messages.js'
 import { Message } from './Message.js'
@@ -28,34 +29,16 @@ export const SettingsForm = function SettingsForm() {
   const styles = useSettingsFormsStyles()
   const buttonStyles = useButtonStyles()
   const navigate = useNavigate()
-  const [unsavedChanges, setUnsavedChanges] = useState(false)
-  const [formConfig, setFormConfig] = useState<Partial<Config>>({})
+  const [unsavedChanges, setUnsavedChanges] = useState(true)
   const catchError = useCatchError()
-  const config = useAtomValue(configAtom)
+  const user = useAtomValue(userAtom)
+  const community = useAtomValue(communityAtom)
   const [configErrors, setConfigErrors] = useAtom(configErrorsAtom)
   const [loading, setLoading] = useState(false)
   const messageStyles = useMessageStyles()
-
-  useEffect(() => {
-    if (config != null) {
-      setFormConfig((c) => {
-        return mergeDeep({}, c, config)
-      })
-    }
-  }, [config, setFormConfig])
-
-  const updateConfig = useCallback(
-    (key: string, value: string) => {
-      setUnsavedChanges(true)
-      const obj = createNestedRecord<Partial<Config>>({
-        [key]: value,
-      })
-      setFormConfig((c) => {
-        return mergeDeep({}, c, obj)
-      })
-    },
-    [setFormConfig, setUnsavedChanges],
-  )
+  const [username, setUsername] = useState(user?.username ?? '')
+  const [pat, setPat] = useState(user?.pat ?? '')
+  const [projectUrl, setProjectUrl] = useState(community?.projectUrl ?? '')
 
   const save = useCallback(
     async (ev: FormEvent<HTMLFormElement>) => {
@@ -63,28 +46,44 @@ export const SettingsForm = function SettingsForm() {
       setConfigErrors([])
       try {
         setLoading(true)
-        const errors = await configService.createOrUpdateConfig(formConfig)
-        if (errors.length > 0) {
-          setConfigErrors(errors)
+        const userErrors = await userService.authenticate(username, pat)
+        if (userErrors.length > 0) {
+          setConfigErrors(userErrors)
           setLoading(false)
         } else {
-          setUnsavedChanges(false)
-          setLoading(false)
-          eventBus.emit('user-logged-in')
+          const communityErrors = await communityService.insertCommunity(
+            projectUrl,
+          )
+          if (communityErrors.length > 0) {
+            setConfigErrors(communityErrors)
+            setLoading(false)
+          } else {
+            await settingsService.generateConfig()
+            setUnsavedChanges(false)
+            setLoading(false)
+            eventBus.emit('user-logged-in')
+          }
         }
       } catch (ex) {
         setLoading(false)
         await catchError(`Failed to save config. ${ex}`)
       }
     },
-    [setUnsavedChanges, formConfig, setConfigErrors, catchError, setLoading],
+    [
+      setUnsavedChanges,
+      username,
+      pat,
+      projectUrl,
+      setConfigErrors,
+      catchError,
+      setLoading,
+    ],
   )
 
   const reset = useCallback(() => {
-    setFormConfig({})
     setUnsavedChanges(false)
     navigate(routes.issues.path)
-  }, [setFormConfig, setUnsavedChanges, navigate])
+  }, [setUnsavedChanges, navigate])
 
   const onClose = useCallback(() => {
     setConfigErrors([])
@@ -115,9 +114,9 @@ export const SettingsForm = function SettingsForm() {
             width="100%"
             type="text"
             id="username"
-            value={formConfig.user?.username ?? ''}
+            value={username}
             disabled={loading}
-            onChange={(e) => updateConfig('user.username', e.target.value)}
+            onChange={(e) => setUsername(e.target.value)}
           />
         </Field>
         <Field
@@ -135,9 +134,9 @@ export const SettingsForm = function SettingsForm() {
           <Input
             type="password"
             id="PAT"
-            value={formConfig.user?.pat ?? ''}
+            value={pat}
             disabled={loading}
-            onChange={(e) => updateConfig('user.pat', e.target.value)}
+            onChange={(e) => setPat(e.target.value)}
           />
         </Field>
         <Field
@@ -155,9 +154,9 @@ export const SettingsForm = function SettingsForm() {
           <Input
             type="url"
             id="communityRepoUrl"
-            value={formConfig?.project_repo ?? ''}
+            value={projectUrl}
             disabled={loading}
-            onChange={(e) => updateConfig('project_repo', e.target.value)}
+            onChange={(e) => setProjectUrl(e.target.value)}
           />
         </Field>
 

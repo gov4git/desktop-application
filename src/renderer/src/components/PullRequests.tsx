@@ -3,7 +3,7 @@ import { useAtomValue } from 'jotai'
 import { type FC, useMemo } from 'react'
 
 import { ballotPullRequestsAtom } from '../state/ballots.js'
-import { configAtom } from '../state/config.js'
+import { communityAtom } from '../state/community.js'
 import { useHeadingsStyles } from '../styles/headings.js'
 import { IssueBallot } from './IssueBallot.js'
 import { usePullRequestsStyles } from './PullRequests.styles.js'
@@ -11,12 +11,12 @@ import { usePullRequestsStyles } from './PullRequests.styles.js'
 export const PullRequests: FC = function PullRequests() {
   const ballots = useAtomValue(ballotPullRequestsAtom)
   const headingStyles = useHeadingsStyles()
-  const config = useAtomValue(configAtom)
+  const community = useAtomValue(communityAtom)
   const styles = usePullRequestsStyles()
   const issuesLink = useMemo(() => {
-    if (config == null) return null
-    return `${config.project_repo}/pulls?q=is:open is:pr label:gov4git:prioritize`
-  }, [config])
+    if (community == null) return null
+    return `${community.projectUrl}/pulls?q=is:open is:pr label:gov4git:prioritize`
+  }, [community])
 
   return (
     <>

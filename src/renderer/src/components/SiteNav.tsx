@@ -63,7 +63,7 @@ export const SiteNav: FC = function SiteNav() {
             {user &&
               Object.entries(routes).map(([key, route]) => {
                 if (!route.siteNav || route.footer) return
-                if (!user?.is_maintainer && route.forAdmin) return
+                if (!user?.isMaintainer && route.forAdmin) return
                 return (
                   <div key={key} className={styles.linkContainer}>
                     <NavLink
@@ -92,7 +92,7 @@ export const SiteNav: FC = function SiteNav() {
           <div className={styles.reset}>
             {Object.entries(routes).map(([key, route]) => {
               if (!route.siteNav || !route.footer) return
-              if (!user?.is_maintainer && route.forAdmin) return
+              if (!user?.isMaintainer && route.forAdmin) return
               return (
                 <div key={key} className={styles.linkContainer}>
                   <NavLink

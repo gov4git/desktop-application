@@ -43,6 +43,7 @@ export class GitService {
         Authorization: `Token ${token}`,
       },
     })
+    await response.text()
     const scopes = (response.headers.get('X-OAuth-Scopes') ?? '').split(', ')
     return scopes
   }
@@ -163,13 +164,14 @@ export class GitService {
 
   public doesUserExist = async (user: GitUserInfo): Promise<boolean> => {
     const authHeader = this.getAuthHeader(user)
-    const response = await fetch(`${this.apiBaseUrl}/user`, {
+    const response = await fetch(`${this.apiBaseUrl}/users/${user.username}`, {
       method: 'GET',
       headers: {
         Accept: 'application/vnd.github+json',
         ...authHeader,
       },
     })
+    await response.text()
     if (response.status !== 200) {
       return false
     }
@@ -197,7 +199,7 @@ export class GitService {
 
       const authHeader = this.getAuthHeader(user)
 
-      await fetch(`${this.apiBaseUrl}/user/repos`, {
+      const response = await fetch(`${this.apiBaseUrl}/user/repos`, {
         method: 'POST',
         headers: {
           Accept: 'application/vnd.github+json',
@@ -213,6 +215,7 @@ export class GitService {
           has_discussions: false,
         }),
       })
+      await response.text()
     } catch (ex) {
       throw new Error(`Unable to initialize repo ${repo}. Error: ${ex}`)
     }
@@ -228,14 +231,17 @@ export class GitService {
       const repoSegment = this.getRepoSegment(repoUrl)
 
       const authHeader = this.getAuthHeader(user)
-
-      await fetch(`${this.apiBaseUrl}/repos/${repoSegment}`, {
+      const result = await fetch(`${this.apiBaseUrl}/repos/${repoSegment}`, {
         method: 'DElETE',
         headers: {
           Accept: 'application/vnd.github+json',
           ...authHeader,
         },
       })
+      await result.text()
+      if (result.status !== 204) {
+        throw new Error(`Status code: ${result.status}`)
+      }
     } catch (ex) {
       throw new Error(`Unable to delete repo ${repoUrl}. Error: ${ex}`)
     }
