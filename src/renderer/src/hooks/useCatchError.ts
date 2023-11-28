@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { routes } from '../App/Router.js'
-import { configService } from '../services/ConfigService.js'
+import { settingsService } from '../services/SettingsService.js'
 import { configErrorsAtom } from '../state/config.js'
 import { errorAtom } from '../state/error.js'
 
@@ -15,7 +15,7 @@ export function useCatchError() {
   const setError = useCallback(
     async (error: string) => {
       try {
-        const configErrors = await configService.validateSettings()
+        const configErrors = await settingsService.validateConfig()
         if (configErrors.length > 0) {
           setConfigErrors(configErrors)
           navigate(routes.settings.path)

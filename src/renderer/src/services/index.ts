@@ -1,5 +1,6 @@
 export * from './BallotService.js'
-export * from './ConfigService.js'
 export * from './UserService.js'
 export * from './LogService.js'
 export * from './AppUpdaterService.js'
+export * from './CommunityService.js'
+export * from './SettingsService.js'

@@ -25,7 +25,7 @@ import { useCatchError } from '../hooks/useCatchError.js'
 import { eventBus } from '../lib/eventBus.js'
 import { formatDecimal } from '../lib/index.js'
 import { ballotService } from '../services/index.js'
-import { configAtom } from '../state/config.js'
+import { communityAtom } from '../state/community.js'
 import { userAtom } from '../state/user.js'
 import { useMessageStyles } from '../styles/messages.js'
 import { BubbleSlider } from './BubbleSlider.js'
@@ -49,7 +49,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
   const catchError = useCatchError()
   const messageStyles = useMessageStyles()
   const user = useAtomValue(userAtom)
-  const config = useAtomValue(configAtom)
+  const community = useAtomValue(communityAtom)
   const [fetchingNewBallot, setFetchingNewBallot] = useState(false)
   const [voteError, setVoteError] = useState<string | null>(null)
   const [inputWidth, setInputWidth] = useState(0)
@@ -74,16 +74,16 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
   }, [setFetchingNewBallot, ballot, voteScore, setSuccessMessage])
 
   const githubLink = useMemo(() => {
-    if (config == null) return null
+    if (community == null) return null
     const linkComponent = ballot.identifier.split('/').slice(1).join('/')
-    return `${config.project_repo}/${linkComponent}`
-  }, [config, ballot])
+    return `${community.projectUrl}/${linkComponent}`
+  }, [community, ballot])
 
   const maxScore = useMemo(() => {
     if (user == null) return 0
     console.log(ballot)
     return Math.sqrt(
-      user.voting_credits +
+      user.votingCredits +
         Math.abs(ballot.user.pendingCredits) +
         Math.abs(ballot.user.talliedCredits),
     )
@@ -92,7 +92,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
   const minScore = useMemo(() => {
     if (user == null) return 0
     return -Math.sqrt(
-      user.voting_credits +
+      user.votingCredits +
         Math.abs(ballot.user.pendingCredits) +
         Math.abs(ballot.user.talliedCredits),
     )
@@ -340,7 +340,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
                             disabled={true}
                             min={0}
                             max={
-                              (user?.voting_credits ?? 0) +
+                              (user?.votingCredits ?? 0) +
                               ballot.user.pendingCredits +
                               ballot.user.talliedCredits
                             }

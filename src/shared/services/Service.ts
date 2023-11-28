@@ -9,6 +9,9 @@ export type ServiceId =
   | 'log'
   | 'db'
   | 'appUpdater'
+  | 'community'
+  | 'settings'
+  | 'cache'
 
 export type ObjectProxy<T> = {
   [P in keyof T]: ServiceProxy<T[P]>

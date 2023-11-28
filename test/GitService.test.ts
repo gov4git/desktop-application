@@ -1,6 +1,8 @@
 import 'dotenv/config'
 
-import { expect, test } from '@jest/globals'
+import { describe } from 'node:test'
+
+import { beforeAll, expect, test } from '@jest/globals'
 
 import {
   GitService,
@@ -16,51 +18,67 @@ const user: GitUserInfo = {
 const baseUrl = 'https://github.com'
 const projectRepo = `${baseUrl}/${user.username}/test-gov4git-creating-deleting-repos`
 
-test('Does public repo exist', async () => {
-  // Act
-  const shouldNotExist = !(await gitService.doesPublicRepoExist(projectRepo))
+export default function run() {
+  beforeAll(async () => {
+    await gitService.deleteRepo(projectRepo, user)
+  }, 30000)
 
-  // Assert
-  expect(shouldNotExist).toEqual(true)
-})
+  describe('Working with Repos', () => {
+    test('Does public repo exist', async () => {
+      // Act
+      const shouldNotExist = !(await gitService.doesPublicRepoExist(
+        projectRepo,
+      ))
 
-test('Create Repo', async () => {
-  // Arrange
-  await gitService.initializeRemoteRepo(projectRepo, user, false, true)
+      // Assert
+      expect(shouldNotExist).toEqual(true)
+    })
 
-  // Act
-  const shouldExist = await gitService.doesRemoteRepoExist(projectRepo, user)
+    test('Create Repo', async () => {
+      // Arrange
+      await gitService.initializeRemoteRepo(projectRepo, user, false, true)
 
-  // Assert
-  expect(shouldExist).toEqual(true)
-})
+      // Act
+      const shouldExist = await gitService.doesRemoteRepoExist(
+        projectRepo,
+        user,
+      )
 
-test('Get default branch', async () => {
-  // Act
-  const shouldBeMain = await gitService.getDefaultBranch(projectRepo, user)
+      // Assert
+      expect(shouldExist).toEqual(true)
+    })
 
-  // Assert
-  expect(shouldBeMain).toEqual('main')
-})
+    test('Get default branch', async () => {
+      // Act
+      const shouldBeMain = await gitService.getDefaultBranch(projectRepo, user)
 
-test('Has commits', async () => {
-  // Act
-  const shouldHaveCommits = await gitService.hasCommits(projectRepo, user)
+      // Assert
+      expect(shouldBeMain).toEqual('main')
+    })
 
-  // Assert
-  expect(shouldHaveCommits).toEqual(true)
-})
+    test('Has commits', async () => {
+      // Act
+      const shouldHaveCommits = await gitService.hasCommits(projectRepo, user)
 
-test('Remove Repo', async () => {
-  // Act
-  const shouldExist = await gitService.doesRemoteRepoExist(projectRepo, user)
-  await gitService.deleteRepo(projectRepo, user)
-  const noLongerExists = !(await gitService.doesRemoteRepoExist(
-    projectRepo,
-    user,
-  ))
+      // Assert
+      expect(shouldHaveCommits).toEqual(true)
+    })
 
-  // Assert
-  expect(shouldExist).toEqual(true)
-  expect(noLongerExists).toEqual(true)
-})
+    test('Remove Repo', async () => {
+      // Act
+      const shouldExist = await gitService.doesRemoteRepoExist(
+        projectRepo,
+        user,
+      )
+      await gitService.deleteRepo(projectRepo, user)
+      const noLongerExists = !(await gitService.doesRemoteRepoExist(
+        projectRepo,
+        user,
+      ))
+
+      // Assert
+      expect(shouldExist).toEqual(true)
+      expect(noLongerExists).toEqual(true)
+    })
+  })
+}

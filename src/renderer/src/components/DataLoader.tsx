@@ -8,10 +8,11 @@ import { eventBus } from '../lib/eventBus.js'
 import { debounceAsync } from '../lib/functions.js'
 import { appUpdaterService } from '../services/AppUpdaterService.js'
 import { ballotService } from '../services/BallotService.js'
-import { configService } from '../services/ConfigService.js'
+import { cacheService } from '../services/CacheService.js'
+import { communityService } from '../services/CommunityService.js'
 import { userService } from '../services/UserService.js'
 import { ballotsAtom } from '../state/ballots.js'
-import { configAtom } from '../state/config.js'
+import { communityAtom } from '../state/community.js'
 import { loaderAtom } from '../state/loader.js'
 import { updatesAtom } from '../state/updates.js'
 import { userAtom, userLoadedAtom } from '../state/user.js'
@@ -19,11 +20,12 @@ import { userAtom, userLoadedAtom } from '../state/user.js'
 export const DataLoader: FC = function DataLoader() {
   const catchError = useCatchError()
   const setUpdates = useSetAtom(updatesAtom)
-  const setConfig = useSetAtom(configAtom)
+  // const setConfig = useSetAtom(configAtom)
   const setBallots = useSetAtom(ballotsAtom)
   const setUser = useSetAtom(userAtom)
   const setUserLoaded = useSetAtom(userLoadedAtom)
   const setLoading = useSetAtom(loaderAtom)
+  const setCommunity = useSetAtom(communityAtom)
   const [loadingQueue, setLoadingQueue] = useState<Promise<any>[]>([])
   const navigate = useNavigate()
 
@@ -49,18 +51,26 @@ export const DataLoader: FC = function DataLoader() {
     return debounceAsync(_checkForUpdates)
   }, [_checkForUpdates])
 
-  const _getConfig = useCallback(async () => {
-    try {
-      const config = await configService.getConfig()
-      setConfig(config)
-    } catch (ex) {
-      await catchError(`Failed to load config. ${ex}`)
-    }
-  }, [catchError, setConfig])
+  const _refreshCache = useCallback(async () => {
+    await cacheService.refreshCache()
+  }, [])
 
-  const getConfig = useMemo(() => {
-    return debounceAsync(_getConfig)
-  }, [_getConfig])
+  const refreshCache = useMemo(() => {
+    return debounceAsync(_refreshCache)
+  }, [_refreshCache])
+
+  // const _getConfig = useCallback(async () => {
+  //   try {
+  //     const config = await configService.getConfig()
+  //     setConfig(config)
+  //   } catch (ex) {
+  //     await catchError(`Failed to load config. ${ex}`)
+  //   }
+  // }, [catchError, setConfig])
+
+  // const getConfig = useMemo(() => {
+  //   return debounceAsync(_getConfig)
+  // }, [_getConfig])
 
   const _getUser = useCallback(async () => {
     try {
@@ -76,9 +86,22 @@ export const DataLoader: FC = function DataLoader() {
     return debounceAsync(_getUser)
   }, [_getUser])
 
+  const _getCommunity = useCallback(async () => {
+    try {
+      const community = await communityService.getCommunity()
+      setCommunity(community)
+    } catch (ex) {
+      await catchError(`Failed to load community. ${ex}`)
+    }
+  }, [catchError, setCommunity])
+
+  const getCommunity = useMemo(() => {
+    return debounceAsync(_getCommunity)
+  }, [_getCommunity])
+
   const _getBallots = useCallback(async () => {
     try {
-      const ballots = await ballotService.getOpen()
+      const ballots = await ballotService.getBallots()
       setBallots(ballots)
     } catch (ex) {
       await catchError(`Failed to load ballots. ${ex}`)
@@ -89,23 +112,26 @@ export const DataLoader: FC = function DataLoader() {
     return debounceAsync(_getBallots)
   }, [_getBallots])
 
-  const _updateBallotCache = useCallback(async () => {
-    try {
-      const ballots = await ballotService.updateCache()
-      setBallots(ballots)
-    } catch (ex) {
-      await catchError(`Failed to load ballots. ${ex}`)
-    }
-  }, [setBallots, catchError])
+  // const _updateBallotCache = useCallback(async () => {
+  //   // try {
+  //   //   const ballots = await ballotService.updateCache()
+  //   //   setBallots(ballots)
+  //   // } catch (ex) {
+  //   //   await catchError(`Failed to load ballots. ${ex}`)
+  //   // }
+  // }, [setBallots, catchError])
 
-  const updateBallotCache = useMemo(() => {
-    return debounceAsync(_updateBallotCache)
-  }, [_updateBallotCache])
+  // const updateBallotCache = useMemo(() => {
+  //   return debounceAsync(_updateBallotCache)
+  // }, [_updateBallotCache])
 
   const _getBallot = useCallback(
     async (e: CustomEvent<{ ballotId: string }>) => {
       try {
         const ballot = await ballotService.getBallot(e.detail.ballotId)
+        if (ballot == null) {
+          return
+        }
         setBallots((ballots) => {
           if (ballots == null) return [ballot]
           const existingInd = ballots.findIndex(
@@ -132,12 +158,14 @@ export const DataLoader: FC = function DataLoader() {
 
   useEffect(() => {
     const listeners: Array<() => void> = []
-    addToQueue(getConfig())
     addToQueue(getUser())
+    addToQueue(getCommunity())
     addToQueue(getBallots())
 
     const updateCacheInterval = setInterval(async () => {
-      return await updateBallotCache().then(getUser)
+      return await refreshCache().then(async () => {
+        await Promise.all([getUser(), getBallots()])
+      })
     }, 60 * 1000)
 
     listeners.push(() => {
@@ -155,7 +183,8 @@ export const DataLoader: FC = function DataLoader() {
 
     listeners.push(
       eventBus.subscribe('user-logged-in', async () => {
-        const prom = getConfig().then(updateBallotCache).then(getUser)
+        // const prom = getConfig().then(updateBallotCache).then(getUser)
+        const prom = Promise.all([getUser(), getCommunity(), getBallots()])
         addToQueue(prom)
         await prom
         navigate(routes.issues.path)
@@ -163,12 +192,17 @@ export const DataLoader: FC = function DataLoader() {
     )
     listeners.push(
       eventBus.subscribe('voted', async (e) => {
-        await getBallot(e).then(getUser)
+        // await getBallot(e).then(getUser)
+        await Promise.all([getBallot(e), getUser()])
       }),
     )
     listeners.push(
       eventBus.subscribe('refresh', async (e) => {
-        addToQueue(updateBallotCache().then(getUser))
+        addToQueue(
+          refreshCache().then(async () => {
+            await Promise.all([getBallots(), getUser()])
+          }),
+        )
       }),
     )
 
@@ -179,14 +213,14 @@ export const DataLoader: FC = function DataLoader() {
     }
   }, [
     setUpdates,
-    getConfig,
     getUser,
     getBallots,
     addToQueue,
     getBallot,
-    updateBallotCache,
     navigate,
     checkForUpdates,
+    getCommunity,
+    refreshCache,
   ])
 
   useEffect(() => {

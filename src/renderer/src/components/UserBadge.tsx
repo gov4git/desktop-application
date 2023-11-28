@@ -20,7 +20,7 @@ export const UserBadge: FC = function UserBadge() {
         <i className={classes.navIcon + ' codicon codicon-account'} />
         {user.username}
         <Badge appearance="outline" color="subtle" size="large">
-          <div>{formatDecimal(user.voting_credits ?? 0)}</div>
+          <div>{formatDecimal(user.votingCredits ?? 0)}</div>
         </Badge>
       </Link>
     </div>

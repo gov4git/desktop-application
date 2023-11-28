@@ -6,7 +6,7 @@ import { Navigate } from 'react-router-dom'
 import type { User } from '~/shared'
 
 import { routes } from '../App/index.js'
-import { configAtom } from '../state/config.js'
+import { communityAtom } from '../state/community.js'
 import { userAtom, userLoadedAtom } from '../state/user.js'
 
 export const RequireAuth: FC<PropsWithChildren> = function RequireAuth({
@@ -19,7 +19,7 @@ export const RequireAuth: FC<PropsWithChildren> = function RequireAuth({
     return <></>
   } else if (user == null) {
     return <Navigate to={routes.login.path} />
-  } else if (!user.is_member) {
+  } else if (!user.isMember) {
     return <Unauthorized />
   } else {
     return children
@@ -27,20 +27,19 @@ export const RequireAuth: FC<PropsWithChildren> = function RequireAuth({
 }
 
 const Unauthorized: FC = function Unauthorized() {
-  const config = useAtomValue(configAtom)
+  const community = useAtomValue(communityAtom)
   const user = useAtomValue(userAtom) as User
 
   return (
     <Alert intent="error">
-      Unauthorized {user?.username} is not a member of {config?.project_repo}.
-      &nbsp;
+      Unauthorized {user?.username} is not a member of {community?.url}. &nbsp;
       <a
         href={
-          config?.project_repo +
+          community?.projectUrl +
           '/issues/new?template=join.yml&contributor_public_url=' +
-          config?.member_public_url +
+          user?.memberPublicUrl +
           '&contributor_public_branch=' +
-          config?.member_public_branch +
+          user?.memberPublicBranch +
           "&title=I'd like to join this project's community" +
           '&labels=gov4git:join'
         }

@@ -14,10 +14,13 @@ export const ballots = sqliteTable('ballots', {
   choice: text('choice').notNull(),
   score: real('score').notNull(),
   user: text('user', { mode: 'json' }).notNull().$type<BallotType['user']>(),
+  status: text('status', { enum: ['open', 'closed'] })
+    .notNull()
+    .default('open'),
 })
 
 export type BallotDB = typeof ballots.$inferSelect
-export type InsertBallotDB = typeof ballots.$inferInsert
+export type BallotDBInsert = typeof ballots.$inferInsert
 
 export const configs = sqliteTable('configs', {
   communityUrl: text('communityUrl').notNull().primaryKey(),
@@ -39,3 +42,51 @@ export const configStore = sqliteTable('configStore', {
 
 export type ConfigStoreDB = typeof configStore.$inferSelect
 export type InsertConfigStoreDB = typeof configStore.$inferInsert
+
+/**
+ * Version 2 DB
+ */
+
+export const communities = sqliteTable('communities', {
+  url: text('url').primaryKey(),
+  branch: text('branch').notNull(),
+  name: text('name').notNull(),
+  configPath: text('configPath').notNull(),
+  projectUrl: text('projectUrl').notNull(),
+  // isMember: integer('isMember', { mode: 'boolean' }).notNull(),
+  // isMaintainer: integer('isMaintainer', { mode: 'boolean' }).notNull(),
+  selected: integer('selected', { mode: 'boolean' }).notNull(),
+})
+
+export type Community = typeof communities.$inferSelect
+export type CommunityInsert = typeof communities.$inferInsert
+
+export const users = sqliteTable('users', {
+  username: text('username').primaryKey(),
+  pat: text('pat').notNull(),
+  memberPublicUrl: text('memberPublicUrl').notNull(),
+  memberPublicBranch: text('memberPublicBranch').notNull(),
+  memberPrivateUrl: text('memberPrivateUrl').notNull(),
+  memberPrivateBranch: text('memberPrivateBranch').notNull(),
+})
+
+export type User = typeof users.$inferSelect
+export type UserInsert = typeof users.$inferInsert
+
+export const userCommunities = sqliteTable('userCommunities', {
+  id: integer('id', { mode: 'number' }).primaryKey(),
+  userId: text('userId')
+    .notNull()
+    .references(() => users.username),
+  communityId: text('communityId')
+    .notNull()
+    .unique()
+    .references(() => communities.url),
+  isMember: integer('isMember', { mode: 'boolean' }).notNull(),
+  isMaintainer: integer('isMaintainer', { mode: 'boolean' }).notNull(),
+  votingCredits: real('votingCredits').notNull(),
+  votingScore: real('votingScore').notNull(),
+})
+
+export type UserCommunity = typeof userCommunities.$inferSelect
+export type UserCommunityInsert = typeof userCommunities.$inferInsert

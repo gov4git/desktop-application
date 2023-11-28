@@ -81,7 +81,6 @@ export class AppUpdaterService extends AbstractAppUpdaterService {
   }
 
   public override restartAndUpdate = async (): Promise<void> => {
-    await this.ballotService.clearCache()
     autoUpdater.quitAndInstall()
   }
 }
