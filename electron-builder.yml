@@ -63,6 +63,7 @@ linux:
 appImage:
   artifactName: ${name}.${ext}
 npmRebuild: true
+buildDependenciesFromSource: true
 publish:
   - provider: github
     protocol: https

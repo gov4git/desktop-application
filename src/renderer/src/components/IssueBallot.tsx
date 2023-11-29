@@ -270,10 +270,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
           <div
             className={styles.description}
             dangerouslySetInnerHTML={{
-              __html: parse(ballot.description, {
-                headerIds: false,
-                mangle: false,
-              }),
+              __html: parse(ballot.description),
             }}
           ></div>
           {githubLink != null && (

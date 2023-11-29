@@ -51,9 +51,8 @@ export const SettingsForm = function SettingsForm() {
           setConfigErrors(userErrors)
           setLoading(false)
         } else {
-          const communityErrors = await communityService.insertCommunity(
-            projectUrl,
-          )
+          const communityErrors =
+            await communityService.insertCommunity(projectUrl)
           if (communityErrors.length > 0) {
             setConfigErrors(communityErrors)
             setLoading(false)

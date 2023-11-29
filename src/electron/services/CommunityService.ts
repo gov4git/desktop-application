@@ -96,9 +96,8 @@ export class CommunityService extends AbstractCommunityService {
       '',
     )}-gov.public.git`
 
-    const [communityMainBranch, errors] = await this.validateCommunityUrl(
-      communityUrl,
-    )
+    const [communityMainBranch, errors] =
+      await this.validateCommunityUrl(communityUrl)
     if (errors != null && errors.length > 0) {
       return errors
     }
