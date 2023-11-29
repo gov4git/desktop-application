@@ -1,19 +1,5 @@
 import objectPath from 'object-path'
 
-export function clone<T = any>(obj: T): T {
-  return structuredClone(obj)
-}
-
-export function createNestedRecord<T extends Record<string, unknown>>(
-  record: Record<string, unknown>,
-): T {
-  const obj = {}
-  for (const key in record) {
-    objectPath.set(obj, key, record[key])
-  }
-  return obj as T
-}
-
 export function isRecord(obj: unknown): obj is Record<string, unknown> {
   return obj != null && typeof obj === 'object' && !Array.isArray(obj)
 }
@@ -47,15 +33,33 @@ export function mergeDeep<T extends Record<string, unknown> = any>(
   return mergeDeep(target, ...sources) as T
 }
 
-export function hasRequiredKeys(
-  obj: Record<string, any>,
-  keys: string[],
-): boolean {
+export function hasRequiredKeys<T extends Record<string, any>>(
+  obj: T,
+  keys: Array<string | string[]>,
+): [boolean, string[]] {
+  const missingKeys: string[] = []
+  let pass = true
   for (const k of keys) {
-    if (obj[k] == null || obj[k].trim() === '') {
-      return false
+    const p = Array.isArray(k) ? k : k.split('.')
+    const value = objectPath.get(obj, p, undefined)
+    if (
+      value === undefined ||
+      (typeof value === 'string' && (value as string).trim() === '')
+    ) {
+      pass = false
+      missingKeys.push(p.join('#'))
     }
   }
 
-  return true
+  return [pass, missingKeys]
+}
+
+export function createNestedRecord<T extends Record<string, unknown>>(
+  record: Record<string, unknown>,
+): T {
+  const obj = {}
+  for (const key in record) {
+    objectPath.set(obj, key, record[key])
+  }
+  return obj as T
 }

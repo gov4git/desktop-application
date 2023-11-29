@@ -1,6 +1,6 @@
 import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-import { type Ballot as BallotType, Config } from '~/shared'
+import { type Ballot as BallotType } from '~/shared'
 
 export const ballots = sqliteTable('ballots', {
   identifier: text('identifier').primaryKey(),

@@ -7,7 +7,8 @@ import {
   useState,
 } from 'react'
 
-import { formatDecimal } from '../lib/numbers.js'
+import { formatDecimal } from '~/shared'
+
 import { useBubbleSliderStyles } from './BubbleSlider.styles.js'
 
 export type BubbleSliderProps = {

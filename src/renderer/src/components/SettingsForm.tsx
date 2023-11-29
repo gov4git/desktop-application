@@ -1,19 +1,11 @@
-import {
-  Button,
-  Card,
-  Field,
-  Input,
-  Label,
-  LabelProps,
-} from '@fluentui/react-components'
-import { InfoLabel } from '@fluentui/react-components/unstable'
+import { Button, Card, Field, Input } from '@fluentui/react-components'
 import { useAtom, useAtomValue } from 'jotai'
-import { FC, FormEvent, useCallback, useEffect, useState } from 'react'
+import { FC, FormEvent, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { routes } from '../App/index.js'
 import { useCatchError } from '../hooks/useCatchError.js'
-import { eventBus } from '../lib/eventBus.js'
+import { eventBus } from '../lib/index.js'
 import { communityService } from '../services/CommunityService.js'
 import { settingsService } from '../services/SettingsService.js'
 import { userService } from '../services/UserService.js'
@@ -122,7 +114,7 @@ export const SettingsForm = function SettingsForm() {
           className={styles.field}
           // @ts-expect-error children signature
           label={{
-            children: (_: unknown, slotProps: LabelProps) => (
+            children: () => (
               <label htmlFor="PAT" className={styles.labelText}>
                 Personal Access Token
               </label>
@@ -142,7 +134,7 @@ export const SettingsForm = function SettingsForm() {
           className={styles.field}
           // @ts-expect-error children signature
           label={{
-            children: (_: unknown, slotProps: LabelProps) => (
+            children: () => (
               <label htmlFor="communityRepoUrl" className={styles.labelText}>
                 Community URL
               </label>

@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm'
 
-import { AbstractUserService } from '~/shared'
+import { AbstractUserService, serialAsync } from '~/shared'
 
 import { DB } from '../db/db.js'
 import {
@@ -209,7 +209,7 @@ export class UserService extends AbstractUserService {
     return []
   }
 
-  public loadUser = async () => {
+  public loadUser = serialAsync(async () => {
     const [allUsers, selectedCommunities] = await Promise.all([
       this.db.select().from(users),
       this.db.select().from(communities).where(eq(communities.selected, true)),
@@ -271,7 +271,7 @@ export class UserService extends AbstractUserService {
       communities: community,
       userCommunities: userCommunity,
     }
-  }
+  })
 
   public getUser = async () => {
     const userInfos = (

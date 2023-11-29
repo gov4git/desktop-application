@@ -3,8 +3,9 @@ import { useAtomValue } from 'jotai'
 import type { FC } from 'react'
 import { Link } from 'react-router-dom'
 
+import { formatDecimal } from '~/shared'
+
 import { routes } from '../App/index.js'
-import { formatDecimal } from '../lib/numbers.js'
 import { userAtom } from '../state/user.js'
 import { useUserBadgeStyles } from './UserBadge.styles.js'
 
