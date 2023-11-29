@@ -2,10 +2,11 @@ import { useSetAtom } from 'jotai'
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { serialAsync } from '~/shared'
+
 import { routes } from '../App/Router.js'
 import { useCatchError } from '../hooks/useCatchError.js'
-import { eventBus } from '../lib/eventBus.js'
-import { debounceAsync } from '../lib/functions.js'
+import { eventBus } from '../lib/index.js'
 import { appUpdaterService } from '../services/AppUpdaterService.js'
 import { ballotService } from '../services/BallotService.js'
 import { cacheService } from '../services/CacheService.js'
@@ -20,7 +21,6 @@ import { userAtom, userLoadedAtom } from '../state/user.js'
 export const DataLoader: FC = function DataLoader() {
   const catchError = useCatchError()
   const setUpdates = useSetAtom(updatesAtom)
-  // const setConfig = useSetAtom(configAtom)
   const setBallots = useSetAtom(ballotsAtom)
   const setUser = useSetAtom(userAtom)
   const setUserLoaded = useSetAtom(userLoadedAtom)
@@ -48,7 +48,7 @@ export const DataLoader: FC = function DataLoader() {
   }, [setUpdates, catchError])
 
   const checkForUpdates = useMemo(() => {
-    return debounceAsync(_checkForUpdates)
+    return serialAsync(_checkForUpdates)
   }, [_checkForUpdates])
 
   const _refreshCache = useCallback(async () => {
@@ -56,21 +56,8 @@ export const DataLoader: FC = function DataLoader() {
   }, [])
 
   const refreshCache = useMemo(() => {
-    return debounceAsync(_refreshCache)
+    return serialAsync(_refreshCache)
   }, [_refreshCache])
-
-  // const _getConfig = useCallback(async () => {
-  //   try {
-  //     const config = await configService.getConfig()
-  //     setConfig(config)
-  //   } catch (ex) {
-  //     await catchError(`Failed to load config. ${ex}`)
-  //   }
-  // }, [catchError, setConfig])
-
-  // const getConfig = useMemo(() => {
-  //   return debounceAsync(_getConfig)
-  // }, [_getConfig])
 
   const _getUser = useCallback(async () => {
     try {
@@ -83,7 +70,7 @@ export const DataLoader: FC = function DataLoader() {
   }, [catchError, setUser, setUserLoaded])
 
   const getUser = useMemo(() => {
-    return debounceAsync(_getUser)
+    return serialAsync(_getUser)
   }, [_getUser])
 
   const _getCommunity = useCallback(async () => {
@@ -96,7 +83,7 @@ export const DataLoader: FC = function DataLoader() {
   }, [catchError, setCommunity])
 
   const getCommunity = useMemo(() => {
-    return debounceAsync(_getCommunity)
+    return serialAsync(_getCommunity)
   }, [_getCommunity])
 
   const _getBallots = useCallback(async () => {
@@ -109,21 +96,9 @@ export const DataLoader: FC = function DataLoader() {
   }, [setBallots, catchError])
 
   const getBallots = useMemo(() => {
-    return debounceAsync(_getBallots)
+    return serialAsync(_getBallots)
   }, [_getBallots])
 
-  // const _updateBallotCache = useCallback(async () => {
-  //   // try {
-  //   //   const ballots = await ballotService.updateCache()
-  //   //   setBallots(ballots)
-  //   // } catch (ex) {
-  //   //   await catchError(`Failed to load ballots. ${ex}`)
-  //   // }
-  // }, [setBallots, catchError])
-
-  // const updateBallotCache = useMemo(() => {
-  //   return debounceAsync(_updateBallotCache)
-  // }, [_updateBallotCache])
 
   const _getBallot = useCallback(
     async (e: CustomEvent<{ ballotId: string }>) => {
@@ -153,7 +128,7 @@ export const DataLoader: FC = function DataLoader() {
   )
 
   const getBallot = useMemo(() => {
-    return debounceAsync(_getBallot)
+    return serialAsync(_getBallot)
   }, [_getBallot])
 
   useEffect(() => {
@@ -183,7 +158,6 @@ export const DataLoader: FC = function DataLoader() {
 
     listeners.push(
       eventBus.subscribe('user-logged-in', async () => {
-        // const prom = getConfig().then(updateBallotCache).then(getUser)
         const prom = Promise.all([getUser(), getCommunity(), getBallots()])
         addToQueue(prom)
         await prom
@@ -192,12 +166,11 @@ export const DataLoader: FC = function DataLoader() {
     )
     listeners.push(
       eventBus.subscribe('voted', async (e) => {
-        // await getBallot(e).then(getUser)
         await Promise.all([getBallot(e), getUser()])
       }),
     )
     listeners.push(
-      eventBus.subscribe('refresh', async (e) => {
+      eventBus.subscribe('refresh', async () => {
         addToQueue(
           refreshCache().then(async () => {
             await Promise.all([getBallots(), getUser()])

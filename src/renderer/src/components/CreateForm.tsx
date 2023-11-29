@@ -10,9 +10,10 @@ import {
 import { FormEvent, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { createNestedRecord, mergeDeep } from '~/shared'
+
 import { routes } from '../App/index.js'
 import { useCatchError } from '../hooks/useCatchError.js'
-import { createNestedRecord, mergeDeep } from '../lib/index.js'
 import { ballotService } from '../services/BallotService.js'
 import { useButtonStyles } from '../styles/index.js'
 import { useSettingsFormsStyles } from './SettingsForm.styles.js'

@@ -1,4 +1,4 @@
-import { Button, Text } from '@fluentui/react-components'
+import { Button } from '@fluentui/react-components'
 import { type FC, useCallback, useState } from 'react'
 
 import { useLogs } from './LogViewer.hooks.js'

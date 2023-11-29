@@ -19,11 +19,10 @@ import {
   useState,
 } from 'react'
 
-import { Ballot } from '~/shared'
+import { Ballot, formatDecimal } from '~/shared'
 
 import { useCatchError } from '../hooks/useCatchError.js'
-import { eventBus } from '../lib/eventBus.js'
-import { formatDecimal } from '../lib/index.js'
+import { eventBus } from '../lib/index.js'
 import { ballotService } from '../services/index.js'
 import { communityAtom } from '../state/community.js'
 import { userAtom } from '../state/user.js'
@@ -54,7 +53,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
   const [voteError, setVoteError] = useState<string | null>(null)
   const [inputWidth, setInputWidth] = useState(0)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const [, setTimer] = useState<NodeJS.Timer | null>(null)
+  const [, setTimer] = useState<number | null>(null)
 
   useEffect(() => {
     return eventBus.subscribe(
@@ -189,12 +188,11 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
 
   const onMouseDown = useCallback(
     (direction: 'up' | 'down') => {
-      console.log('============ DOWN ====================')
       switch (direction) {
         case 'up':
           setTimer((t) => {
             if (t != null) clearInterval(t)
-            return setInterval(() => {
+            return window.setInterval(() => {
               change(1)
             }, 100)
           })
@@ -202,7 +200,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
         case 'down':
           setTimer((t) => {
             if (t != null) clearInterval(t)
-            return setInterval(() => {
+            return window.setInterval(() => {
               change(-1)
             }, 100)
           })

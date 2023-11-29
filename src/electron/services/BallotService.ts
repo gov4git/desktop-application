@@ -4,6 +4,7 @@ import {
   AbstractBallotService,
   Ballot,
   CreateBallotOptions,
+  serialAsync,
   VoteOption,
 } from '~/shared'
 
@@ -294,7 +295,7 @@ export class BallotService extends AbstractBallotService {
     return this.loadBallot(user.username, community.url, ballotId)
   }
 
-  public loadBallots = async () => {
+  public loadBallots = serialAsync(async () => {
     const [userRows, communityRows] = await Promise.all([
       this.db.select().from(users).limit(1),
       this.db
@@ -328,7 +329,7 @@ export class BallotService extends AbstractBallotService {
     }
 
     await Promise.all(ballotPromises)
-  }
+  })
 
   public getBallots = async () => {
     const selectedCommunity = (

@@ -1,6 +1,5 @@
 import { InvokeServiceProps, ServiceId } from '~/shared'
-
-import { isRecord } from '../lib/records.js'
+import { isRecord } from '~/shared'
 
 export class Services {
   protected declare services: Record<string, unknown>

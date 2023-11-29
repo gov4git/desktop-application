@@ -11,9 +11,9 @@ import { dirname, resolve } from 'node:path'
 import fastRedact from 'fast-redact'
 
 import { AbstractLogService } from '~/shared'
+import { isRecord } from '~/shared'
 
 import { toResolvedPath } from '../lib/paths.js'
-import { isRecord } from '../lib/records.js'
 
 export type Redacter = (...args: any[]) => string
 

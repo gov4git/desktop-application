@@ -1,7 +1,7 @@
 import { Tooltip } from '@fluentui/react-tooltip'
 import { FC, useCallback } from 'react'
 
-import { eventBus } from '../lib/eventBus.js'
+import { eventBus } from '../lib/index.js'
 import { useRefreshButtonStyles } from './RefreshButton.styles.js'
 
 export const RefreshButton: FC = function RefreshButton() {

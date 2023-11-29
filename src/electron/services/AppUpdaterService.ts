@@ -62,7 +62,7 @@ export class AppUpdaterService extends AbstractAppUpdaterService {
       const updateInfo = await autoUpdater.checkForUpdates()
       if (updateInfo == null) return null
       if (updateInfo.downloadPromise != null) {
-        this.updating = updateInfo.downloadPromise.then((r) => {
+        this.updating = updateInfo.downloadPromise.then(() => {
           return {
             ready: true,
             version: updateInfo.updateInfo.version,
