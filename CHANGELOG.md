@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.8.1
+
+### Patch Changes
+
+- 4629b4b: Cleanup deps
+
 ## 0.8.0
 
 ### Minor Changes
