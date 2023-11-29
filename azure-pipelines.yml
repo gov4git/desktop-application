@@ -14,8 +14,10 @@ stages:
           - task: NodeTool@0
             inputs:
               versionSource: 'spec'
-              versionSpec: '18.x'
-          - script: npm install
+              versionSpec: '20.x'
+          - script: npm install node-gyp
+            displayName: 'Install GYP'
+          - script: npm install --ignore-scripts
             displayName: 'install'
           - script: npm run build
             displayName: 'Build'
@@ -45,8 +47,10 @@ stages:
           - task: NodeTool@0
             inputs:
               versionSource: 'spec'
-              versionSpec: '18.x'
-          - script: npm install
+              versionSpec: '20.x'
+          - script: npm install node-gyp
+            displayName: 'Install GYP'
+          - script: npm install --ignore-scripts
             displayName: 'install'
           - script: npm run build
             displayName: 'Build'
@@ -70,8 +74,10 @@ stages:
           - task: NodeTool@0
             inputs:
               versionSource: 'spec'
-              versionSpec: '18.x'
-          - script: npm install
+              versionSpec: '20.x'
+          - script: npm install node-gyp
+            displayName: 'Install GYP'
+          - script: npm install --ignore-scripts
             displayName: 'install'
           - script: npm run build
             displayName: 'Build'
@@ -211,8 +217,8 @@ stages:
           - task: NodeTool@0
             inputs:
               versionSource: 'spec'
-              versionSpec: '18.x'
-          - script: npm install
+              versionSpec: '20.x'
+          - script: npm install --ignore-scripts
             displayName: 'install'
           - task: DownloadPipelineArtifact@2
             inputs:

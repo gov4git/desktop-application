@@ -22,7 +22,7 @@ export type ServiceProxy<T> = T extends
   | (abstract new (...args: infer TArguments) => infer TInstance)
   ? new (...args: TArguments) => ServiceProxy<TInstance>
   : T extends (...args: infer TArguments) => infer TReturn
-  ? (...args: TArguments) => ServiceProxy<TReturn>
-  : T extends object
-  ? ObjectProxy<T>
-  : Promisify<T>
+    ? (...args: TArguments) => ServiceProxy<TReturn>
+    : T extends object
+      ? ObjectProxy<T>
+      : Promisify<T>

@@ -29,6 +29,7 @@ module.exports = {
     'sort-imports': 'off',
     'simple-import-sort/imports': 'error',
     'no-void': 'off',
+    '@typescript-eslint/no-unused-vars': 'warn',
     '@typescript-eslint/no-non-null-assertion': 'off',
     '@typescript-eslint/space-before-function-paren': 'off',
     '@typescript-eslint/indent': 'off',
