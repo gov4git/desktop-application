@@ -12,9 +12,7 @@ export const useSiteNavStyles = makeStyles({
     position: 'sticky',
     top: '0',
     width: '75px',
-    maxHeight: '100vh',
-    // height of the header is 60px
-    minHeight: 'calc(100vh - 60px)',
+    height: 'calc(100vh - 60px)',
     zIndex: '100',
     flexBasis: 'auto',
     flexGrow: '0',
@@ -27,7 +25,6 @@ export const useSiteNavStyles = makeStyles({
   },
   absoluteContainer: {
     backgroundColor: gov4GitTokens.colorNeutralBackground1,
-    // backgroundColor: gov4GitTokens.g4gColorPrimaryGreen1,
     position: 'absolute',
     top: '0',
     minHeight: '100%',
