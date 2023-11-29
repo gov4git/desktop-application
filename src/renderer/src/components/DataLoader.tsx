@@ -99,7 +99,6 @@ export const DataLoader: FC = function DataLoader() {
     return serialAsync(_getBallots)
   }, [_getBallots])
 
-
   const _getBallot = useCallback(
     async (e: CustomEvent<{ ballotId: string }>) => {
       try {

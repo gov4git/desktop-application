@@ -1,7 +1,10 @@
 export function serialAsync<X extends (...args: any) => Promise<any>>(
   fn: X,
 ): (...args: Parameters<typeof fn>) => Promise<Awaited<ReturnType<typeof fn>>> {
-  const existingPromises: Record<string, Promise<ReturnType<typeof fn>> | null> = {}
+  const existingPromises: Record<
+    string,
+    Promise<ReturnType<typeof fn>> | null
+  > = {}
   function generatePromise(...args: Parameters<typeof fn>) {
     const key = JSON.stringify(args)
     // @ts-expect-error error

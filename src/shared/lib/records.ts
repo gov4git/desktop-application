@@ -4,7 +4,6 @@ export function isRecord(obj: unknown): obj is Record<string, unknown> {
   return obj != null && typeof obj === 'object' && !Array.isArray(obj)
 }
 
-
 export function mergeDeep<T extends Record<string, unknown> = any>(
   target: unknown,
   ...sources: unknown[]
@@ -34,7 +33,6 @@ export function mergeDeep<T extends Record<string, unknown> = any>(
   return mergeDeep(target, ...sources) as T
 }
 
-
 export function hasRequiredKeys<T extends Record<string, any>>(
   obj: T,
   keys: Array<string | string[]>,
@@ -43,12 +41,11 @@ export function hasRequiredKeys<T extends Record<string, any>>(
   let pass = true
   for (const k of keys) {
     const p = Array.isArray(k) ? k : k.split('.')
-    const value = objectPath.get(
-      obj,
-      p,
-      undefined,
-    )
-    if (value === undefined || (typeof value === 'string' && (value as string).trim() === '')) {
+    const value = objectPath.get(obj, p, undefined)
+    if (
+      value === undefined ||
+      (typeof value === 'string' && (value as string).trim() === '')
+    ) {
       pass = false
       missingKeys.push(p.join('#'))
     }
