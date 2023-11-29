@@ -15,7 +15,7 @@ stages:
             inputs:
               versionSource: 'spec'
               versionSpec: '18.x'
-          - script: npm install
+          - script: npm install --ignore-scripts
             displayName: 'install'
           - script: npm run build
             displayName: 'Build'
@@ -46,7 +46,7 @@ stages:
             inputs:
               versionSource: 'spec'
               versionSpec: '18.x'
-          - script: npm install
+          - script: npm install --ignore-scripts
             displayName: 'install'
           - script: npm run build
             displayName: 'Build'
@@ -71,7 +71,7 @@ stages:
             inputs:
               versionSource: 'spec'
               versionSpec: '18.x'
-          - script: npm install
+          - script: npm install --ignore-scripts
             displayName: 'install'
           - script: npm run build
             displayName: 'Build'
@@ -212,7 +212,7 @@ stages:
             inputs:
               versionSource: 'spec'
               versionSpec: '18.x'
-          - script: npm install
+          - script: npm install --ignore-scripts
             displayName: 'install'
           - task: DownloadPipelineArtifact@2
             inputs:

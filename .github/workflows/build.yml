@@ -37,7 +37,7 @@ jobs:
           node-version: 18
 
       - name: Install Dependencies
-        run: npm install
+        run: npm install --ignore-scripts
 
       - name: CI Check
         run: npm run ci:check
