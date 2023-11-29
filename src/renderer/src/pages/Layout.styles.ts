@@ -6,8 +6,9 @@ export const useLayoutStyles = makeStyles({
   layout: {
     display: 'flex',
     flexDirection: 'column',
-    minHeight: '100%',
+    height: '100%',
     width: '100%',
+    overflowY: 'hidden',
   },
   header: {
     flexGrow: 0,
@@ -15,18 +16,21 @@ export const useLayoutStyles = makeStyles({
   },
   mainContainer: {
     display: 'flex',
-    flexGrow: 1,
-    flexShrink: 1,
-    flexBasis: 'auto',
+    flexGrow: 0,
+    flexShrink: 0,
+    height: '100%',
+    overflowY: 'hidden',
   },
   main: {
     ...shorthands.padding(
       gov4GitTokens.spacingVerticalL,
       gov4GitTokens.spacingHorizontalM,
     ),
-    flexGrow: 1,
+    height: 'calc(100% - 60px)',
+    overflowY: 'auto',
+    flexGrow: 0,
     flexShrink: 1,
-    flexBasis: 'auto',
+    flexBasis: '100%',
     position: 'relative',
   },
 })
