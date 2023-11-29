@@ -37,7 +37,9 @@ jobs:
           node-version: 20
 
       - name: Install Dependencies
-        run: npm install --ignore-scripts
+        run: |
+          npm install node-gyp
+          npm install --ignore-scripts
 
       - name: CI Check
         run: npm run ci:check
