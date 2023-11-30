@@ -14,7 +14,7 @@
     "format": "prettier --write \"./src/**/*.{js,jsx,ts,tsx}\"",
     "lint:check": "eslint \"./src/**/*.{js,jsx,ts,tsx}\"",
     "lint": "eslint --fix \"./src/**/*.{js,jsx,ts,tsx}\"",
-    "test": "jest testRunner.test.ts",
+    "test": "jest testRunner.test.ts --testTimeout=30000",
     "build:webapp": "vite build --config ./vite.webapp.config.mts",
     "build:electron": "tsup --dts",
     "build": "conc npm:build:webapp npm:build:electron",

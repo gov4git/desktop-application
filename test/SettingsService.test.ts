@@ -16,59 +16,61 @@ export default function run(services: Services) {
   let gitService: GitService
   let db: DB
 
-  beforeAll(async () => {
-    settingsService = services.load<SettingsService>('settings')
-    db = services.load<DB>('db')
-    gitService = services.load<GitService>('git')
-  })
+  describe('Settings Tests', () => {
+    beforeAll(async () => {
+      settingsService = services.load<SettingsService>('settings')
+      db = services.load<DB>('db')
+      gitService = services.load<GitService>('git')
+    })
 
-  describe('Generate Config', () => {
-    test('Generate', async () => {
-      await settingsService.generateConfig()
+    describe('Generate Config', () => {
+      test('Generate', async () => {
+        await settingsService.generateConfig()
 
-      const selectedCommunity = (
-        await db
-          .select()
-          .from(communities)
-          .where(eq(communities.selected, true))
-          .limit(1)
-      )[0]
+        const selectedCommunity = (
+          await db
+            .select()
+            .from(communities)
+            .where(eq(communities.selected, true))
+            .limit(1)
+        )[0]
 
-      if (selectedCommunity == null) {
-        throw new Error(`No selected community`)
-      }
+        if (selectedCommunity == null) {
+          throw new Error(`No selected community`)
+        }
 
-      const shouldExist1 = existsSync(selectedCommunity.configPath)
-      const shouldExist2 = await gitService.doesRemoteRepoExist(
-        config.publicRepo,
-        config.user,
-      )
-      const shouldExist3 = await gitService.doesRemoteRepoExist(
-        config.privateRepo,
-        config.user,
-      )
-      const shouldHaveCommits1 = await gitService.hasCommits(
-        config.publicRepo,
-        config.user,
-      )
-      const shouldHaveCommits2 = await gitService.hasCommits(
-        config.privateRepo,
-        config.user,
-      )
+        const shouldExist1 = existsSync(selectedCommunity.configPath)
+        const shouldExist2 = await gitService.doesRemoteRepoExist(
+          config.publicRepo,
+          config.user,
+        )
+        const shouldExist3 = await gitService.doesRemoteRepoExist(
+          config.privateRepo,
+          config.user,
+        )
+        const shouldHaveCommits1 = await gitService.hasCommits(
+          config.publicRepo,
+          config.user,
+        )
+        const shouldHaveCommits2 = await gitService.hasCommits(
+          config.privateRepo,
+          config.user,
+        )
 
-      expect(shouldExist1).toEqual(true)
-      expect(shouldExist2).toEqual(true)
-      expect(shouldExist3).toEqual(true)
-      expect(shouldHaveCommits1).toEqual(true)
-      expect(shouldHaveCommits2).toEqual(true)
-    }, 30000)
-  })
+        expect(shouldExist1).toEqual(true)
+        expect(shouldExist2).toEqual(true)
+        expect(shouldExist3).toEqual(true)
+        expect(shouldHaveCommits1).toEqual(true)
+        expect(shouldHaveCommits2).toEqual(true)
+      })
+    })
 
-  describe('Validate', () => {
-    test('Validate', async () => {
-      const errors = await settingsService.validateConfig()
+    describe('Validate', () => {
+      test('Validate', async () => {
+        const errors = await settingsService.validateConfig()
 
-      expect(errors.length).toEqual(0)
-    }, 30000)
+        expect(errors.length).toEqual(0)
+      })
+    })
   })
 }

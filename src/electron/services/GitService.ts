@@ -30,32 +30,51 @@ export class GitService {
 
   protected getAuthHeader = (user: GitUserInfo) => {
     return {
-      Authorization: `Basic ${Buffer.from(
-        `${user.username}:${user.pat}`,
-      ).toString('base64')}`,
+      Authorization: `token ${user.pat}`,
     }
   }
 
-  public getOAuthScopes = async (token: string): Promise<string[]> => {
-    const response = await fetch(`${this.apiBaseUrl}`, {
-      method: 'GET',
-      headers: {
-        Authorization: `Token ${token}`,
-      },
-    })
-    await response.text()
-    const scopes = (response.headers.get('X-OAuth-Scopes') ?? '').split(', ')
-    return scopes
+  public getTokenMetaData = async (
+    token: string,
+  ): Promise<[{ scopes: string[] }, null] | [null, string[]]> => {
+    try {
+      const response = await fetch(`${this.apiBaseUrl}`, {
+        headers: {
+          Authorization: `token ${token}`,
+        },
+      })
+      await response.text()
+      if (response.status !== 200) {
+        return [
+          null,
+          [
+            `Invalid user credentials. Personal Access Token may have expired or has insufficient privileges. Please create a classic token with top-level repo rights.`,
+          ],
+        ]
+      }
+      const scopes = (response.headers.get('X-OAuth-Scopes') ?? '').split(', ')
+      return [
+        {
+          scopes,
+        },
+        null,
+      ]
+    } catch (ex) {
+      return [
+        {
+          scopes: [] as string[],
+        },
+        null,
+      ]
+    }
   }
 
   protected throwIfUserDoesNotExist = async (
     user: GitUserInfo,
     from: string,
   ) => {
-    if (!(await this.doesUserExist(user))) {
-      throw new Error(
-        `${user.username} does not exist or PAT is invalid. From ${from}`,
-      )
+    if ((await this.validateUser(user)).length > 0) {
+      throw new Error(`Invalid user credentials. From ${from}`)
     }
   }
 
@@ -68,17 +87,6 @@ export class GitService {
       throw new Error(
         `Remote repo ${repoUrl} does not exist or ${user.username} does not have rights to view it. From: ${from}`,
       )
-    }
-  }
-
-  public doesPublicRepoExist = async (repoUrl: string): Promise<boolean> => {
-    this.throwIfNotUrl(repoUrl, 'doesPublicRepoExist')
-    try {
-      const response = await fetch(repoUrl)
-      await response.text()
-      return response.status === 200
-    } catch (ex) {
-      throw new Error(`Unable to check if public repo exists. Error: ${ex}`)
     }
   }
 
@@ -112,7 +120,7 @@ export class GitService {
     user: GitUserInfo,
   ): Promise<string | null> => {
     this.throwIfNotUrl(repoUrl, 'getDefaultBranch')
-    await this.throwIfUserDoesNotExist(user, 'doesRemoteRepoExist')
+    await this.throwIfUserDoesNotExist(user, 'getDefaultBranch')
     await this.throwIfRepoDoesNotExist(repoUrl, user, 'getDefaultBranch')
     try {
       const authHeader = this.getAuthHeader(user)
@@ -138,7 +146,7 @@ export class GitService {
     user: GitUserInfo,
   ): Promise<boolean> => {
     this.throwIfNotUrl(repoUrl, 'hasCommits')
-    await this.throwIfUserDoesNotExist(user, 'doesRemoteRepoExist')
+    await this.throwIfUserDoesNotExist(user, 'hasCommits')
     await this.throwIfRepoDoesNotExist(repoUrl, user, 'hasCommits')
     try {
       const authHeader = this.getAuthHeader(user)
@@ -162,20 +170,43 @@ export class GitService {
     }
   }
 
-  public doesUserExist = async (user: GitUserInfo): Promise<boolean> => {
-    const authHeader = this.getAuthHeader(user)
-    const response = await fetch(`${this.apiBaseUrl}/users/${user.username}`, {
-      method: 'GET',
-      headers: {
-        Accept: 'application/vnd.github+json',
-        ...authHeader,
-      },
-    })
-    await response.text()
-    if (response.status !== 200) {
-      return false
+  public validateUser = async (user: GitUserInfo): Promise<string[]> => {
+    const [tokenData, errors] = await this.getTokenMetaData(user.pat)
+
+    if (Array.isArray(errors) && errors.length) {
+      return errors
     }
-    return true
+
+    if (!tokenData!.scopes.includes('repo')) {
+      return [
+        'Personal Access Token has insufficient privileges. Please create a classic token with the top-level repo scope selected.',
+      ]
+    }
+
+    try {
+      const authHeader = this.getAuthHeader(user)
+      const response = await fetch(`${this.apiBaseUrl}/user`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/vnd.github+json',
+          ...authHeader,
+        },
+      })
+      if (response.status !== 200) {
+        return ['Invalid user credentials.']
+      }
+      const payload: any = await response.json()
+      if (
+        payload == null ||
+        payload.login == null ||
+        (payload.login as string).toLowerCase() !== user.username.toLowerCase()
+      ) {
+        return ['Invalid user credentials']
+      }
+      return []
+    } catch (ex) {
+      return [`Failed to validate user credentials. ${ex}`]
+    }
   }
 
   protected getRepoName = (repo: string): string => {

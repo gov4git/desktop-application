@@ -84,7 +84,7 @@ afterAll(async () => {
   loggingService.close()
   dbService.close()
   await rm(config.configDir, { recursive: true, force: true })
-}, 30000)
+})
 
 describe('Run tests', () => {
   runGitTests()
