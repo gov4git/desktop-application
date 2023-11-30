@@ -67,25 +67,10 @@ export class UserService extends AbstractUserService {
     if (missingErrors.length > 0) {
       return missingErrors
     }
-    const errors: string[] = []
-    const scopes = await this.gitService.getOAuthScopes(pat)
-    if (!scopes.includes('repo')) {
-      errors.push(
-        'Personal Access Token has insufficient privileges. Please ensure PAT has rights to top-level repo scope.',
-      )
-      return errors
-    }
-
-    if (
-      !(await this.gitService.doesUserExist({
-        username,
-        pat,
-      }))
-    ) {
-      errors.push(`Invalid user credentials`)
-    }
-
-    return errors
+    return await this.gitService.validateUser({
+      username,
+      pat,
+    })
   }
 
   private getOpenBallots = async () => {

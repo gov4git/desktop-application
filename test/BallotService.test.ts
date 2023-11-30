@@ -58,6 +58,7 @@ export default function run(services: Services) {
         '10',
       )
     })
+
     test('Vote flow', async () => {
       expect(true).toEqual(true)
       await userService.loadUser()

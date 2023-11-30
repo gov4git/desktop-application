@@ -9,7 +9,7 @@ import {
   type GitUserInfo,
 } from '../src/electron/services/GitService.js'
 
-const gitService = new GitService()
+let gitService: GitService
 const user: GitUserInfo = {
   username: process.env['GH_USER']!,
   pat: process.env['GH_TOKEN']!,
@@ -19,15 +19,16 @@ const baseUrl = 'https://github.com'
 const projectRepo = `${baseUrl}/${user.username}/test-gov4git-creating-deleting-repos`
 
 export default function run() {
-  beforeAll(async () => {
-    await gitService.deleteRepo(projectRepo, user)
-  }, 30000)
-
-  describe('Working with Repos', () => {
+  describe('Git Tests', () => {
+    beforeAll(async () => {
+      gitService = new GitService()
+      await gitService.deleteRepo(projectRepo, user)
+    })
     test('Does public repo exist', async () => {
       // Act
-      const shouldNotExist = !(await gitService.doesPublicRepoExist(
+      const shouldNotExist = !(await gitService.doesRemoteRepoExist(
         projectRepo,
+        user,
       ))
 
       // Assert
