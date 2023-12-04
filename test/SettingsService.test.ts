@@ -8,24 +8,27 @@ import {
   GitService,
   Services,
   SettingsService,
+  ValidationService,
 } from '../src/electron/services/index.js'
 import { config } from './config.js'
 
 export default function run(services: Services) {
   let settingsService: SettingsService
+  let validationService: ValidationService
   let gitService: GitService
   let db: DB
 
   describe('Settings Tests', () => {
     beforeAll(async () => {
       settingsService = services.load<SettingsService>('settings')
+      validationService = services.load<ValidationService>('validation')
       db = services.load<DB>('db')
       gitService = services.load<GitService>('git')
     })
 
     describe('Generate Config', () => {
       test('Generate', async () => {
-        await settingsService.generateConfig()
+        await settingsService.generateConfigs()
 
         const selectedCommunity = (
           await db
@@ -67,7 +70,7 @@ export default function run(services: Services) {
 
     describe('Validate', () => {
       test('Validate', async () => {
-        const errors = await settingsService.validateConfig()
+        const errors = await validationService.validateConfig()
 
         expect(errors.length).toEqual(0)
       })

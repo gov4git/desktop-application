@@ -3,19 +3,19 @@ import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { routes } from '../App/Router.js'
-import { settingsService } from '../services/SettingsService.js'
-import { configErrorsAtom } from '../state/config.js'
+import { validationService } from '../services/ValidationService.js'
 import { errorAtom } from '../state/error.js'
+import { settingsErrorAtom } from '../state/settings.js'
 
 export function useCatchError() {
   const setErrorMessage = useSetAtom(errorAtom)
   const navigate = useNavigate()
-  const setConfigErrors = useSetAtom(configErrorsAtom)
+  const setConfigErrors = useSetAtom(settingsErrorAtom)
 
   const setError = useCallback(
     async (error: string) => {
       try {
-        const configErrors = await settingsService.validateConfig()
+        const configErrors = await validationService.validateConfig()
         if (configErrors.length > 0) {
           setConfigErrors(configErrors)
           navigate(routes.settings.path)

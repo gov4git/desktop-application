@@ -10,10 +10,8 @@ import { eventBus } from '../lib/index.js'
 import { appUpdaterService } from '../services/AppUpdaterService.js'
 import { ballotService } from '../services/BallotService.js'
 import { cacheService } from '../services/CacheService.js'
-import { communityService } from '../services/CommunityService.js'
 import { userService } from '../services/UserService.js'
 import { ballotsAtom } from '../state/ballots.js'
-import { communityAtom } from '../state/community.js'
 import { loaderAtom } from '../state/loader.js'
 import { updatesAtom } from '../state/updates.js'
 import { userAtom, userLoadedAtom } from '../state/user.js'
@@ -25,7 +23,6 @@ export const DataLoader: FC = function DataLoader() {
   const setUser = useSetAtom(userAtom)
   const setUserLoaded = useSetAtom(userLoadedAtom)
   const setLoading = useSetAtom(loaderAtom)
-  const setCommunity = useSetAtom(communityAtom)
   const [loadingQueue, setLoadingQueue] = useState<Promise<any>[]>([])
   const navigate = useNavigate()
 
@@ -72,19 +69,6 @@ export const DataLoader: FC = function DataLoader() {
   const getUser = useMemo(() => {
     return serialAsync(_getUser)
   }, [_getUser])
-
-  const _getCommunity = useCallback(async () => {
-    try {
-      const community = await communityService.getCommunity()
-      setCommunity(community)
-    } catch (ex) {
-      await catchError(`Failed to load community. ${ex}`)
-    }
-  }, [catchError, setCommunity])
-
-  const getCommunity = useMemo(() => {
-    return serialAsync(_getCommunity)
-  }, [_getCommunity])
 
   const _getBallots = useCallback(async () => {
     try {
@@ -133,7 +117,6 @@ export const DataLoader: FC = function DataLoader() {
   useEffect(() => {
     const listeners: Array<() => void> = []
     addToQueue(getUser())
-    addToQueue(getCommunity())
     addToQueue(getBallots())
 
     const updateCacheInterval = setInterval(async () => {
@@ -156,8 +139,8 @@ export const DataLoader: FC = function DataLoader() {
     })
 
     listeners.push(
-      eventBus.subscribe('user-logged-in', async () => {
-        const prom = Promise.all([getUser(), getCommunity(), getBallots()])
+      eventBus.subscribe('user-logged-in, community-saved', async () => {
+        const prom = Promise.all([getUser(), getBallots()])
         addToQueue(prom)
         await prom
         navigate(routes.issues.path)
@@ -191,7 +174,6 @@ export const DataLoader: FC = function DataLoader() {
     getBallot,
     navigate,
     checkForUpdates,
-    getCommunity,
     refreshCache,
   ])
 

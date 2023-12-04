@@ -2,6 +2,7 @@ import { createHashRouter, RouterProvider } from 'react-router-dom'
 
 import { RequireAuth } from '../components/RequireAuth.js'
 import { AboutPage } from '../pages/About.js'
+import { CommunityJoinPage } from '../pages/CommunityJoin.js'
 import { CreatePage } from '../pages/Create.js'
 import { ErrorPage } from '../pages/Error.js'
 import { Layout } from '../pages/Layout.js'
@@ -29,6 +30,7 @@ export type Routes = {
   info: Route
   settings: Route
   login: Route
+  communityJoin: Route
   license: Route
   logs: Route
 }
@@ -139,6 +141,16 @@ export const routes = {
     footer: false,
     toolTip: '',
     element: <LoginPage />,
+  },
+  communityJoin: {
+    path: '/community-join',
+    name: 'Community Join',
+    siteNav: false,
+    forAdmin: false,
+    iconClass: '',
+    footer: false,
+    toolTip: '',
+    element: <CommunityJoinPage />,
   },
   license: {
     path: '/license',

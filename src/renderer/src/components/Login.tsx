@@ -1,89 +1,62 @@
 import { Button, Card, Field, Input } from '@fluentui/react-components'
-import { useAtom, useAtomValue } from 'jotai'
-import { FC, FormEvent, useCallback, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useAtomValue } from 'jotai'
+import { FC, FormEvent, useCallback, useMemo, useState } from 'react'
 
-import { routes } from '../App/index.js'
 import { useCatchError } from '../hooks/useCatchError.js'
 import { eventBus } from '../lib/index.js'
-import { communityService } from '../services/CommunityService.js'
 import { userService } from '../services/UserService.js'
-import { communityAtom } from '../state/community.js'
-import { settingsErrorAtom } from '../state/settings.js'
 import { userAtom } from '../state/user.js'
-import { useButtonStyles } from '../styles/index.js'
-import { useMessageStyles } from '../styles/messages.js'
+import { useButtonStyles, useMessageStyles } from '../styles/index.js'
+import { useLoginStyles } from './Login.styles.js'
 import { Message } from './Message.js'
-import { useSettingsFormsStyles } from './SettingsForm.styles.js'
 
-export const SettingsForm = function SettingsForm() {
-  const styles = useSettingsFormsStyles()
+export const Login: FC = function Login() {
+  const styles = useLoginStyles()
   const buttonStyles = useButtonStyles()
-  const navigate = useNavigate()
-  const [unsavedChanges, setUnsavedChanges] = useState(true)
   const catchError = useCatchError()
   const user = useAtomValue(userAtom)
-  const community = useAtomValue(communityAtom)
-  const [configErrors, setConfigErrors] = useAtom(settingsErrorAtom)
+  const [loginErrors, setLoginErrors] = useState<string[]>([])
   const [loading, setLoading] = useState(false)
   const messageStyles = useMessageStyles()
   const [username, setUsername] = useState(user?.username ?? '')
   const [pat, setPat] = useState(user?.pat ?? '')
-  const [projectUrl, setProjectUrl] = useState(community?.projectUrl ?? '')
+
+  const dismissError = useCallback(() => {
+    setLoginErrors([])
+  }, [setLoginErrors])
+
+  const submitEnabled = useMemo(() => {
+    return username !== '' && pat !== ''
+  }, [username, pat])
 
   const save = useCallback(
     async (ev: FormEvent<HTMLFormElement>) => {
       ev.preventDefault()
-      setConfigErrors([])
+      setLoginErrors([])
       try {
         setLoading(true)
         const userErrors = await userService.authenticate(username, pat)
         if (userErrors.length > 0) {
-          setConfigErrors(userErrors)
+          setLoginErrors(userErrors)
           setLoading(false)
         } else {
-          const communityErrors =
-            await communityService.insertCommunity(projectUrl)
-          if (communityErrors.length > 0) {
-            setConfigErrors(communityErrors)
-            setLoading(false)
-          } else {
-            setUnsavedChanges(false)
-            setLoading(false)
-            eventBus.emit('user-logged-in')
-          }
+          setLoading(false)
+          eventBus.emit('user-logged-in')
         }
       } catch (ex) {
         setLoading(false)
         await catchError(`Failed to save config. ${ex}`)
       }
     },
-    [
-      setUnsavedChanges,
-      username,
-      pat,
-      projectUrl,
-      setConfigErrors,
-      catchError,
-      setLoading,
-    ],
+    [username, pat, setLoginErrors, catchError, setLoading],
   )
-
-  const reset = useCallback(() => {
-    setUnsavedChanges(false)
-    navigate(routes.issues.path)
-  }, [setUnsavedChanges, navigate])
-
-  const onClose = useCallback(() => {
-    setConfigErrors([])
-  }, [setConfigErrors])
 
   return (
     <Card className={styles.card}>
-      {configErrors.length > 0 && (
+      {loginErrors.length > 0 && (
         <Message
-          messages={configErrors}
-          onClose={onClose}
+          messages={loginErrors}
+          onClose={dismissError}
           className={messageStyles.error}
         />
       )}
@@ -128,38 +101,15 @@ export const SettingsForm = function SettingsForm() {
             onChange={(e) => setPat(e.target.value)}
           />
         </Field>
-        <Field
-          className={styles.field}
-          // @ts-expect-error children signature
-          label={{
-            children: () => (
-              <label htmlFor="communityRepoUrl" className={styles.labelText}>
-                Community URL
-              </label>
-            ),
-          }}
-        >
-          <CommunityUrlMoreInfo />
-          <Input
-            type="url"
-            id="communityRepoUrl"
-            value={projectUrl}
-            disabled={loading}
-            onChange={(e) => setProjectUrl(e.target.value)}
-          />
-        </Field>
 
         <div className={styles.buttons}>
-          <Button shape="circular" onClick={reset} disabled={loading}>
-            Cancel
-          </Button>
           <Button
             shape="circular"
             type="submit"
-            disabled={!unsavedChanges || loading}
+            disabled={!submitEnabled || loading}
             className={buttonStyles.primary}
           >
-            {!loading && 'Save'}
+            {!loading && 'Login'}
             {loading && (
               <i className="codicon codicon-loading codicon-modifier-spin" />
             )}
@@ -193,17 +143,6 @@ const PATMoreInfo: FC = function PATMoreInfo() {
         />
         <br />
         <br />
-      </p>
-    </div>
-  )
-}
-
-const CommunityUrlMoreInfo: FC = function CommunityUrlMoreInfo() {
-  return (
-    <div>
-      <p>
-        URL to a GitHub hosted community repo provided by a community maintainer
-        is required.
       </p>
     </div>
   )

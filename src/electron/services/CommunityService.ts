@@ -4,10 +4,11 @@ import { resolve } from 'path'
 import { AbstractCommunityService } from '~/shared'
 
 import { DB } from '../db/db.js'
-import { communities, Community, users } from '../db/schema.js'
+import { communities, Community, userCommunities } from '../db/schema.js'
 import { hashString, toResolvedPath } from '../lib/paths.js'
 import { GitService } from './GitService.js'
 import { Services } from './Services.js'
+import { UserService } from './UserService.js'
 
 export type CommunityServiceOptions = {
   services: Services
@@ -19,6 +20,7 @@ export class CommunityService extends AbstractCommunityService {
   private declare readonly configDir: string
   private declare readonly db: DB
   private declare readonly gitService: GitService
+  private declare readonly userService: UserService
 
   constructor({ services, configDir = '~/.gov4git' }: CommunityServiceOptions) {
     super()
@@ -26,19 +28,14 @@ export class CommunityService extends AbstractCommunityService {
     this.configDir = toResolvedPath(configDir)
     this.db = this.services.load<DB>('db')
     this.gitService = this.services.load<GitService>('git')
+    this.userService = this.services.load<UserService>('user')
   }
 
   public validateCommunityUrl = async (
     url: string,
   ): Promise<[string | null, string[] | null]> => {
-    const user = (await this.db.select().from(users).limit(1))[0]
-
-    if (user == null) {
-      return [null, ['User not set. Cannot validate community URL.']]
-    }
-
     const errors: string[] = []
-    if (!(await this.gitService.doesRemoteRepoExist(url, user))) {
+    if (!(await this.gitService.doesRemoteRepoExist(url))) {
       errors.push(
         `Community url, ${url}, does not exist. Please enter a valid community URL.`,
       )
@@ -46,7 +43,7 @@ export class CommunityService extends AbstractCommunityService {
     }
 
     const communityMainBranch =
-      (await this.gitService.getDefaultBranch(url, user)) ?? 'main'
+      (await this.gitService.getDefaultBranch(url)) ?? 'main'
 
     return [communityMainBranch, null]
   }
@@ -78,15 +75,58 @@ export class CommunityService extends AbstractCommunityService {
       .where(eq(communities.url, url))
   }
 
+  private requestToJoin = async (community: Community): Promise<void> => {
+    const user = await this.userService.loadUser()
+
+    if (user == null) {
+      return
+    }
+
+    const currentCommunity = user.communities.find(
+      (c) => c.url === community.url,
+    )
+
+    if (currentCommunity == null) {
+      return
+    }
+
+    if (
+      currentCommunity.joinRequestUrl != null &&
+      currentCommunity.joinRequestStatus != null
+    ) {
+      return
+    }
+
+    const title = "I'd like to join this project's community"
+    const body = `### Your public repo
+
+${user.memberPublicUrl}
+
+### Your public branch
+
+${user.memberPublicBranch}`
+    const labels = ['gov4git:join']
+
+    const url = await this.gitService.createIssue({
+      url: community.projectUrl,
+      user,
+      title,
+      body,
+      labels,
+    })
+
+    await this.db
+      .update(userCommunities)
+      .set({
+        joinRequestUrl: url,
+        joinRequestStatus: 'open',
+      })
+      .where(eq(userCommunities.id, currentCommunity.id))
+  }
+
   public insertCommunity = async (projectUrl: string): Promise<string[]> => {
     if (projectUrl === '') {
       return [`Community URL is a required field.`]
-    }
-
-    const user = (await this.db.select().from(users).limit(1))[0]
-    console.log(`================ ${user?.username} ===================`)
-    if (user == null) {
-      return []
     }
 
     const projectRepoUrl = projectUrl.replace(/(\/|\.git)$/i, '')
@@ -120,6 +160,8 @@ export class CommunityService extends AbstractCommunityService {
       target: communities.url,
       set: community,
     })
+
+    await this.requestToJoin(community)
 
     return []
   }

@@ -4,12 +4,14 @@ import { FC, useCallback, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 
 import { routes } from '../App/index.js'
+import { communityAtom } from '../state/community.js'
 import { userAtom } from '../state/user.js'
 import { useSiteNavStyles } from './SiteNav.styles.js'
 
 export const SiteNav: FC = function SiteNav() {
   const styles = useSiteNavStyles()
   const user = useAtomValue(userAtom)
+  const community = useAtomValue(communityAtom)
   const [pinned, setPinned] = useState('')
 
   const onExpand = useCallback(() => {
@@ -63,7 +65,7 @@ export const SiteNav: FC = function SiteNav() {
             {user &&
               Object.entries(routes).map(([key, route]) => {
                 if (!route.siteNav || route.footer) return
-                if (!user?.isMaintainer && route.forAdmin) return
+                if (!community?.isMaintainer && route.forAdmin) return
                 return (
                   <div key={key} className={styles.linkContainer}>
                     <NavLink
@@ -92,7 +94,7 @@ export const SiteNav: FC = function SiteNav() {
           <div className={styles.reset}>
             {Object.entries(routes).map(([key, route]) => {
               if (!route.siteNav || !route.footer) return
-              if (!user?.isMaintainer && route.forAdmin) return
+              if (!community?.isMaintainer && route.forAdmin) return
               return (
                 <div key={key} className={styles.linkContainer}>
                   <NavLink

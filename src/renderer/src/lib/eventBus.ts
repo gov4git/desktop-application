@@ -15,9 +15,14 @@ class EventBus extends EventTarget {
     event: string,
     fn: (e: CustomEvent<any>) => void | Promise<void>,
   ) => {
-    this.addEventListener(event, fn as EventListenerOrEventListenerObject)
+    const events = event.replace(/\s/g, '').split(',')
+    for (const e of events) {
+      this.addEventListener(e, fn as EventListenerOrEventListenerObject)
+    }
     return () => {
-      this.removeEventListener(event, fn as EventListenerOrEventListenerObject)
+      for (const e of events) {
+        this.removeEventListener(e, fn as EventListenerOrEventListenerObject)
+      }
     }
   }
 }

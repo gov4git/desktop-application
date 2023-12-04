@@ -26,6 +26,7 @@ import { eventBus } from '../lib/index.js'
 import { ballotService } from '../services/index.js'
 import { communityAtom } from '../state/community.js'
 import { userAtom } from '../state/user.js'
+import { useBadgeStyles } from '../styles/badges.js'
 import { useMessageStyles } from '../styles/messages.js'
 import { BubbleSlider } from './BubbleSlider.js'
 import { useIssueBallotStyles } from './IssueBallot.styles.js'
@@ -39,6 +40,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
   ballot,
 }) {
   const styles = useIssueBallotStyles()
+  const badgeStyles = useBadgeStyles()
   const [voteScore, setVoteScore] = useState(ballot.user.newScore)
   const [displayVoteScore, setDisplayVoteScore] = useState(
     formatDecimal(voteScore),
@@ -79,23 +81,23 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
   }, [community, ballot])
 
   const maxScore = useMemo(() => {
-    if (user == null) return 0
+    if (community == null) return 0
     console.log(ballot)
     return Math.sqrt(
-      user.votingCredits +
+      community.votingCredits +
         Math.abs(ballot.user.pendingCredits) +
         Math.abs(ballot.user.talliedCredits),
     )
-  }, [ballot, user])
+  }, [ballot, community])
 
   const minScore = useMemo(() => {
-    if (user == null) return 0
+    if (community == null) return 0
     return -Math.sqrt(
-      user.votingCredits +
+      community.votingCredits +
         Math.abs(ballot.user.pendingCredits) +
         Math.abs(ballot.user.talliedCredits),
     )
-  }, [ballot, user])
+  }, [ballot, community])
 
   useEffect(() => {
     const score = voteScore
@@ -247,7 +249,11 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
     <Card className={styles.card}>
       <div className={styles.root} key={ballot.identifier}>
         <div className={styles.rankArea}>
-          <Badge className={styles.badge} size="extra-large" shape="circular">
+          <Badge
+            className={badgeStyles.primary}
+            size="extra-large"
+            shape="circular"
+          >
             <Text size={400}>{formatDecimal(ballot.score)}</Text>
           </Badge>
           <Text size={200}>
@@ -335,7 +341,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
                             disabled={true}
                             min={0}
                             max={
-                              (user?.votingCredits ?? 0) +
+                              (community?.votingCredits ?? 0) +
                               ballot.user.pendingCredits +
                               ballot.user.talliedCredits
                             }
