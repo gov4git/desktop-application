@@ -3,8 +3,6 @@ import { resolve } from 'node:path'
 
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 
-import { Config } from '~/shared'
-
 import { DB, loadDb } from './db.js'
 import { communities, configStore, users } from './schema.js'
 export async function migrateDb(dbPath: string, isPackaged = false) {
@@ -36,7 +34,7 @@ async function migrateData(db: DB) {
     return
   }
 
-  const config: Config = JSON.parse(readFileSync(configPath, 'utf-8'))
+  const config = JSON.parse(readFileSync(configPath, 'utf-8'))
 
   if (
     config.user != null &&

@@ -35,7 +35,13 @@ export default function run(services: Services) {
         await govService.mustRun('init-gov')
       }
 
-      if (!user?.isMember) {
+      const selectedCommunity = user.communities.filter((c) => c.selected)[0]
+
+      if (selectedCommunity == null) {
+        throw new Error(`No selected Community`)
+      }
+
+      if (!selectedCommunity?.isMember) {
         await govService.mustRun(
           'user',
           'add',
@@ -64,6 +70,14 @@ export default function run(services: Services) {
       await userService.loadUser()
       const user1 = await userService.getUser()
       if (user1 == null) {
+        throw new Error(`No User to load`)
+      }
+      const selectedCommunity1 = user1.communities.filter((c) => c.selected)[0]
+
+      if (selectedCommunity1 == null) {
+        throw new Error(`No selected Community`)
+      }
+      if (user1 == null) {
         throw new Error(`No user to load`)
       }
       let ballots = await ballotService.getBallots()
@@ -81,15 +95,26 @@ export default function run(services: Services) {
       })
       await ballotService.tallyBallot(`github/issues/12`)
       await ballotService.loadBallots()
+      await ballotService.loadBallots()
       ballots = await ballotService.getBallots()
-      const user2 = await userService.getUser()
+      const user2 = await userService.loadUser()
+      if (user2 == null) {
+        throw new Error(`No User to load`)
+      }
+      const selectedCommunity2 = user2.communities.filter((c) => c.selected)[0]
+
+      if (selectedCommunity2 == null) {
+        throw new Error(`No selected Community`)
+      }
       expect(ballots.length).toEqual(1)
       const ballot = ballots[0]
       if (ballot == null) {
         throw new Error(`No ballots`)
       }
       expect(ballot.score).toEqual(2)
-      expect(user2?.votingCredits).toEqual(user1.votingCredits - 4)
+      expect(selectedCommunity2?.votingCredits).toEqual(
+        selectedCommunity1.votingCredits - 4,
+      )
     }, 1200000)
   })
 }

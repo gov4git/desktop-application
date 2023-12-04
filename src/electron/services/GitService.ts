@@ -6,6 +6,28 @@ export type GitUserInfo = {
   pat: string
 }
 
+export type IssueDescription = {
+  url: string
+  user: GitUserInfo
+  title: string
+  body: string
+  labels?: string[]
+}
+
+export type IssueSearch = {
+  url: string
+  user: GitUserInfo
+  title: string
+}
+
+export type IssueSearchResult = {
+  id: number
+  html_url: string
+  title: string
+  body: string
+  state: 'open' | 'closed'
+}
+
 export class GitService {
   protected declare apiBaseUrl: string
   constructor() {
@@ -92,12 +114,13 @@ export class GitService {
 
   public doesRemoteRepoExist = async (
     repoUrl: string,
-    user: GitUserInfo,
+    user?: GitUserInfo,
   ): Promise<boolean> => {
     this.throwIfNotUrl(repoUrl, 'doesRemoteRepoExist')
-    await this.throwIfUserDoesNotExist(user, 'doesRemoteRepoExist')
+    if (user != null)
+      await this.throwIfUserDoesNotExist(user, 'doesRemoteRepoExist')
     try {
-      const authHeader = this.getAuthHeader(user)
+      const authHeader = user != null ? this.getAuthHeader(user) : null
       const repoSegment = this.getRepoSegment(repoUrl)
       const response = await fetch(`${this.apiBaseUrl}/repos/${repoSegment}`, {
         method: 'GET',
@@ -117,13 +140,13 @@ export class GitService {
 
   public getDefaultBranch = async (
     repoUrl: string,
-    user: GitUserInfo,
+    user?: GitUserInfo,
   ): Promise<string | null> => {
     this.throwIfNotUrl(repoUrl, 'getDefaultBranch')
-    await this.throwIfUserDoesNotExist(user, 'getDefaultBranch')
-    await this.throwIfRepoDoesNotExist(repoUrl, user, 'getDefaultBranch')
+    if (user != null)
+      await this.throwIfUserDoesNotExist(user, 'getDefaultBranch')
     try {
-      const authHeader = this.getAuthHeader(user)
+      const authHeader = user != null ? this.getAuthHeader(user) : null
       const repoSegment = this.getRepoSegment(repoUrl)
       const response = await fetch(`${this.apiBaseUrl}/repos/${repoSegment}`, {
         method: 'GET',
@@ -240,7 +263,7 @@ export class GitService {
           name: repoName,
           private: isPrivate,
           auto_init: autoInit,
-          has_issues: false,
+          has_issues: true,
           has_projects: false,
           has_wiki: false,
           has_discussions: false,
@@ -274,7 +297,81 @@ export class GitService {
         throw new Error(`Status code: ${result.status}`)
       }
     } catch (ex) {
-      throw new Error(`Unable to delete repo ${repoUrl}. Error: ${ex}`)
+      throw new Error(`Failed to delete repo ${repoUrl}. Error: ${ex}`)
+    }
+  }
+
+  public createIssue = async (issue: IssueDescription) => {
+    this.throwIfNotUrl(issue.url, 'createIssue')
+    await this.throwIfUserDoesNotExist(issue.user, 'createIssue')
+    try {
+      const repoSegment = this.getRepoSegment(issue.url)
+      const authHeader = this.getAuthHeader(issue.user)
+
+      const response = await fetch(
+        `${this.apiBaseUrl}/repos/${repoSegment}/issues`,
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'application/vnd.github+json',
+            ...authHeader,
+          },
+          body: JSON.stringify({
+            title: issue.title,
+            body: issue.body,
+            labels: issue.labels ?? [],
+          }),
+        },
+      )
+      const results: any = await response.json()
+      if (response.status !== 201) {
+        throw new Error(`Status code: ${response.status}`)
+      }
+      return results.html_url as string
+    } catch (ex) {
+      throw new Error(
+        `Failed to create issue in ${issue.url} for ${issue.user.username}. Error: ${ex}`,
+      )
+    }
+  }
+
+  public searchUserIssues = async (issue: IssueSearch) => {
+    this.throwIfNotUrl(issue.url, 'searchUserIssues')
+    await this.throwIfUserDoesNotExist(issue.user, 'searchUserIssue')
+    try {
+      const repoSegment = this.getRepoSegment(issue.url)
+      const authHeader = this.getAuthHeader(issue.user)
+      let allResponses: IssueSearchResult[] = []
+      let currentResponse: IssueSearchResult[]
+
+      let url = `${this.apiBaseUrl}/repos/${repoSegment}/issues`
+      url += `?creator=${issue.user.username}`
+      url += '&state=all'
+      url += `&per_page=100`
+
+      do {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            Accept: 'application/vnd.github+json',
+            ...authHeader,
+          },
+        })
+        if (response.status !== 200) {
+          throw new Error(`Status code: ${response.status}`)
+        }
+        currentResponse = (await response.json()) as IssueSearchResult[]
+        allResponses = [
+          ...allResponses,
+          ...currentResponse.filter((i) => i.title === issue.title),
+        ]
+      } while (currentResponse.length === 100)
+
+      return allResponses
+    } catch (ex) {
+      throw new Error(
+        `Failed to search user issues for ${issue.url} and ${issue.user.username}. Error: ${ex}`,
+      )
     }
   }
 }

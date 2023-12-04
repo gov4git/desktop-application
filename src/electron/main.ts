@@ -22,6 +22,8 @@ import {
   GitService,
   LogService,
   Services,
+  UserCommunityService,
+  ValidationService,
 } from './services/index.js'
 import { SettingsService } from './services/SettingsService.js'
 import { UserService } from './services/UserService.js'
@@ -55,16 +57,21 @@ async function setup(): Promise<void> {
   const gov4GitService = new Gov4GitService(services)
   services.register('gov4git', gov4GitService)
 
+  const settingsService = new SettingsService({
+    services,
+  })
+  services.register('settings', settingsService)
+
+  const userCommunityService = new UserCommunityService({
+    services,
+  })
+  services.register('userCommunity', userCommunityService)
+
   const userService = new UserService({
     services,
     identityRepoName: COMMUNITY_REPO_NAME,
   })
   services.register('user', userService)
-
-  const ballotService = new BallotService({
-    services,
-  })
-  services.register('ballots', ballotService)
 
   const communityService = new CommunityService({
     services,
@@ -72,10 +79,15 @@ async function setup(): Promise<void> {
   })
   services.register('community', communityService)
 
-  const settingsService = new SettingsService({
+  const ballotService = new BallotService({
     services,
   })
-  services.register('settings', settingsService)
+  services.register('ballots', ballotService)
+
+  const validationService = new ValidationService({
+    services,
+  })
+  services.register('validation', validationService)
 
   const appUpdaterService = new AppUpdaterService(services)
   services.register('appUpdater', appUpdaterService)

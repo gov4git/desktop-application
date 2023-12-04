@@ -1,6 +1,6 @@
 import { atom } from 'jotai'
 
-import { User } from '~/shared'
+import { type FullUser } from '../../../electron/db/schema.js'
 
 export const userLoadedAtom = atom<boolean>(false)
-export const userAtom = atom<User | null>(null)
+export const userAtom = atom<FullUser | null>(null)

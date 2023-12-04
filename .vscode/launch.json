@@ -25,12 +25,15 @@
       "type": "node",
       "request": "launch",
       "cwd": "${workspaceFolder}",
-      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/dotenv",
       "windows": {
-        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron.cmd"
+        "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/dotenv.cmd"
       },
-      "envFile": "${workspaceFolder}/.env",
       "args": [
+        "-e",
+        ".env",
+        "--",
+        "./node_modules/.bin/electron.cmd",
         ".",
         "--remote-debugging-port=9222"
       ],

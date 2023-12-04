@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 
 import { AbstractUserService, serialAsync } from '~/shared'
 
@@ -6,13 +6,14 @@ import { DB } from '../db/db.js'
 import {
   ballots,
   communities,
+  FullUser,
   userCommunities,
   UserInsert,
   users,
 } from '../db/schema.js'
 import { GitService } from './GitService.js'
-import { Gov4GitService } from './Gov4GitService.js'
 import { Services } from './Services.js'
+import { UserCommunityService } from './UserCommunityService.js'
 
 export type UserServiceOptions = {
   services: Services
@@ -24,7 +25,7 @@ export class UserService extends AbstractUserService {
   private declare readonly repoUrlBase: string
   private declare readonly db: DB
   private declare readonly gitService: GitService
-  private declare readonly govService: Gov4GitService
+  private declare readonly userCommunityService: UserCommunityService
 
   constructor({
     services,
@@ -36,7 +37,8 @@ export class UserService extends AbstractUserService {
     this.repoUrlBase = 'https://github.com'
     this.db = this.services.load<DB>('db')
     this.gitService = this.services.load<GitService>('git')
-    this.govService = this.services.load<Gov4GitService>('gov4git')
+    this.userCommunityService =
+      this.services.load<UserCommunityService>('userCommunity')
   }
 
   private deleteDBTables = async () => {
@@ -71,61 +73,6 @@ export class UserService extends AbstractUserService {
       username,
       pat,
     })
-  }
-
-  private getOpenBallots = async () => {
-    const community = (
-      await this.db
-        .select()
-        .from(communities)
-        .where(eq(communities.selected, true))
-    )[0]
-    if (community == null) {
-      return []
-    }
-    const results = await this.db
-      .select()
-      .from(ballots)
-      .where(and(eq(ballots.status, 'open')))
-    return results
-  }
-
-  private isCommunityMember = async (
-    username: string,
-  ): Promise<string | null> => {
-    const command = ['group', 'list', '--name', 'everybody']
-    const users = await this.govService.mustRun<string[]>(...command)
-    const existingInd = users.findIndex((u) => {
-      return u.toLocaleLowerCase() === username.toLocaleLowerCase()
-    })
-    if (existingInd !== -1) {
-      return users[existingInd]!
-    }
-    return null
-  }
-
-  private getVotingCredits = async (username: string): Promise<number> => {
-    const command = [
-      'balance',
-      'get',
-      '--user',
-      username,
-      '--key',
-      'voting_credits',
-    ]
-    const [credits, openTallies] = await Promise.all([
-      this.govService.mustRun<number>(...command),
-      this.getOpenBallots(),
-    ])
-    const totalPendingSpentCredits = openTallies.reduce((acc, cur) => {
-      const spentCredits = cur.user.talliedCredits
-      const score = cur.user.newScore
-      const scoreSign = score < 0 ? -1 : 1
-      const totalCredits = scoreSign * Math.pow(score, 2)
-      const additionalCosts = Math.abs(totalCredits) - Math.abs(spentCredits)
-      return acc + additionalCosts
-    }, 0)
-    return credits - totalPendingSpentCredits
   }
 
   private validateIdRepo = async (
@@ -191,123 +138,60 @@ export class UserService extends AbstractUserService {
       target: users.username,
       set: newUser,
     })
+
+    await this.userCommunityService.loadUserCommunities()
+
     return []
   }
 
-  public loadUser = serialAsync(async () => {
-    const [allUsers, selectedCommunities] = await Promise.all([
-      this.db.select().from(users),
-      this.db.select().from(communities).where(eq(communities.selected, true)),
-    ])
-    const user = allUsers[0]
-    const community = selectedCommunities[0]
+  public loadUser = serialAsync(async (): Promise<FullUser | null> => {
+    const user = (await this.db.select().from(users).limit(1))[0]
 
     if (user == null) {
-      return {
-        users: null,
-        communities: null,
-        userCommunities: null,
-      }
-    }
-    if (community == null) {
-      return {
-        users: user,
-        communities: null,
-        userCommunities: null,
-      }
+      return null
     }
 
-    const newUsername = await this.isCommunityMember(user.username)
-    const isMember = newUsername != null
-    const votingCredits = isMember
-      ? await this.getVotingCredits(newUsername)
-      : 0
-    const votingScore = Math.sqrt(Math.abs(votingCredits))
-
-    if (newUsername != null && newUsername !== user.username) {
-      await this.db
-        .update(users)
-        .set({ username: newUsername })
-        .where(eq(users.username, user.username))
-    }
-
-    const userCommunity = {
-      userId: newUsername ?? user.username,
-      communityId: community.url,
-      isMember: isMember,
-      isMaintainer: false,
-      votingCredits: votingCredits,
-      votingScore: votingScore,
-    }
-
-    await this.db
-      .insert(userCommunities)
-      .values(userCommunity)
-      .onConflictDoUpdate({
-        target: userCommunities.communityId,
-        set: userCommunity,
-      })
+    const allUserCommunities =
+      await this.userCommunityService.loadUserCommunities()
 
     return {
-      users: {
-        ...user,
-        username: newUsername ?? user.username,
-      },
-      communities: community,
-      userCommunities: userCommunity,
+      ...user,
+      communities: allUserCommunities,
     }
   })
 
-  public getUser = async () => {
-    const userInfos = (
-      await this.db
-        .select()
-        .from(userCommunities)
-        .rightJoin(
-          communities,
-          eq(userCommunities.communityId, communities.url),
-        )
-        .leftJoin(users, eq(userCommunities.userId, users.username))
-        .where(eq(communities.selected, true))
-        .limit(1)
-    )[0]
+  public getUser = async (): Promise<FullUser | null> => {
+    const userInfo = await this.db
+      .select()
+      .from(userCommunities)
+      .innerJoin(users, eq(userCommunities.userId, users.username))
+      .innerJoin(communities, eq(userCommunities.communityId, communities.url))
 
-    if (
-      userInfos == null ||
-      userInfos.userCommunities == null ||
-      userInfos.users == null
-    ) {
-      const newUserInfo = await this.loadUser()
-      if (newUserInfo.users == null) {
-        return null
-      } else if (newUserInfo.userCommunities == null) {
-        return {
-          ...newUserInfo.users,
-          communityId: '',
-          isMember: false,
-          isMaintainer: false,
-          votingCredits: 0,
-          votingScore: 0,
-        }
-      } else {
-        return {
-          ...newUserInfo.users,
-          communityId: newUserInfo.userCommunities.communityId,
-          isMember: newUserInfo.userCommunities.isMember,
-          isMaintainer: false,
-          votingCredits: newUserInfo.userCommunities.votingCredits,
-          votingScore: newUserInfo.userCommunities.votingScore,
-        }
-      }
-    } else {
-      return {
-        ...userInfos.users,
-        communityId: userInfos.userCommunities.communityId,
-        isMember: userInfos.userCommunities.isMember,
-        isMaintainer: false,
-        votingCredits: userInfos.userCommunities.votingCredits,
-        votingScore: userInfos.userCommunities.votingScore,
-      }
+    if (userInfo.length === 0) {
+      return await this.loadUser()
     }
+
+    const userRecord = userInfo.reduce<Record<string, FullUser>>((acc, cur) => {
+      const user = cur.users
+      const userCommunity = cur.userCommunities
+      const community = cur.communities
+
+      if (!(user.username in acc)) {
+        acc[user.username] = user as FullUser
+      }
+
+      const fullUser = acc[user.username]!
+
+      fullUser.communities = [
+        ...(fullUser.communities ?? []),
+        {
+          ...userCommunity,
+          ...community,
+        },
+      ]
+      return acc
+    }, {})
+
+    return userRecord[userInfo[0]!.users.username]!
   }
 }

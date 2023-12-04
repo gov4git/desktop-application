@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, test } from '@jest/globals'
 import { eq } from 'drizzle-orm'
 
 import { DB } from '../src/electron/db/db.js'
-import { communities } from '../src/electron/db/schema.js'
+import { communities, userCommunities } from '../src/electron/db/schema.js'
 import { CommunityService, Services } from '../src/electron/services/index.js'
 import { config } from './config.js'
 
@@ -59,6 +59,25 @@ export default function run(services: Services) {
 
         expect(selectedCommunity).not.toBeUndefined()
         expect(selectedCommunity?.projectUrl).toEqual(config.projectRepo)
+
+        const selectedUserCommunity = (
+          await db
+            .select()
+            .from(userCommunities)
+            .innerJoin(
+              communities,
+              eq(userCommunities.communityId, communities.url),
+            )
+            .where(eq(communities.selected, true))
+            .limit(1)
+        )[0]
+
+        expect(
+          selectedUserCommunity?.userCommunities.joinRequestUrl,
+        ).not.toBeNull()
+        expect(
+          selectedUserCommunity?.userCommunities.joinRequestStatus,
+        ).toEqual('open')
       })
     })
   })

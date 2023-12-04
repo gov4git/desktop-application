@@ -1,6 +1,6 @@
 import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
 
-import { type Ballot as BallotType } from '~/shared'
+import { type Ballot as BallotType, Expand, ExpandRecursive } from '~/shared'
 
 export const ballots = sqliteTable('ballots', {
   identifier: text('identifier').primaryKey(),
@@ -53,8 +53,6 @@ export const communities = sqliteTable('communities', {
   name: text('name').notNull(),
   configPath: text('configPath').notNull(),
   projectUrl: text('projectUrl').notNull(),
-  // isMember: integer('isMember', { mode: 'boolean' }).notNull(),
-  // isMaintainer: integer('isMaintainer', { mode: 'boolean' }).notNull(),
   selected: integer('selected', { mode: 'boolean' }).notNull(),
 })
 
@@ -82,11 +80,22 @@ export const userCommunities = sqliteTable('userCommunities', {
     .notNull()
     .unique()
     .references(() => communities.url),
+  uniqueId: text('uniqueId').unique(),
   isMember: integer('isMember', { mode: 'boolean' }).notNull(),
   isMaintainer: integer('isMaintainer', { mode: 'boolean' }).notNull(),
   votingCredits: real('votingCredits').notNull(),
   votingScore: real('votingScore').notNull(),
+  joinRequestUrl: text('joinRequestUrl'),
+  joinRequestStatus: text('joinRequestStatus', { enum: ['open', 'closed'] }),
 })
 
 export type UserCommunity = typeof userCommunities.$inferSelect
 export type UserCommunityInsert = typeof userCommunities.$inferInsert
+
+export type FullUserCommunity = Expand<UserCommunity & Community>
+
+export type FullUser = ExpandRecursive<
+  User & {
+    communities: FullUserCommunity[]
+  }
+>

@@ -1,11 +1,11 @@
 import { Badge, Text } from '@fluentui/react-components'
 
-import { Login } from '../components/index.js'
+import { CommunityJoin } from '../components/index.js'
 import { useBadgeStyles } from '../styles/index.js'
-import { useLoginStyles } from './Login.styles.js'
+import { useCommunityJoinStyles } from './CommunityJoin.styles.js'
 
-export const LoginPage = function LoginPage() {
-  const loginStyles = useLoginStyles()
+export const CommunityJoinPage = function LoginPage() {
+  const loginStyles = useCommunityJoinStyles()
   const badgeStyles = useBadgeStyles()
   return (
     <>
@@ -15,11 +15,11 @@ export const LoginPage = function LoginPage() {
           size="extra-large"
           shape="circular"
         >
-          <Text size={500}>1</Text>
+          <Text size={500}>2</Text>
         </Badge>
-        <h1 className={loginStyles.pageHeading}>Login</h1>
+        <h1 className={loginStyles.pageHeading}>Join a Community</h1>
       </div>
-      <Login />
+      <CommunityJoin />
     </>
   )
 }

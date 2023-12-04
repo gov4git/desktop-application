@@ -3,39 +3,37 @@ import { existsSync, writeFileSync } from 'fs'
 import { mkdir } from 'fs/promises'
 import { dirname } from 'path'
 
-import { AbstractSettingsService, Config } from '~/shared'
-
 import { DB } from '../db/db.js'
-import { communities, users } from '../db/schema.js'
-import { CommunityService } from './CommunityService.js'
+import { communities, Community, User, users } from '../db/schema.js'
 import { GitService } from './GitService.js'
 import { Gov4GitService } from './Gov4GitService.js'
 import { Services } from './Services.js'
-import { UserService } from './UserService.js'
 
 export type SettingsServiceOptions = {
   services: Services
 }
 
-export class SettingsService extends AbstractSettingsService {
+export class SettingsService {
   private declare readonly services: Services
-  private declare readonly communityService: CommunityService
-  private declare readonly userService: UserService
   private declare readonly gitService: GitService
   private declare readonly govService: Gov4GitService
   private declare readonly db: DB
 
   constructor({ services }: SettingsServiceOptions) {
-    super()
     this.services = services
     this.db = this.services.load<DB>('db')
-    this.communityService = this.services.load<CommunityService>('community')
-    this.userService = this.services.load<UserService>('user')
     this.gitService = this.services.load<GitService>('git')
     this.govService = this.services.load<Gov4GitService>('gov4git')
   }
 
-  private runGov4GitInit = async (config: Config) => {
+  private runGov4GitInit = async (config: {
+    member_public_url: string
+    member_private_url: string
+    user: {
+      username: string
+      pat: string
+    }
+  }) => {
     const user = config.user
     const isPublicEmpty = !(await this.gitService.hasCommits(
       config.member_public_url!,
@@ -51,23 +49,7 @@ export class SettingsService extends AbstractSettingsService {
     }
   }
 
-  public generateConfig = async () => {
-    const [allCommunities, allUsers] = await Promise.all([
-      this.db
-        .select()
-        .from(communities)
-        .where(eq(communities.selected, true))
-        .limit(1),
-      this.db.select().from(users).limit(1),
-    ])
-
-    const community = allCommunities[0]
-    const user = allUsers[0]
-
-    if (community == null || user == null) {
-      return null
-    }
-
+  public generateConfig = async (user: User, community: Community) => {
     const config = {
       notice:
         'Do not modify this file. It will be overwritten by Gov4Git application',
@@ -113,18 +95,26 @@ export class SettingsService extends AbstractSettingsService {
     return config
   }
 
-  public validateConfig = async (): Promise<string[]> => {
-    const config = await this.generateConfig()
-    if (config == null) return []
-    const userErrors = await this.userService.validateUser(
-      config.user.username,
-      config.user.pat,
-    )
-    if (userErrors.length > 0) {
-      return userErrors
+  public generateConfigs = async (): Promise<void> => {
+    const [allCommunities, allUsers] = await Promise.all([
+      this.db
+        .select()
+        .from(communities)
+        .where(eq(communities.selected, true))
+        .limit(1),
+      this.db.select().from(users).limit(1),
+    ])
+
+    const user = allUsers[0]
+
+    if (user == null) {
+      return
     }
-    const [, communityErrors] =
-      await this.communityService.validateCommunityUrl(config.gov_public_url)
-    return communityErrors ?? []
+
+    const updates = allCommunities.map((r) => {
+      return this.generateConfig(user, r)
+    })
+
+    await Promise.all(updates)
   }
 }

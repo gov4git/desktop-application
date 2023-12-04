@@ -12,6 +12,8 @@ export type ServiceId =
   | 'community'
   | 'settings'
   | 'cache'
+  | 'userCommunity'
+  | 'validation'
 
 export type ObjectProxy<T> = {
   [P in keyof T]: ServiceProxy<T[P]>

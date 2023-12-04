@@ -12,7 +12,9 @@ import {
   LogService,
   Services,
   SettingsService,
+  UserCommunityService,
   UserService,
+  ValidationService,
 } from '../src/electron/services/index.js'
 // eslint-disable-next-line
 import runBallotTests from './BallotService.test'
@@ -38,26 +40,32 @@ beforeAll(async () => {
   services.register('git', gitService)
   const govService = new Gov4GitService(services)
   services.register('gov4git', govService)
+  const settingsService = new SettingsService({
+    services,
+  })
+  services.register('settings', settingsService)
+  const userCommunityService = new UserCommunityService({
+    services,
+  })
+  services.register('userCommunity', userCommunityService)
   const userService = new UserService({
     services,
     identityRepoName: config.identityName,
   })
   services.register('user', userService)
-  const ballotService = new BallotService({
-    services,
-  })
-  services.register('ballots', ballotService)
-
   const communityService = new CommunityService({
     services,
     configDir: config.configDir,
   })
   services.register('community', communityService)
-
-  const settingsService = new SettingsService({
+  const ballotService = new BallotService({
     services,
   })
-  services.register('settings', settingsService)
+  services.register('ballots', ballotService)
+  const validationService = new ValidationService({
+    services,
+  })
+  services.register('validation', validationService)
 
   await gitService.initializeRemoteRepo(
     config.projectRepo,
