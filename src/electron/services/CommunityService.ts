@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm'
+import { eq, sql } from 'drizzle-orm'
 import { resolve } from 'path'
 
 import { AbstractCommunityService } from '~/shared'
@@ -153,13 +153,20 @@ ${user.memberPublicBranch}`
       name: communityName,
       projectUrl: projectRepoUrl,
       configPath,
-      selected: true,
+      selected: false,
     }
-    await this.db.update(communities).set({ selected: false })
+    const communityCount = await this.db
+      .select({
+        count: sql<number>`count(*)`,
+      })
+      .from(communities)
     await this.db.insert(communities).values(community).onConflictDoUpdate({
       target: communities.url,
       set: community,
     })
+    if (communityCount.length === 0 || communityCount[0]?.count === 0) {
+      await this.selectCommunity(community.url)
+    }
 
     await this.requestToJoin(community)
 

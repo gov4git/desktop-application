@@ -19,7 +19,15 @@ export class Gov4GitService {
     this.db = this.services.load<DB>('db')
   }
 
-  public mustRun = async <T>(...command: string[]): Promise<T> => {
+  private checkConfigPath = (configPath: string) => {
+    if (!existsSync(configPath)) {
+      throw new Error(
+        `Unable to run Gov4Git command as config ${configPath} does not exist`,
+      )
+    }
+  }
+
+  private getConfigPath = async (): Promise<string> => {
     const selectedCommunity = (
       await this.db
         .select()
@@ -30,21 +38,26 @@ export class Gov4GitService {
 
     if (selectedCommunity == null) {
       throw new Error(
-        `Unable to run Gov4Git command ${command.join(
-          ' ',
-        )} as config is not provided.`,
+        `Unable to run Gov4Git command as config is not provided.`,
       )
     }
 
-    if (!existsSync(selectedCommunity.configPath)) {
-      throw new Error(
-        `Unable to run Gov4Git command ${command.join(' ')} as config ${
-          selectedCommunity.configPath
-        } does not exist`,
-      )
+    this.checkConfigPath(selectedCommunity.configPath)
+
+    return selectedCommunity.configPath
+  }
+
+  public mustRun = async <T>(
+    command: string[],
+    configPath?: string,
+  ): Promise<T> => {
+    if (configPath != null) {
+      this.checkConfigPath(configPath)
+    } else {
+      configPath = await this.getConfigPath()
     }
 
-    command.push('--config', selectedCommunity.configPath)
+    command.push('--config', configPath)
 
     command.push('-v')
 

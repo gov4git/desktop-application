@@ -26,8 +26,13 @@ export const Login: FC = function Login() {
   }, [setLoginErrors])
 
   const submitEnabled = useMemo(() => {
-    return username !== '' && pat !== ''
-  }, [username, pat])
+    return (
+      username !== '' &&
+      pat !== '' &&
+      username !== user?.username &&
+      pat !== user?.pat
+    )
+  }, [username, pat, user])
 
   const save = useCallback(
     async (ev: FormEvent<HTMLFormElement>) => {

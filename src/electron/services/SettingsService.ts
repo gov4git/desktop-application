@@ -45,7 +45,7 @@ export class SettingsService {
     ))
 
     if (isPublicEmpty || isPrivateEmpty) {
-      this.govService.mustRun('init-id')
+      this.govService.mustRun(['init-id'])
     }
   }
 
@@ -97,11 +97,7 @@ export class SettingsService {
 
   public generateConfigs = async (): Promise<void> => {
     const [allCommunities, allUsers] = await Promise.all([
-      this.db
-        .select()
-        .from(communities)
-        .where(eq(communities.selected, true))
-        .limit(1),
+      this.db.select().from(communities),
       this.db.select().from(users).limit(1),
     ])
 

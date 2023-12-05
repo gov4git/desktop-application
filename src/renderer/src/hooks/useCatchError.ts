@@ -3,6 +3,7 @@ import { useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { routes } from '../App/Router.js'
+import { eventBus } from '../lib/index.js'
 import { validationService } from '../services/ValidationService.js'
 import { errorAtom } from '../state/error.js'
 import { settingsErrorAtom } from '../state/settings.js'
@@ -19,13 +20,14 @@ export function useCatchError() {
         if (configErrors.length > 0) {
           setConfigErrors(configErrors)
           navigate(routes.settings.path)
+          eventBus.emit('error')
         } else {
-          window.scrollTo(0, 0)
           setErrorMessage(error)
+          eventBus.emit('error')
         }
       } catch (ex) {
-        window.scrollTo(0, 0)
         setErrorMessage(error)
+        eventBus.emit('error')
       }
     },
     [navigate, setConfigErrors, setErrorMessage],

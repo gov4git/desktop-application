@@ -1,6 +1,6 @@
 import { useSetAtom } from 'jotai'
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useNavigation } from 'react-router-dom'
 
 import { serialAsync } from '~/shared'
 
@@ -25,6 +25,7 @@ export const DataLoader: FC = function DataLoader() {
   const setLoading = useSetAtom(loaderAtom)
   const [loadingQueue, setLoadingQueue] = useState<Promise<any>[]>([])
   const navigate = useNavigate()
+  const location = useLocation()
 
   const addToQueue = useCallback(
     (value: Promise<any>) => {
@@ -115,9 +116,17 @@ export const DataLoader: FC = function DataLoader() {
   }, [_getBallot])
 
   useEffect(() => {
+    if (
+      location.pathname === routes.issues.path ||
+      location.pathname === routes.pullRequests.path
+    ) {
+      addToQueue(getBallots())
+    }
+  }, [location, addToQueue, getBallots])
+
+  useEffect(() => {
     const listeners: Array<() => void> = []
     addToQueue(getUser())
-    addToQueue(getBallots())
 
     const updateCacheInterval = setInterval(async () => {
       return await refreshCache().then(async () => {
@@ -139,13 +148,19 @@ export const DataLoader: FC = function DataLoader() {
     })
 
     listeners.push(
-      eventBus.subscribe('user-logged-in, community-saved', async () => {
-        const prom = Promise.all([getUser(), getBallots()])
-        addToQueue(prom)
-        await prom
-        navigate(routes.issues.path)
+      eventBus.subscribe('user-logged-in', async () => {
+        await getUser()
+        eventBus.emit('new-user')
       }),
     )
+
+    listeners.push(
+      eventBus.subscribe('community-saved, selected-community', async () => {
+        await getUser()
+        eventBus.emit('new-community')
+      }),
+    )
+
     listeners.push(
       eventBus.subscribe('voted', async (e) => {
         await Promise.all([getBallot(e), getUser()])
