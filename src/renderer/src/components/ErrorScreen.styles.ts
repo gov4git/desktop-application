@@ -4,12 +4,12 @@ import { gov4GitTokens } from '../App/theme/index.js'
 
 export const useErrorScreenStyles = makeStyles({
   root: {
-    ...shorthands.padding(gov4GitTokens.spacingVerticalM),
-    flexBasis: 'auto',
-    width: '100%',
+    ...shorthands.padding(0, 0, '20px', 0),
   },
   card: {
     position: 'relative',
+    ...shorthands.padding(gov4GitTokens.spacingHorizontalXXL),
+    ...shorthands.borderRadius(gov4GitTokens.borderRadiusLarge),
   },
   close: {
     position: 'absolute',

@@ -166,9 +166,8 @@ export class BallotService extends AbstractBallotService {
     ballotId: string,
   ): Promise<RemoteBallotInfo> => {
     const ballotInfoCommand = ['ballot', 'show', '--name', ballotId]
-    const ballotInfo = await this.govService.mustRun<RemoteBallotInfo>(
-      ...ballotInfoCommand,
-    )
+    const ballotInfo =
+      await this.govService.mustRun<RemoteBallotInfo>(ballotInfoCommand)
 
     return ballotInfo
   }
@@ -178,7 +177,7 @@ export class BallotService extends AbstractBallotService {
     let ballotTracking: RemoteBallotTrack | null = null
     try {
       ballotTracking = await this.govService.mustRun<RemoteBallotTrack>(
-        ...ballotTrackingCommand,
+        ballotTrackingCommand,
       )
       if (ballotTracking != null && ballotTracking.pending_votes != null) {
         const userAcceptedVotes = ballotTracking.accepted_votes
@@ -313,9 +312,7 @@ export class BallotService extends AbstractBallotService {
     }
 
     const command = ['ballot', 'list', '--participant', user.username]
-    const remoteBallots = await this.govService.mustRun<RemoteBallot[]>(
-      ...command,
-    )
+    const remoteBallots = await this.govService.mustRun<RemoteBallot[]>(command)
 
     const ballotPromises = []
     for (const remoteBallot of remoteBallots) {
@@ -389,7 +386,7 @@ export class BallotService extends AbstractBallotService {
       return
     }
 
-    await this.govService.mustRun(
+    await this.govService.mustRun([
       'ballot',
       'vote',
       '--name',
@@ -398,7 +395,7 @@ export class BallotService extends AbstractBallotService {
       choice,
       '--strengths',
       strength,
-    )
+    ])
 
     const votingCredits = userInfo.userCommunities.votingCredits - +strength
     const votingScore = Math.sqrt(Math.abs(votingCredits))
@@ -429,11 +426,11 @@ export class BallotService extends AbstractBallotService {
       'prioritize',
       '--use_credits',
     ]
-    await this.govService.mustRun(...command)
+    await this.govService.mustRun(command)
   }
 
   public tallyBallot = async (ballotName: string) => {
     const command = ['ballot', 'tally', '--name', ballotName]
-    await this.govService.mustRun(...command)
+    await this.govService.mustRun(command)
   }
 }

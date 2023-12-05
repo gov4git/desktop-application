@@ -53,12 +53,16 @@ export class UserCommunityService {
   }
 
   private isCommunityMember = async (
-    username: string,
+    user: User,
+    community: Community,
   ): Promise<string | null> => {
     const command = ['group', 'list', '--name', 'everybody']
-    const users = await this.govService.mustRun<string[]>(...command)
+    const users = await this.govService.mustRun<string[]>(
+      command,
+      community.configPath,
+    )
     const existingInd = users.findIndex((u) => {
-      return u.toLocaleLowerCase() === username.toLocaleLowerCase()
+      return u.toLocaleLowerCase() === user.username.toLocaleLowerCase()
     })
     if (existingInd !== -1) {
       return users[existingInd]!
@@ -66,26 +70,22 @@ export class UserCommunityService {
     return null
   }
 
-  private getOpenBallots = async (communityUrl: string) => {
-    const community = (
-      await this.db
-        .select()
-        .from(communities)
-        .where(eq(communities.url, communityUrl))
-    )[0]
-    if (community == null) {
-      return []
-    }
+  private getOpenBallots = async (community: Community) => {
     const results = await this.db
       .select()
       .from(ballots)
-      .where(and(eq(ballots.status, 'open')))
+      .where(
+        and(
+          eq(ballots.status, 'open'),
+          eq(ballots.communityUrl, community.url),
+        ),
+      )
     return results
   }
 
   private getVotingCredits = async (
     username: string,
-    communityUrl: string,
+    community: Community,
   ): Promise<number> => {
     const command = [
       'balance',
@@ -96,8 +96,8 @@ export class UserCommunityService {
       'voting_credits',
     ]
     const [credits, openTallies] = await Promise.all([
-      this.govService.mustRun<number>(...command),
-      this.getOpenBallots(communityUrl),
+      this.govService.mustRun<number>(command, community.configPath),
+      this.getOpenBallots(community),
     ])
     const totalPendingSpentCredits = openTallies.reduce((acc, cur) => {
       const spentCredits = cur.user.talliedCredits
@@ -112,11 +112,11 @@ export class UserCommunityService {
 
   private getMembershipStatus = async (
     user: User,
-    projectUrl: string,
+    community: Community,
   ): Promise<{ status: 'open' | 'closed'; url: string } | null> => {
     const userJoinRequest = (
       await this.gitService.searchUserIssues({
-        url: projectUrl,
+        url: community.projectUrl,
         user,
         title: "I'd like to join this project's community",
       })
@@ -136,10 +136,10 @@ export class UserCommunityService {
     user: User,
     community: Community,
   ): Promise<FullUserCommunity> => {
-    const newUsername = await this.isCommunityMember(user.username)
+    const newUsername = await this.isCommunityMember(user, community)
     const isMember = newUsername != null
     const votingCredits = isMember
-      ? await this.getVotingCredits(newUsername, community.url)
+      ? await this.getVotingCredits(newUsername, community)
       : 0
     const votingScore = Math.sqrt(Math.abs(votingCredits))
 
@@ -150,10 +150,7 @@ export class UserCommunityService {
         .where(eq(users.username, user.username))
     }
 
-    const membership = await this.getMembershipStatus(
-      user,
-      community.projectUrl,
-    )
+    const membership = await this.getMembershipStatus(user, community)
 
     const userCommunity: UserCommunityInsert = {
       userId: newUsername ?? user.username,

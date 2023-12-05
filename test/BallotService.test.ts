@@ -32,7 +32,7 @@ export default function run(services: Services) {
       const hasCommits = await gitService.hasCommits(config.communityUrl, user)
 
       if (!hasCommits) {
-        await govService.mustRun('init-gov')
+        await govService.mustRun(['init-gov'])
       }
 
       const selectedCommunity = user.communities.filter((c) => c.selected)[0]
@@ -42,7 +42,7 @@ export default function run(services: Services) {
       }
 
       if (!selectedCommunity?.isMember) {
-        await govService.mustRun(
+        await govService.mustRun([
           'user',
           'add',
           '--name',
@@ -51,9 +51,9 @@ export default function run(services: Services) {
           config.publicRepo,
           '--branch',
           'main',
-        )
+        ])
       }
-      await govService.mustRun(
+      await govService.mustRun([
         'balance',
         'add',
         '--user',
@@ -62,7 +62,7 @@ export default function run(services: Services) {
         'voting_credits',
         '--value',
         '10',
-      )
+      ])
     })
 
     test('Vote flow', async () => {

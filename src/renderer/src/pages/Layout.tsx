@@ -1,4 +1,5 @@
 import { useAtomValue } from 'jotai'
+import { useEffect, useRef } from 'react'
 import { Outlet } from 'react-router-dom'
 
 import { ErrorScreen } from '../components/ErrorScreen.js'
@@ -10,12 +11,22 @@ import {
   SiteNav,
   UpdateNotification,
 } from '../components/index.js'
+import { eventBus } from '../lib/index.js'
 import { errorAtom } from '../state/error.js'
 import { useLayoutStyles } from './Layout.styles.js'
 
 export const Layout = function Layout() {
   const classes = useLayoutStyles()
   const errorMessage = useAtomValue(errorAtom)
+  const mainRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    return eventBus.subscribe('error', () => {
+      if (mainRef.current != null) {
+        mainRef.current.scrollTo(0, 0)
+      }
+    })
+  }, [mainRef])
 
   return (
     <div id="layout" className={classes.layout}>
@@ -23,9 +34,13 @@ export const Layout = function Layout() {
       <div className={classes.mainContainer}>
         <DataLoader />
         <SiteNav />
-        <main className={classes.main}>
+        <main className={classes.main} ref={mainRef}>
           {errorMessage !== '' && (
-            <ErrorScreen message={errorMessage} showClose={true} />
+            <>
+              <br />
+              <br />
+              <ErrorScreen message={errorMessage} showClose={true} />
+            </>
           )}
           <Loader>
             <RefreshButton />
