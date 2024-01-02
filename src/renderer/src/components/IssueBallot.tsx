@@ -25,7 +25,6 @@ import { useCatchError } from '../hooks/useCatchError.js'
 import { eventBus } from '../lib/index.js'
 import { ballotService } from '../services/index.js'
 import { communityAtom } from '../state/community.js'
-import { userAtom } from '../state/user.js'
 import { useBadgeStyles } from '../styles/badges.js'
 import { useMessageStyles } from '../styles/messages.js'
 import { BubbleSlider } from './BubbleSlider.js'
@@ -49,7 +48,6 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
   const [totalCostInCredits, setTotalCostInCredits] = useState(0)
   const catchError = useCatchError()
   const messageStyles = useMessageStyles()
-  const user = useAtomValue(userAtom)
   const community = useAtomValue(communityAtom)
   const [fetchingNewBallot, setFetchingNewBallot] = useState(false)
   const [voteError, setVoteError] = useState<string | null>(null)
@@ -78,6 +76,14 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
     if (community == null) return null
     const linkComponent = ballot.identifier.split('/').slice(1).join('/')
     return `${community.projectUrl}/${linkComponent}`
+  }, [community, ballot])
+
+  const githubLinkText = useMemo(() => {
+    if (community == null) return null
+    const linkComponents = ballot.identifier.split('/')
+    const itemType =
+      linkComponents.at(-2) === 'issues' ? 'issue' : 'pull request'
+    return `GitHub ${itemType} #${linkComponents.at(-1)}`
   }, [community, ballot])
 
   const maxScore = useMemo(() => {
@@ -270,130 +276,134 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
           </Text>
         </div>
         <div className={styles.issueArea}>
-          <h2 className={styles.title}>{ballot.title}</h2>
+          <hgroup className={styles.titleArea}>
+            <h2>{ballot.title}</h2>
+            {githubLink != null && (
+              <a href={githubLink} target="_blank" rel="noreferrer">
+                {githubLinkText}
+              </a>
+            )}
+          </hgroup>
           <div
             className={styles.description}
             dangerouslySetInnerHTML={{
               __html: parse(ballot.description),
             }}
           ></div>
-          {githubLink != null && (
-            <div className={styles.issueLinkArea}>
-              <a href={githubLink} target="_blank" rel="noreferrer">
-                View in GitHub
-              </a>
-            </div>
-          )}
           <div>
-            <div className={styles.votingArea}>
-              <Accordion collapsible multiple>
-                <AccordionItem value="1">
-                  <AccordionHeader>
-                    <Text weight="regular" size={500}>
-                      Vote
-                    </Text>
-                  </AccordionHeader>
-                  <AccordionPanel>
-                    <div className={styles.voteContainer}>
-                      <div className={styles.voteArea}>
-                        <div>
-                          <div className={styles.label}>
-                            <label htmlFor={`ballot-vote-${ballot.identifier}`}>
-                              Vote:
-                            </label>
+            {ballot.status === 'open' && (
+              <div className={styles.votingArea}>
+                <Accordion collapsible multiple>
+                  <AccordionItem value="1">
+                    <AccordionHeader>
+                      <Text weight="regular" size={500}>
+                        Vote
+                      </Text>
+                    </AccordionHeader>
+                    <AccordionPanel>
+                      <div className={styles.voteContainer}>
+                        <div className={styles.voteArea}>
+                          <div>
+                            <div className={styles.label}>
+                              <label
+                                htmlFor={`ballot-vote-${ballot.identifier}`}
+                              >
+                                Vote:
+                              </label>
+                            </div>
+                            <div className={styles.voteRow}>
+                              <button
+                                className={styles.voteButton}
+                                onClick={() => change(-1)}
+                                onMouseDown={() => onMouseDown('down')}
+                                // onMouseUp={stop}
+                              >
+                                <i className="codicon codicon-chevron-down" />
+                              </button>
+                              <input
+                                className={styles.voteInput}
+                                id={`ballot-vote-${ballot.identifier}`}
+                                type="text"
+                                value={displayVoteScore}
+                                onInput={onChange}
+                                // onBlur={onBlur}
+                                style={{
+                                  width: `${inputWidth}ch`,
+                                }}
+                              />
+                              <button
+                                className={styles.voteButton}
+                                onClick={() => change(1)}
+                                onMouseUp={stop}
+                                onMouseDown={() => onMouseDown('up')}
+                              >
+                                <i className="codicon codicon-chevron-up" />
+                              </button>
+                            </div>
                           </div>
-                          <div className={styles.voteRow}>
-                            <button
-                              className={styles.voteButton}
-                              onClick={() => change(-1)}
-                              onMouseDown={() => onMouseDown('down')}
-                              // onMouseUp={stop}
-                            >
-                              <i className="codicon codicon-chevron-down" />
-                            </button>
-                            <input
-                              className={styles.voteInput}
-                              id={`ballot-vote-${ballot.identifier}`}
-                              type="text"
-                              value={displayVoteScore}
-                              onInput={onChange}
-                              // onBlur={onBlur}
-                              style={{
-                                width: `${inputWidth}ch`,
-                              }}
+                          <div className={styles.sliderArea}>
+                            <div className={styles.label}>
+                              Corresponding cost in credits:
+                            </div>
+                            <BubbleSlider
+                              value={totalCostInCredits}
+                              disabled={true}
+                              min={0}
+                              max={
+                                (community?.votingCredits ?? 0) +
+                                ballot.user.pendingCredits +
+                                ballot.user.talliedCredits
+                              }
+                              ariaLabel="Cost in credits"
+                              onChange={() => undefined}
                             />
-                            <button
-                              className={styles.voteButton}
-                              onClick={() => change(1)}
-                              onMouseUp={stop}
-                              onMouseDown={() => onMouseDown('up')}
-                            >
-                              <i className="codicon codicon-chevron-up" />
-                            </button>
                           </div>
                         </div>
-                        <div className={styles.sliderArea}>
-                          <div className={styles.label}>
-                            Corresponding cost in credits:
-                          </div>
-                          <BubbleSlider
-                            value={totalCostInCredits}
-                            disabled={true}
-                            min={0}
-                            max={
-                              (community?.votingCredits ?? 0) +
-                              ballot.user.pendingCredits +
-                              ballot.user.talliedCredits
+                        <div className={styles.buttonRow}>
+                          <Button
+                            onClick={cancelVote}
+                            appearance="secondary"
+                            disabled={fetchingNewBallot}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={vote}
+                            appearance="primary"
+                            disabled={
+                              fetchingNewBallot || voteStrengthInCredits === 0
                             }
-                            ariaLabel="Cost in credits"
-                            onChange={() => undefined}
-                          />
+                          >
+                            {!fetchingNewBallot && 'Vote'}
+                            {fetchingNewBallot && (
+                              <i className="codicon codicon-loading codicon-modifier-spin" />
+                            )}
+                          </Button>
                         </div>
+                        {voteError != null && (
+                          <div className={styles.messageArea}>
+                            <Message
+                              className={messageStyles.error}
+                              messages={[voteError]}
+                              onClose={dismissError}
+                            />
+                          </div>
+                        )}
+                        {successMessage && (
+                          <div className={styles.messageArea}>
+                            <Message
+                              className={messageStyles.success}
+                              messages={[successMessage]}
+                              onClose={dismissMessage}
+                            />
+                          </div>
+                        )}
                       </div>
-                      <div className={styles.buttonRow}>
-                        <Button
-                          onClick={cancelVote}
-                          appearance="secondary"
-                          disabled={fetchingNewBallot}
-                        >
-                          Cancel
-                        </Button>
-                        <Button
-                          onClick={vote}
-                          appearance="primary"
-                          disabled={
-                            fetchingNewBallot || voteStrengthInCredits === 0
-                          }
-                        >
-                          {!fetchingNewBallot && 'Vote'}
-                          {fetchingNewBallot && (
-                            <i className="codicon codicon-loading codicon-modifier-spin" />
-                          )}
-                        </Button>
-                      </div>
-                      {voteError != null && (
-                        <div className={styles.messageArea}>
-                          <Message
-                            className={messageStyles.error}
-                            messages={[voteError]}
-                            onClose={dismissError}
-                          />
-                        </div>
-                      )}
-                      {successMessage && (
-                        <div className={styles.messageArea}>
-                          <Message
-                            className={messageStyles.success}
-                            messages={[successMessage]}
-                            onClose={dismissMessage}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </AccordionPanel>
-                </AccordionItem>
-              </Accordion>
-            </div>
+                    </AccordionPanel>
+                  </AccordionItem>
+                </Accordion>
+              </div>
+            )}
           </div>
         </div>
       </div>

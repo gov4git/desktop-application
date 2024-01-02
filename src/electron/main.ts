@@ -47,7 +47,7 @@ async function setup(): Promise<void> {
   try {
     await migrateDb(DB_PATH, app.isPackaged)
   } catch (ex) {
-    logService.error(`Failed to migrate DB`)
+    logService.error(`Failed to migrate DB. ${ex}`)
     logService.error(ex)
   }
 

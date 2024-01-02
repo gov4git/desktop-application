@@ -29,6 +29,20 @@
       "when": 1701484393709,
       "tag": "0003_married_winter_soldier",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1701889202480,
+      "tag": "0004_complete_gabe_jones",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1701993526190,
+      "tag": "0005_sparkling_princess_powerful",
+      "breakpoints": true
     }
   ]
 }

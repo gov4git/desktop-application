@@ -1,3 +1,9 @@
+import {
+  type BallotDB,
+  type BallotSearch,
+  type BallotSearchResults,
+} from '../../electron/db/schema.js'
+
 export type BallotLabel = 'issues' | 'pull' | 'other'
 
 export type Ballot = {
@@ -9,7 +15,7 @@ export type Ballot = {
   choices: string[]
   choice: string
   description: string
-  status: 'open' | 'closed'
+  status: 'open' | 'closed' | 'cancelled' | 'frozen'
   user: {
     talliedScore: number
     talliedCredits: number
@@ -32,9 +38,11 @@ export type CreateBallotOptions = {
 }
 
 export abstract class AbstractBallotService {
-  public abstract getBallot(ballotId: string): Promise<Ballot | null>
+  public abstract getBallot(ballotId: string): Promise<BallotDB | null>
   public abstract vote(voteOptions: VoteOption): Promise<void>
   // public abstract createBallot(options: CreateBallotOptions): Promise<void>
   // public abstract tallyBallot(ballotName: string): Promise<void>
-  public abstract getBallots(): Promise<Ballot[]>
+  public abstract getBallots(
+    options?: BallotSearch,
+  ): Promise<BallotSearchResults>
 }
