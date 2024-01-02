@@ -1,0 +1,1 @@
+ALTER TABLE ballots ADD `voted` integer DEFAULT false NOT NULL;

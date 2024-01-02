@@ -6,6 +6,7 @@ import { serialAsync } from '~/shared'
 
 import { routes } from '../App/Router.js'
 import { useCatchError } from '../hooks/useCatchError.js'
+import { useFetchUser } from '../hooks/users.js'
 import { eventBus } from '../lib/index.js'
 import { appUpdaterService } from '../services/AppUpdaterService.js'
 import { ballotService } from '../services/BallotService.js'
@@ -26,6 +27,7 @@ export const DataLoader: FC = function DataLoader() {
   const [loadingQueue, setLoadingQueue] = useState<Promise<any>[]>([])
   const navigate = useNavigate()
   const location = useLocation()
+  const getUser = useFetchUser()
 
   const addToQueue = useCallback(
     (value: Promise<any>) => {
@@ -56,33 +58,6 @@ export const DataLoader: FC = function DataLoader() {
   const refreshCache = useMemo(() => {
     return serialAsync(_refreshCache)
   }, [_refreshCache])
-
-  const _getUser = useCallback(async () => {
-    try {
-      const user = await userService.getUser()
-      setUser(user)
-      setUserLoaded(true)
-    } catch (ex) {
-      await catchError(`Failed to load user information. ${ex}`)
-    }
-  }, [catchError, setUser, setUserLoaded])
-
-  const getUser = useMemo(() => {
-    return serialAsync(_getUser)
-  }, [_getUser])
-
-  const _getBallots = useCallback(async () => {
-    try {
-      const ballots = await ballotService.getBallots()
-      setBallots(ballots)
-    } catch (ex) {
-      await catchError(`Failed to load ballots. ${ex}`)
-    }
-  }, [setBallots, catchError])
-
-  const getBallots = useMemo(() => {
-    return serialAsync(_getBallots)
-  }, [_getBallots])
 
   const _getBallot = useCallback(
     async (e: CustomEvent<{ ballotId: string }>) => {
@@ -115,14 +90,14 @@ export const DataLoader: FC = function DataLoader() {
     return serialAsync(_getBallot)
   }, [_getBallot])
 
-  useEffect(() => {
-    if (
-      location.pathname === routes.issues.path ||
-      location.pathname === routes.pullRequests.path
-    ) {
-      addToQueue(getBallots())
-    }
-  }, [location, addToQueue, getBallots])
+  // useEffect(() => {
+  //   if (
+  //     location.pathname === routes.issues.path ||
+  //     location.pathname === routes.pullRequests.path
+  //   ) {
+  //     addToQueue(getBallots())
+  //   }
+  // }, [location, addToQueue, getBallots])
 
   useEffect(() => {
     const listeners: Array<() => void> = []
@@ -130,7 +105,7 @@ export const DataLoader: FC = function DataLoader() {
 
     const updateCacheInterval = setInterval(async () => {
       return await refreshCache().then(async () => {
-        await Promise.all([getUser(), getBallots()])
+        await Promise.all([getUser()])
       })
     }, 60 * 1000)
 
@@ -170,7 +145,7 @@ export const DataLoader: FC = function DataLoader() {
       eventBus.subscribe('refresh', async () => {
         addToQueue(
           refreshCache().then(async () => {
-            await Promise.all([getBallots(), getUser()])
+            await Promise.all([getUser()])
           }),
         )
       }),
@@ -184,7 +159,6 @@ export const DataLoader: FC = function DataLoader() {
   }, [
     setUpdates,
     getUser,
-    getBallots,
     addToQueue,
     getBallot,
     navigate,

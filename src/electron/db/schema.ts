@@ -1,26 +1,56 @@
-import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import {
+  int,
+  integer,
+  real,
+  sqliteTable,
+  text,
+  unique,
+} from 'drizzle-orm/sqlite-core'
 
 import { type Ballot as BallotType, Expand, ExpandRecursive } from '~/shared'
 
-export const ballots = sqliteTable('ballots', {
-  identifier: text('identifier').primaryKey(),
-  label: text('label', { enum: ['issues', 'pull', 'other'] }).notNull(),
-  communityUrl: text('communityUrl').notNull(),
-  title: text('title').notNull(),
-  description: text('description').notNull(),
-  choices: text('choices', { mode: 'json' })
-    .notNull()
-    .$type<BallotType['choices']>(),
-  choice: text('choice').notNull(),
-  score: real('score').notNull(),
-  user: text('user', { mode: 'json' }).notNull().$type<BallotType['user']>(),
-  status: text('status', { enum: ['open', 'closed'] })
-    .notNull()
-    .default('open'),
-})
+export const ballots = sqliteTable(
+  'ballots',
+  {
+    id: int('id').primaryKey(),
+    identifier: text('identifier').notNull(),
+    label: text('label', { enum: ['issues', 'pull', 'other'] }).notNull(),
+    communityUrl: text('communityUrl').notNull(),
+    title: text('title').notNull(),
+    description: text('description').notNull(),
+    choices: text('choices', { mode: 'json' })
+      .notNull()
+      .$type<BallotType['choices']>(),
+    choice: text('choice').notNull(),
+    score: real('score').notNull(),
+    user: text('user', { mode: 'json' }).notNull().$type<BallotType['user']>(),
+    status: text('status', { enum: ['open', 'closed', 'cancelled', 'frozen'] })
+      .notNull()
+      .default('open'),
+    voted: int('voted', { mode: 'boolean' }).notNull().default(false),
+  },
+  (t) => ({
+    uniqueId: unique().on(t.identifier, t.communityUrl),
+  }),
+)
 
 export type BallotDB = typeof ballots.$inferSelect
 export type BallotDBInsert = typeof ballots.$inferInsert
+export type BallotStatus = 'open' | 'closed' | 'cancelled' | 'frozen'
+export type BallotVoteStatus = 'Voted' | 'Not Voted'
+export type BallotSearch = {
+  communityUrl?: string
+  status?: BallotStatus[]
+  search?: string
+  label?: 'issues' | 'pull' | 'other'
+  voted?: BallotVoteStatus[]
+}
+
+export type BallotSearchResults = {
+  totalCount: number
+  matchingCount: number
+  ballots: BallotDB[]
+}
 
 export const configs = sqliteTable('configs', {
   communityUrl: text('communityUrl').notNull().primaryKey(),

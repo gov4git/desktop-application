@@ -10,8 +10,11 @@ import {
 
 import { DB } from '../db/db.js'
 import {
+  BallotDB,
   BallotDBInsert,
   ballots,
+  BallotSearch,
+  BallotSearchResults,
   communities,
   userCommunities,
   users,
@@ -221,11 +224,15 @@ export class BallotService extends AbstractBallotService {
     ballot['description'] = ballotInfo.ballot_advertisement.description
     ballot['choices'] = ballotInfo.ballot_advertisement.choices
 
-    const closed =
-      ballotInfo.ballot_advertisement.frozen ||
-      ballotInfo.ballot_advertisement.closed ||
-      ballotInfo.ballot_advertisement.cancelled
-    ballot['status'] = closed ? 'closed' : 'open'
+    if (ballotInfo.ballot_advertisement.closed) {
+      ballot['status'] = 'closed'
+    } else if (ballotInfo.ballot_advertisement.cancelled) {
+      ballot['status'] = 'cancelled'
+    } else if (ballotInfo.ballot_advertisement.frozen) {
+      ballot['status'] = 'frozen'
+    } else {
+      ballot['status'] = 'open'
+    }
 
     const choice = (ballot['choices'] as string[])[0]
 
@@ -264,14 +271,32 @@ export class BallotService extends AbstractBallotService {
       pendingCredits: pendingCredits,
     }
 
-    await this.db
-      .insert(ballots)
-      .values(ballot as BallotDBInsert)
-      .onConflictDoUpdate({
-        target: ballots.identifier,
-        set: ballot,
-      })
-    return ballot as Ballot
+    ballot['voted'] = talliedScore !== 0 || pendingScoreDiff !== 0
+
+    const newBallot = (
+      await this.db
+        .insert(ballots)
+        .values(ballot as BallotDBInsert)
+        .onConflictDoUpdate({
+          target: [ballots.identifier, ballots.communityUrl],
+          set: ballot,
+        })
+        .returning()
+    )[0]!
+
+    let insertSearchQuery = `INSERT OR IGNORE INTO ballotSearch (rowid, identifier, title, description) VALUES `
+    insertSearchQuery += `(${newBallot.id}, '${newBallot.identifier}', '${newBallot.title}', '${newBallot.description}')`
+
+    const insertResult = this.db.run(sql.raw(insertSearchQuery))
+
+    if (insertResult.changes === 0) {
+      let updateQuery = `UPDATE ballotSearch SET `
+      updateQuery += `identifier='${newBallot.identifier}', title='${newBallot.title}', description='${newBallot.description}' `
+      updateQuery += `WHERE rowid=${newBallot.id}`
+      this.db.run(sql.raw(updateQuery))
+    }
+
+    return newBallot
   }
 
   public getBallot = async (ballotId: string) => {
@@ -328,45 +353,92 @@ export class BallotService extends AbstractBallotService {
     await Promise.all(ballotPromises)
   })
 
-  public getBallots = async () => {
-    const selectedCommunity = (
-      await this.db
-        .select()
-        .from(communities)
-        .where(eq(communities.selected, true))
-        .limit(1)
-    )[0]
+  private getCurrentCommunityUrl = async () => {
+    return (
+      (
+        await this.db
+          .select()
+          .from(communities)
+          .where(eq(communities.selected, true))
+          .limit(1)
+      )[0]?.url ?? null
+    )
+  }
 
-    if (selectedCommunity == null) {
-      return []
+  public getBallots = async (
+    options?: BallotSearch,
+  ): Promise<BallotSearchResults> => {
+    const {
+      communityUrl = await this.getCurrentCommunityUrl(),
+      status = [],
+      search = null,
+      label = null,
+      voted = [],
+    } = options ?? {}
+
+    if (communityUrl == null) {
+      return {
+        totalCount: 0,
+        matchingCount: 0,
+        ballots: [],
+      }
     }
 
-    const ballotCounts = await this.db
-      .select({
-        count: sql<number>`count(*)`,
-      })
-      .from(ballots)
-      .where(
-        and(
-          eq(ballots.communityUrl, selectedCommunity.url),
-          eq(ballots.status, 'open'),
-        ),
-      )
+    let ballotCounts = (
+      await this.db
+        .select({
+          count: sql<number>`count(*)`,
+        })
+        .from(ballots)
+        .where(eq(ballots.communityUrl, communityUrl))
+    )[0]
 
-    if (ballotCounts.length === 0 || ballotCounts[0]?.count === 0) {
+    if (ballotCounts?.count === 0) {
       await this.loadBallots()
     }
 
-    return await this.db
-      .select()
-      .from(ballots)
-      .where(
-        and(
-          eq(ballots.communityUrl, selectedCommunity.url),
-          eq(ballots.status, 'open'),
-        ),
-      )
-      .orderBy(desc(ballots.score), asc(ballots.title))
+    ballotCounts = (
+      await this.db
+        .select({
+          count: sql<number>`count(*)`,
+        })
+        .from(ballots)
+        .where(eq(ballots.communityUrl, communityUrl))
+    )[0]
+
+    let query = `SELECT b.id, bs.identifier, b.label, b.communityUrl, bs.title, bs.description, b.choices, b.choice, b.score, b.user, b.status from ballots as b inner join ballotSearch as bs on b.id = bs.rowid`
+    query += ` WHERE b.communityUrl = '${communityUrl}'`
+    if (status.length > 0) {
+      query += ` AND b.status IN (${status.map((v) => `'${v}'`).join(', ')})`
+    }
+    if (label != null) {
+      query += ` AND b.label = '${label}'`
+    }
+    if (voted.length > 0) {
+      query += ` AND b.voted IN (${voted
+        .map((v) => (v === 'Voted' ? 1 : 0))
+        .join(', ')})`
+    }
+    if (search != null && search !== '') {
+      query += ` AND ballotSearch MATCH '${search}' ORDER BY rank desc`
+    } else {
+      query += ` ORDER BY b.score desc, b.title asc`
+    }
+    query += ';'
+
+    const results = this.db.all<BallotDB>(sql.raw(query)).map((r) => {
+      return {
+        ...r,
+        choices: JSON.parse(r.choices as any),
+        user: JSON.parse(r.user as any),
+      }
+    })
+
+    return {
+      totalCount: ballotCounts?.count ?? 0,
+      matchingCount: results.length,
+      ballots: results,
+    }
   }
 
   public vote = async ({ name, choice, strength }: VoteOption) => {

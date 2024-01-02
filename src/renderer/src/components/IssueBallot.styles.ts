@@ -8,8 +8,11 @@ export const useIssueBallotStyles = makeStyles({
     alignItems: 'center',
     ...shorthands.gap('8px'),
   },
-  title: {
-    paddingBottom: gov4GitTokens.spacingVerticalXL,
+  titleArea: {
+    paddingBottom: '8px',
+    '& h2': {
+      paddingBottom: '4px',
+    },
   },
   card: {
     marginBottom: '1rem',

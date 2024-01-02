@@ -1,18 +1,35 @@
-import { Card } from '@fluentui/react-card'
+import { Card } from '@fluentui/react-components'
 import { useAtomValue } from 'jotai'
-import { type FC, useMemo } from 'react'
+import { type FC, useEffect, useMemo, useState } from 'react'
 
-import { ballotIssuesAtom } from '../state/ballots.js'
+import { useFetchIssues } from '../hooks/ballots.js'
+import {
+  issuesAtom,
+  issueSearchAtom,
+  issueSearchOptionsAtom,
+  issuesSearchResultsAtom,
+  issuesStatusAtom,
+  issuesVotedOnAtom,
+} from '../state/ballots.js'
 import { communityAtom } from '../state/community.js'
 import { useHeadingsStyles } from '../styles/headings.js'
+import { BallotControls } from './BallotControls.js'
 import { IssueBallot } from './IssueBallot.js'
-import { useIssuesStyles } from './Issues.styles.js'
 
 export const Issues: FC = function Issues() {
-  const ballots = useAtomValue(ballotIssuesAtom)
+  const issues = useAtomValue(issuesAtom)
   const headingStyles = useHeadingsStyles()
-  const styles = useIssuesStyles()
   const community = useAtomValue(communityAtom)
+  const fetchIssues = useFetchIssues()
+  const fetchIssuesOptions = useAtomValue(issueSearchOptionsAtom)
+  const [globalSearchAtom] = useState(issueSearchAtom)
+  const [globalIssuesStatusAtom] = useState(issuesStatusAtom)
+  const [globalVotedOnAtom] = useState(issuesVotedOnAtom)
+  const [globalSearchResultsAtom] = useState(issuesSearchResultsAtom)
+
+  useEffect(() => {
+    fetchIssues()
+  }, [fetchIssuesOptions, fetchIssues])
 
   const issuesLink = useMemo(() => {
     if (community == null) return null
@@ -23,21 +40,26 @@ export const Issues: FC = function Issues() {
     <>
       <h1 className={headingStyles.pageHeading}>Prioritize Issues</h1>
 
-      <div className={styles.controls}>
+      <BallotControls
+        searchAtom={globalSearchAtom}
+        statusAtom={globalIssuesStatusAtom}
+        votedOnAtom={globalVotedOnAtom}
+        searchResultsAtom={globalSearchResultsAtom}
+      >
         {issuesLink != null && (
           <a href={issuesLink} target="_blank" rel="noreferrer">
             View all issues in GitHub
           </a>
         )}
-      </div>
+      </BallotControls>
 
-      {(ballots == null || ballots.length === 0) && (
+      {(issues == null || issues.length === 0) && (
         <Card>
-          <p>No open ballots for issues to display at this time.</p>
+          <p>No matching ballots for issues to display at this time.</p>
         </Card>
       )}
-      {ballots != null &&
-        ballots.map((ballot) => {
+      {issues != null &&
+        issues.map((ballot) => {
           return <IssueBallot key={ballot.identifier} ballot={ballot} />
         })}
     </>

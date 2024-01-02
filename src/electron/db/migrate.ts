@@ -1,10 +1,11 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
+import { eq, sql } from 'drizzle-orm'
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator'
 
 import { DB, loadDb } from './db.js'
-import { communities, configStore, users } from './schema.js'
+import { ballots, communities, configStore, users } from './schema.js'
 export async function migrateDb(dbPath: string, isPackaged = false) {
   const migrationPath = resolve(
     isPackaged ? process.resourcesPath : process.cwd(),
@@ -12,10 +13,41 @@ export async function migrateDb(dbPath: string, isPackaged = false) {
   )
   const db = await loadDb(dbPath)
   migrate(db, { migrationsFolder: migrationPath })
-  await migrateData(db)
+  await createSearchIndex(db)
+  await migrateConfigData(db)
+  await migrateBallotData(db)
 }
 
-async function migrateData(db: DB) {
+async function createSearchIndex(db: DB) {
+  const rows = db.all<{ name: string }>(
+    sql.raw(
+      `SELECT * FROM sqlite_master WHERE type='table' and name='ballotSearch'`,
+    ),
+  )
+  if (rows.length === 0) {
+    db.run(
+      sql.raw(
+        `CREATE VIRTUAL TABLE ballotSearch USING fts5(identifier, title, description, tokenize = 'porter unicode61 remove_diacritics 2');`,
+      ),
+    )
+    const ballotCount = (
+      await db
+        .select({
+          count: sql<number>`count(*)`,
+        })
+        .from(ballots)
+    )[0]
+    if (ballotCount != null && ballotCount.count > 0) {
+      db.run(
+        sql.raw(
+          `INSERT INTO ballotSearch (rowid, identifier, title, description) SELECT id, identifier, title, description FROM ballots`,
+        ),
+      )
+    }
+  }
+}
+
+async function migrateConfigData(db: DB) {
   const user = (await db.select().from(users).limit(1))[0]
 
   if (user != null) {
@@ -76,5 +108,20 @@ async function migrateData(db: DB) {
       projectUrl: config.project_repo,
       selected: true,
     })
+  }
+}
+
+async function migrateBallotData(db: DB) {
+  const rows = await db.select().from(ballots)
+
+  for (const ballot of rows) {
+    const voted =
+      ballot.user.talliedScore !== 0 || ballot.user.pendingScoreDiff !== 0
+    await db
+      .update(ballots)
+      .set({
+        voted,
+      })
+      .where(eq(ballots.id, ballot.id))
   }
 }
