@@ -1,5 +1,13 @@
 # gov4git-desktop-app
 
+## 0.9.1
+
+### Patch Changes
+
+- 5f22ca3: Fix login form
+
+  - Allow updating PAT.
+
 ## 0.9.0
 
 ### Minor Changes
