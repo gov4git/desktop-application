@@ -1,5 +1,31 @@
 # gov4git-desktop-app
 
+## 0.9.0
+
+### Minor Changes
+
+- b8529ed: Update auth flow
+
+  - Separate out user login and joining communities
+    to allow for joining multiple communities.
+  - Submit GH request to join from UI.
+    Addresses gov4git/gov4git#118
+
+- 5f1a77e: Support multiple communities
+
+  - Addresses gov4git/gov4git#121
+
+- 6e8aeba: Add ballot filters
+
+  - Support filtering by ballot status (open, closed, etc)
+  - Support filteringer by participation (voted, not voted)
+  - Addresses gov4git/gov4git#109, gov4git/gov4git#110, gov4git/gov4git#131
+
+### Patch Changes
+
+- 45d6c20: Centralize utility functions
+- 2aa7fca: Pin header
+
 ## 0.8.1
 
 ### Patch Changes
