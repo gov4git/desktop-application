@@ -29,8 +29,7 @@ export const Login: FC = function Login() {
     return (
       username !== '' &&
       pat !== '' &&
-      username !== user?.username &&
-      pat !== user?.pat
+      (username !== user?.username || pat !== user?.pat)
     )
   }, [username, pat, user])
 
