@@ -109,10 +109,10 @@ async function serviceHandler(
    */
   try {
     const response = await services.invoke(invokeProps)
-    logService.info(`Invoking ${invokeProps.service}:`, invokeProps)
-    if (invokeProps.service !== 'log') {
-      logService.info('Response:', response)
-    }
+    logService.info(`Invoked ${invokeProps.service}:`, invokeProps)
+    // if (invokeProps.service !== 'log') {
+    //   logService.info('Response:', response)
+    // }
     return response
   } catch (ex) {
     try {

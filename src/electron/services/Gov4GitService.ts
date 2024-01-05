@@ -70,9 +70,11 @@ export class Gov4GitService {
       this.log.info('Gov4Git Response:', output)
       return output
     } catch (ex: any) {
-      this.log.error('Exception running Gov4Git')
-      this.log.error(`Command: ${command.join(' ')}`)
-      this.log.error(ex.stderr)
+      if (!command.includes('track')) {
+        this.log.error('Exception running Gov4Git')
+        this.log.error(`Command: ${command.join(' ')}`)
+        this.log.error(ex.stderr)
+      }
       throw ex
     }
   }

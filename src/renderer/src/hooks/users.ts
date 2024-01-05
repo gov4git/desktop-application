@@ -11,15 +11,20 @@ export function useFetchUser() {
   const setUser = useSetAtom(userAtom)
   const setUserLoaded = useSetAtom(userLoadedAtom)
   const catchError = useCatchError()
-  const _getUser = useCallback(async () => {
-    try {
-      const user = await userService.getUser()
-      setUser(user)
-      setUserLoaded(true)
-    } catch (ex) {
-      await catchError(`Failed to load user information. ${ex}`)
-    }
-  }, [catchError, setUser, setUserLoaded])
+  const _getUser = useCallback(
+    async (cache = true) => {
+      try {
+        const user = cache
+          ? await userService.getUser()
+          : await userService.loadUser()
+        setUser(user)
+        setUserLoaded(true)
+      } catch (ex) {
+        await catchError(`Failed to load user information. ${ex}`)
+      }
+    },
+    [catchError, setUser, setUserLoaded],
+  )
 
   return useMemo(() => {
     return serialAsync(_getUser)
