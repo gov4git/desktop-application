@@ -1,5 +1,15 @@
 # gov4git-desktop-app
 
+## 0.9.2
+
+### Patch Changes
+
+- d634208: Cleanup logging
+- bc3ad7f: Parameterize SQL queries
+- a5df269: Fix vote response.
+
+  - Update user credits from source instead of cache
+
 ## 0.9.1
 
 ### Patch Changes
