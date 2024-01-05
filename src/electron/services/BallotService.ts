@@ -1,5 +1,4 @@
 import { and, asc, desc, eq, sql } from 'drizzle-orm'
-import { SQLiteSyncDialect } from 'drizzle-orm/sqlite-core/dialect'
 
 import {
   AbstractBallotService,
@@ -289,9 +288,6 @@ export class BallotService extends AbstractBallotService {
     insertSearchQuery.append(
       sql`VALUES (${newBallot.id}, ${newBallot.identifier}, ${newBallot.title}, ${newBallot.description})`,
     )
-
-    const sqliteDialect = new SQLiteSyncDialect()
-    console.log(sqliteDialect.sqlToQuery(insertSearchQuery))
 
     const insertResult = this.db.run(insertSearchQuery)
 
