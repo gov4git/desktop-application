@@ -1,32 +1,26 @@
 import { useSetAtom } from 'jotai'
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
-import { useLocation, useNavigate, useNavigation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 
 import { serialAsync } from '~/shared'
 
-import { routes } from '../App/Router.js'
 import { useCatchError } from '../hooks/useCatchError.js'
 import { useFetchUser } from '../hooks/users.js'
 import { eventBus } from '../lib/index.js'
 import { appUpdaterService } from '../services/AppUpdaterService.js'
 import { ballotService } from '../services/BallotService.js'
 import { cacheService } from '../services/CacheService.js'
-import { userService } from '../services/UserService.js'
 import { ballotsAtom } from '../state/ballots.js'
 import { loaderAtom } from '../state/loader.js'
 import { updatesAtom } from '../state/updates.js'
-import { userAtom, userLoadedAtom } from '../state/user.js'
 
 export const DataLoader: FC = function DataLoader() {
   const catchError = useCatchError()
   const setUpdates = useSetAtom(updatesAtom)
   const setBallots = useSetAtom(ballotsAtom)
-  const setUser = useSetAtom(userAtom)
-  const setUserLoaded = useSetAtom(userLoadedAtom)
   const setLoading = useSetAtom(loaderAtom)
   const [loadingQueue, setLoadingQueue] = useState<Promise<any>[]>([])
   const navigate = useNavigate()
-  const location = useLocation()
   const getUser = useFetchUser()
 
   const addToQueue = useCallback(
@@ -52,8 +46,12 @@ export const DataLoader: FC = function DataLoader() {
   }, [_checkForUpdates])
 
   const _refreshCache = useCallback(async () => {
-    await cacheService.refreshCache()
-  }, [])
+    try {
+      await cacheService.refreshCache()
+    } catch (ex) {
+      await catchError(`Failed to refresh cache. ${ex}`)
+    }
+  }, [catchError])
 
   const refreshCache = useMemo(() => {
     return serialAsync(_refreshCache)
@@ -89,15 +87,6 @@ export const DataLoader: FC = function DataLoader() {
   const getBallot = useMemo(() => {
     return serialAsync(_getBallot)
   }, [_getBallot])
-
-  // useEffect(() => {
-  //   if (
-  //     location.pathname === routes.issues.path ||
-  //     location.pathname === routes.pullRequests.path
-  //   ) {
-  //     addToQueue(getBallots())
-  //   }
-  // }, [location, addToQueue, getBallots])
 
   useEffect(() => {
     const listeners: Array<() => void> = []
@@ -138,7 +127,7 @@ export const DataLoader: FC = function DataLoader() {
 
     listeners.push(
       eventBus.subscribe('voted', async (e) => {
-        await Promise.all([getBallot(e), getUser()])
+        await Promise.all([getBallot(e), getUser(false)])
       }),
     )
     listeners.push(
@@ -170,7 +159,7 @@ export const DataLoader: FC = function DataLoader() {
     async function run() {
       if (loadingQueue.length > 0) {
         setLoading(true)
-        await Promise.all(loadingQueue)
+        await Promise.allSettled(loadingQueue)
         setLoadingQueue([])
         setLoading(false)
       } else {
