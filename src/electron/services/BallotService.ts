@@ -1,4 +1,5 @@
 import { and, asc, desc, eq, sql } from 'drizzle-orm'
+import { SQLiteSyncDialect } from 'drizzle-orm/sqlite-core/dialect'
 
 import {
   AbstractBallotService,
@@ -284,16 +285,23 @@ export class BallotService extends AbstractBallotService {
         .returning()
     )[0]!
 
-    let insertSearchQuery = `INSERT OR IGNORE INTO ballotSearch (rowid, identifier, title, description) VALUES `
-    insertSearchQuery += `(${newBallot.id}, '${newBallot.identifier}', '${newBallot.title}', '${newBallot.description}')`
+    const insertSearchQuery = sql`INSERT OR IGNORE INTO ballotSearch (rowid, identifier, title, description) `
+    insertSearchQuery.append(
+      sql`VALUES (${newBallot.id}, ${newBallot.identifier}, ${newBallot.title}, ${newBallot.description})`,
+    )
 
-    const insertResult = this.db.run(sql.raw(insertSearchQuery))
+    const sqliteDialect = new SQLiteSyncDialect()
+    console.log(sqliteDialect.sqlToQuery(insertSearchQuery))
+
+    const insertResult = this.db.run(insertSearchQuery)
 
     if (insertResult.changes === 0) {
-      let updateQuery = `UPDATE ballotSearch SET `
-      updateQuery += `identifier='${newBallot.identifier}', title='${newBallot.title}', description='${newBallot.description}' `
-      updateQuery += `WHERE rowid=${newBallot.id}`
-      this.db.run(sql.raw(updateQuery))
+      const updateQuery = sql`UPDATE ballotSearch SET `
+      updateQuery.append(
+        sql`identifier=${newBallot.identifier}, title=${newBallot.title}, description=${newBallot.description}`,
+      )
+      updateQuery.append(sql`WHERE rowid=${newBallot.id}`)
+      this.db.run(updateQuery)
     }
 
     return newBallot
