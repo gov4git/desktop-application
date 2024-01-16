@@ -1,8 +1,8 @@
 import { FC, useMemo } from 'react'
 
-import { Issues, OtherBallots, PullRequests } from '../components/index.js'
+import { Issues, PullRequests } from '../components/index.js'
 
-type PollsPageState = 'ISSUES' | 'PULL_REQUESTS' | 'OTHER'
+type PollsPageState = 'ISSUES' | 'PULL_REQUESTS'
 
 export type PollsPageProps = {
   state: PollsPageState
@@ -13,10 +13,8 @@ export const PollsPage: FC<PollsPageProps> = function PollsPage({ state }) {
     switch (state) {
       case 'ISSUES':
         return Issues
-      case 'PULL_REQUESTS':
-        return PullRequests
       default:
-        return OtherBallots
+        return PullRequests
     }
   }, [state])
 

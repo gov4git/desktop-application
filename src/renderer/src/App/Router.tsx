@@ -3,7 +3,6 @@ import { createHashRouter, RouterProvider } from 'react-router-dom'
 import { RequireAuth } from '../components/RequireAuth.js'
 import { AboutPage } from '../pages/About.js'
 import { CommunityJoinPage } from '../pages/CommunityJoin.js'
-import { CreatePage } from '../pages/Create.js'
 import { ErrorPage } from '../pages/Error.js'
 import { Layout } from '../pages/Layout.js'
 import { LicensePage } from '../pages/License.js'
@@ -24,9 +23,7 @@ export type Route = {
 
 export type Routes = {
   issues: Route
-  create: Route
   pullRequests: Route
-  ballots: Route
   info: Route
   settings: Route
   login: Route
@@ -36,21 +33,6 @@ export type Routes = {
 }
 
 export const routes = {
-  create: {
-    index: true,
-    name: 'Create',
-    path: '/create',
-    siteNav: false,
-    forAdmin: false,
-    iconClass: 'codicon-edit',
-    toolTip: 'Create new ballots',
-    footer: false,
-    element: (
-      <RequireAuth>
-        <CreatePage />
-      </RequireAuth>
-    ),
-  },
   issues: {
     index: true,
     name: 'Prioritization',
@@ -80,20 +62,6 @@ export const routes = {
       </RequireAuth>
     ),
   },
-  ballots: {
-    path: '/ballots',
-    name: 'Other Ballots',
-    siteNav: false,
-    forAdmin: false,
-    iconClass: 'codicon-inbox',
-    footer: false,
-    toolTip: 'Vote on other ballots',
-    element: (
-      <RequireAuth>
-        <PollsPage state="OTHER" />
-      </RequireAuth>
-    ),
-  },
   info: {
     path: '/about',
     name: 'About',
@@ -102,11 +70,7 @@ export const routes = {
     iconClass: 'codicon-info',
     footer: true,
     toolTip: 'About Gov4Git',
-    element: (
-      <RequireAuth>
-        <AboutPage />
-      </RequireAuth>
-    ),
+    element: <AboutPage />,
   },
   logs: {
     path: '/logs',

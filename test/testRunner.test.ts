@@ -5,24 +5,25 @@ import { resolve } from 'path'
 import { DB, loadDb } from '../src/electron/db/db.js'
 import { migrateDb } from '../src/electron/db/migrate.js'
 import {
-  BallotService,
   CommunityService,
   GitService,
   Gov4GitService,
   LogService,
+  MotionService,
   Services,
   SettingsService,
-  UserCommunityService,
   UserService,
   ValidationService,
 } from '../src/electron/services/index.js'
 // eslint-disable-next-line
-import runBallotTests from './BallotService.test'
+// import runBallotTests from './BallotService.test'
 // eslint-disable-next-line
 import runCommunityTests from './CommunityService.test'
 import { config } from './config.js'
 // eslint-disable-next-line
 import runGitTests from './GitService.test'
+// eslint-disable-next-line
+import runMotionTests from './MotionService.test'
 // eslint-disable-next-line
 import runSettingsTests from './SettingsService.test'
 // eslint-disable-next-line
@@ -31,11 +32,11 @@ import runUserTests from './UserService.test'
 const services = new Services()
 
 beforeAll(async () => {
+  const loggingService = new LogService(resolve(config.configDir, 'logs.txt'))
+  services.register('log', loggingService)
   const dbService = await loadDb(config.dbPath)
   await migrateDb(config.dbPath)
   services.register('db', dbService)
-  const loggingService = new LogService(resolve(config.configDir, 'logs.txt'))
-  services.register('log', loggingService)
   const gitService = new GitService()
   services.register('git', gitService)
   const govService = new Gov4GitService(services)
@@ -44,10 +45,7 @@ beforeAll(async () => {
     services,
   })
   services.register('settings', settingsService)
-  const userCommunityService = new UserCommunityService({
-    services,
-  })
-  services.register('userCommunity', userCommunityService)
+
   const userService = new UserService({
     services,
     identityRepoName: config.identityName,
@@ -58,10 +56,10 @@ beforeAll(async () => {
     configDir: config.configDir,
   })
   services.register('community', communityService)
-  const ballotService = new BallotService({
+  const motionService = new MotionService({
     services,
   })
-  services.register('ballots', ballotService)
+  services.register('motion', motionService)
   const validationService = new ValidationService({
     services,
   })
@@ -77,7 +75,13 @@ beforeAll(async () => {
     config.communityUrl,
     config.user,
     false,
+    false,
+  )
+  await gitService.initializeRemoteRepo(
+    config.privateCommunityUrl,
+    config.user,
     true,
+    false,
   )
 }, 30000)
 
@@ -89,6 +93,7 @@ afterAll(async () => {
   await gitService.deleteRepo(config.communityUrl, config.user)
   await gitService.deleteRepo(config.publicRepo, config.user)
   await gitService.deleteRepo(config.privateRepo, config.user)
+  await gitService.deleteRepo(config.privateCommunityUrl, config.user)
   loggingService.close()
   dbService.close()
   await rm(config.configDir, { recursive: true, force: true })
@@ -99,5 +104,5 @@ describe('Run tests', () => {
   runUserTests(services)
   runCommunityTests(services)
   runSettingsTests(services)
-  runBallotTests(services)
+  runMotionTests(services)
 })

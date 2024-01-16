@@ -1,11 +1,4 @@
-import {
-  Button,
-  Dropdown,
-  Option,
-  Switch,
-  type SwitchOnChangeData,
-  Text,
-} from '@fluentui/react-components'
+import { Dropdown, Option, Text } from '@fluentui/react-components'
 import { SearchBox } from '@fluentui/react-search-preview'
 import { PrimitiveAtom, useAtom, useAtomValue } from 'jotai'
 import {
@@ -20,15 +13,15 @@ import {
 import { debounceAsync } from '~/shared'
 
 import type {
-  BallotStatus,
-  BallotVoteStatus,
+  MotionStatus,
+  MotionVotedStatus,
 } from '../../../electron/db/schema.js'
 import { useBallotControlStyles } from './BallotControls.styles.js'
 
 export type BallotControlsOptions = {
   searchAtom: PrimitiveAtom<string>
-  statusAtom: PrimitiveAtom<BallotStatus[]>
-  votedOnAtom: PrimitiveAtom<BallotVoteStatus[]>
+  statusAtom: PrimitiveAtom<MotionStatus[]>
+  votedOnAtom: PrimitiveAtom<MotionVotedStatus[]>
   searchResultsAtom: PrimitiveAtom<{
     totalCount: number
     matchingCount: number
@@ -81,13 +74,6 @@ export const BallotControls: FC<PropsWithChildren<BallotControlsOptions>> =
     return (
       <>
         <div className={styles.controls}>
-          {/* <div>
-              <Switch
-                label="Voted"
-                checked={globalVotedOn}
-                onChange={handleVotedOnChange}
-              />
-            </div> */}
           <div className={styles.searchBox}>
             <div>
               <SearchBox

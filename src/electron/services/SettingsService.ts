@@ -62,12 +62,17 @@ export class SettingsService {
       },
       gov_public_url: community.url,
       gov_public_branch: community.branch,
+      gov_private_url: community.privateUrl,
+      gov_private_branch: community.branch,
       member_public_url: user.memberPublicUrl,
       member_public_branch: user.memberPublicBranch,
       member_private_url: user.memberPrivateUrl,
       member_private_branch: user.memberPrivateBranch,
       auth: {
         [community.url]: {
+          access_token: user.pat,
+        },
+        [community.privateUrl]: {
           access_token: user.pat,
         },
         [user.memberPublicUrl]: {

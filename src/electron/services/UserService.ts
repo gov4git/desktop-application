@@ -1,19 +1,19 @@
+import { existsSync, rmSync } from 'node:fs'
+
+import { createOAuthDeviceAuth } from '@octokit/auth-oauth-device'
+import type {
+  OAuthAppAuthentication,
+  Verification,
+} from '@octokit/auth-oauth-device/dist-types/types.js'
+import { request } from '@octokit/request'
 import { eq } from 'drizzle-orm'
 
 import { AbstractUserService, serialAsync } from '~/shared'
 
 import { DB } from '../db/db.js'
-import {
-  ballots,
-  communities,
-  FullUser,
-  userCommunities,
-  UserInsert,
-  users,
-} from '../db/schema.js'
+import { communities, motions, User, UserInsert, users } from '../db/schema.js'
 import { GitService } from './GitService.js'
 import { Services } from './Services.js'
-import { UserCommunityService } from './UserCommunityService.js'
 
 export type UserServiceOptions = {
   services: Services
@@ -25,7 +25,8 @@ export class UserService extends AbstractUserService {
   private declare readonly repoUrlBase: string
   private declare readonly db: DB
   private declare readonly gitService: GitService
-  private declare readonly userCommunityService: UserCommunityService
+  private declare authVerification: Verification | null
+  private declare authorization: Promise<OAuthAppAuthentication> | null
 
   constructor({
     services,
@@ -37,25 +38,24 @@ export class UserService extends AbstractUserService {
     this.repoUrlBase = 'https://github.com'
     this.db = this.services.load<DB>('db')
     this.gitService = this.services.load<GitService>('git')
-    this.userCommunityService =
-      this.services.load<UserCommunityService>('userCommunity')
+    this.authVerification = null
+    this.authorization = null
   }
 
   private deleteDBTables = async () => {
-    await this.db.delete(userCommunities)
     await Promise.all([
       this.db.delete(users),
-      this.db.delete(ballots),
+      this.db.delete(motions),
       this.db.delete(communities),
     ])
   }
 
   private requireFields = (username: string, pat: string): string[] => {
     const errors: string[] = []
-    if (username === '') {
+    if (username.trim() === '') {
       errors.push('Username is a required field')
     }
-    if (pat === '') {
+    if (pat.trim() === '') {
       errors.push('Personal Access Token is a required field')
     }
     return errors
@@ -65,6 +65,8 @@ export class UserService extends AbstractUserService {
     username: string,
     pat: string,
   ): Promise<string[]> => {
+    username = username.toLowerCase().trim()
+    pat = pat.trim()
     const missingErrors = this.requireFields(username, pat)
     if (missingErrors.length > 0) {
       return missingErrors
@@ -80,6 +82,8 @@ export class UserService extends AbstractUserService {
     pat: string,
     isPrivate: boolean,
   ) => {
+    username = username.toLowerCase().trim()
+    pat = pat.trim()
     const url = `${this.repoUrlBase}/${username}/${this.identityRepoName}-${
       isPrivate ? 'private' : 'public'
     }.git`
@@ -119,6 +123,8 @@ export class UserService extends AbstractUserService {
     username: string,
     pat: string,
   ): Promise<string[]> => {
+    username = username.toLowerCase().trim()
+    pat = pat.trim()
     const validationErrors = await this.validateUser(username, pat)
     if (validationErrors.length > 0) {
       return validationErrors
@@ -139,59 +145,212 @@ export class UserService extends AbstractUserService {
       set: newUser,
     })
 
-    await this.userCommunityService.loadUserCommunities()
-
     return []
   }
 
-  public loadUser = serialAsync(async (): Promise<FullUser | null> => {
+  public getUser = async (): Promise<User | null> => {
+    const userInfo = (await this.db.select().from(users).limit(1))[0]
+
+    return userInfo ?? null
+  }
+
+  /**
+   * Access token login
+   */
+
+  /**
+   * Bypasses interactive user login flow and verification.
+   * Only used in unit tests to skip interactive login flow
+   */
+  public insertUser = async (username: string, pat: string) => {
+    await this.db
+      .insert(users)
+      .values({
+        username,
+        pat,
+        memberPublicUrl: '',
+        memberPrivateUrl: '',
+        memberPrivateBranch: '',
+        memberPublicBranch: '',
+      })
+      .onConflictDoUpdate({
+        target: users.username,
+        set: {
+          username,
+          pat,
+        },
+      })
+  }
+
+  private awaitAuthCode = async (): Promise<Verification> => {
+    return new Promise((res) => {
+      const interval = setInterval(() => {
+        if (this.authVerification != null) {
+          clearInterval(interval)
+          res(this.authVerification)
+        }
+      }, 100)
+    })
+  }
+
+  public initializeIdRepos = serialAsync(async () => {
+    const errors: string[] = []
     const user = (await this.db.select().from(users).limit(1))[0]
 
     if (user == null) {
+      return [`Cannot create ID repos as user is not logged in.`]
+    }
+
+    const repos = [
+      `${this.identityRepoName}-public`,
+      `${this.identityRepoName}-private`,
+    ]
+
+    const requestWithAuth = request.defaults({
+      headers: {
+        authorization: `Bearer ${user.pat}`,
+      },
+    })
+
+    const userInfo: Partial<User> = {}
+
+    for (const repo of repos) {
+      const repoUrl = `${this.repoUrlBase}/${user.username}/${repo}.git`
+      const keyPrefix = repo.endsWith('private')
+        ? 'memberPrivate'
+        : 'memberPublic'
+      userInfo[`${keyPrefix}Url`] = repoUrl
+      try {
+        const existingRepo = await requestWithAuth(
+          'GET /repos/{owner}/{repo}',
+          {
+            owner: user.username,
+            repo: repo,
+          },
+        )
+        userInfo[`${keyPrefix}Branch`] = existingRepo.data.default_branch
+      } catch (ex: any) {
+        if (ex.status === 404) {
+          try {
+            await requestWithAuth('POST /user/repos', {
+              name: repo,
+              private: repo.endsWith('private'),
+              auto_init: false,
+            })
+            userInfo[`${keyPrefix}Branch`] = 'main'
+          } catch (er) {
+            errors.push(
+              `Error initializing ${repo}. ${ex.status}: ${ex.response.data.message}`,
+            )
+          }
+        } else {
+          errors.push(
+            `Error checking satus of ${repo}. ${ex.status}: ${ex.response.data.message}`,
+          )
+        }
+      }
+    }
+    if (errors.length > 0) {
+      return errors
+    }
+
+    await this.db
+      .update(users)
+      .set(userInfo)
+      .where(eq(users.username, user.username))
+
+    return []
+  })
+
+  public startLoginFlow = async () => {
+    this.authVerification = null
+    this.authorization = null
+    const auth = createOAuthDeviceAuth({
+      clientType: 'oauth-app',
+      clientId: '912c0ab18e0f0b4a1abe',
+      scopes: ['repo'],
+      onVerification: (verification) => {
+        this.authVerification = verification
+      },
+    })
+
+    this.authorization = auth({ type: 'oauth' })
+    return this.awaitAuthCode()
+  }
+
+  public finishLoginFlow = async (): Promise<string[] | null> => {
+    if (this.authorization == null) {
       return null
     }
 
-    const allUserCommunities =
-      await this.userCommunityService.loadUserCommunities()
-
-    return {
-      ...user,
-      communities: allUserCommunities,
+    const errors: string[] = []
+    let tokenInfo: OAuthAppAuthentication
+    try {
+      tokenInfo = await this.authorization
+    } catch (ex: any) {
+      return [`Failed to log in. ${ex.response.data.error}`]
     }
-  })
-
-  public getUser = async (): Promise<FullUser | null> => {
-    const userInfo = await this.db
-      .select()
-      .from(userCommunities)
-      .innerJoin(users, eq(userCommunities.userId, users.username))
-      .innerJoin(communities, eq(userCommunities.communityId, communities.url))
-
-    if (userInfo.length === 0) {
-      return await this.loadUser()
+    const scopes = tokenInfo.scopes[0]!.split(',')
+    if (!scopes.includes('repo')) {
+      errors.push(
+        'Authorization has insufficient privileges. Must approve the repo scope.',
+      )
+    }
+    if (errors.length > 0) {
+      return errors
     }
 
-    const userRecord = userInfo.reduce<Record<string, FullUser>>((acc, cur) => {
-      const user = cur.users
-      const userCommunity = cur.userCommunities
-      const community = cur.communities
+    const requestWithAuth = request.defaults({
+      headers: {
+        authorization: `Bearer ${tokenInfo.token}`,
+      },
+    })
 
-      if (!(user.username in acc)) {
-        acc[user.username] = user as FullUser
-      }
-
-      const fullUser = acc[user.username]!
-
-      fullUser.communities = [
-        ...(fullUser.communities ?? []),
-        {
-          ...userCommunity,
-          ...community,
-        },
+    let username = ''
+    try {
+      const response = await requestWithAuth('GET /user')
+      username = response.data.login.toLowerCase()
+    } catch (ex: any) {
+      return [
+        `Error retreiving user info. ${ex.status}: ${ex.response.data.message}`,
       ]
-      return acc
-    }, {})
+    }
 
-    return userRecord[userInfo[0]!.users.username]!
+    const existingUser = (await this.db.select().from(users).limit(1))[0]
+
+    if (existingUser != null && existingUser.username !== username) {
+      await this.deleteDBTables()
+    }
+
+    await this.db
+      .insert(users)
+      .values({
+        username,
+        pat: tokenInfo.token,
+        memberPublicUrl: '',
+        memberPrivateUrl: '',
+        memberPrivateBranch: '',
+        memberPublicBranch: '',
+      })
+      .onConflictDoUpdate({
+        target: users.username,
+        set: {
+          username,
+          pat: tokenInfo.token,
+        },
+      })
+
+    return await this.initializeIdRepos()
   }
+
+  public logout = serialAsync(async () => {
+    const allCommunities = await this.db.select().from(communities)
+
+    for (const community of allCommunities) {
+      if (existsSync(community.configPath)) {
+        rmSync(community.configPath)
+      }
+    }
+    await this.deleteDBTables()
+  })
 }

@@ -53,7 +53,9 @@ export class LogService extends AbstractLogService {
   protected formatString = (...args: any[]): string => {
     return args
       .map((v) => {
-        if (isRecord(v)) {
+        if (v instanceof Error) {
+          return `${v}`
+        } else if (isRecord(v)) {
           return this.redact(structuredClone(v))
         } else if (Array.isArray(v)) {
           return `${JSON.stringify(v, undefined, 2)}`

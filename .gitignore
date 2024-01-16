@@ -8,3 +8,5 @@ dev.md
 .env.*
 data
 test/config
+scripts/deploy.ts
+scripts/erase.ts

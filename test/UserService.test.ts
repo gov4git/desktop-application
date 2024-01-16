@@ -41,25 +41,30 @@ export default function run(services: Services) {
     describe('Authenticating User', () => {
       test('Authenticate', async () => {
         // Act
-        const userErrors = await userService.authenticate(
-          config.user.username,
-          config.user.pat,
-        )
-        expect(userErrors.length).toEqual(0)
+        // const userErrors = await userService.authenticate(
+        //   config.user.username,
+        //   config.user.pat,
+        // )
+        // expect(userErrors.length).toEqual(0)
 
-        // Act
-        const shouldExist1 = await gitService.doesRemoteRepoExist(
-          config.publicRepo,
-          config.user,
-        )
-        const shouldExist2 = await gitService.doesRemoteRepoExist(
-          config.privateRepo,
-          config.user,
-        )
+        // // Act
+        // const shouldExist1 = await gitService.doesRemoteRepoExist(
+        //   config.publicRepo,
+        //   config.user,
+        // )
+        // const shouldExist2 = await gitService.doesRemoteRepoExist(
+        //   config.privateRepo,
+        //   config.user,
+        // )
 
-        // Assert
-        expect(shouldExist1).toEqual(true)
-        expect(shouldExist2).toEqual(true)
+        // // Assert
+        // expect(shouldExist1).toEqual(true)
+        // expect(shouldExist2).toEqual(true)
+
+        await userService.insertUser(config.user.username, config.user.pat)
+        const errors = await userService.initializeIdRepos()
+        expect(errors).not.toBeNull()
+        expect(errors?.length).toEqual(0)
       })
     })
   })

@@ -23,7 +23,7 @@ export const UserBadge: FC = function UserBadge() {
         <i className={classes.navIcon + ' codicon codicon-account'} />
         {user.username}
         <Badge appearance="outline" color="subtle" size="large">
-          <div>{formatDecimal(community?.votingCredits ?? 0)}</div>
+          <div>{formatDecimal(community?.userVotingCredits ?? 0)}</div>
         </Badge>
       </Link>
     </div>

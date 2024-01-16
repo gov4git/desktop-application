@@ -10,6 +10,7 @@ export async function serviceHandler<T = unknown>(
     console.error('========== Caught Backend Error ==========')
     console.error('PROPS:')
     console.error(invokeProps)
+    console.error(results)
     throw results
   }
   return results as T

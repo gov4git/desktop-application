@@ -13,7 +13,6 @@ import type { InvokeServiceProps } from '~/shared'
 import { COMMUNITY_REPO_NAME, CONFIG_PATH, DB_PATH } from './configs.js'
 import { DB, loadDb } from './db/db.js'
 import { migrateDb } from './db/migrate.js'
-import { BallotService } from './services/BallotService.js'
 import { CacheService } from './services/CacheService.js'
 import { CommunityService } from './services/CommunityService.js'
 import { Gov4GitService } from './services/Gov4GitService.js'
@@ -21,8 +20,8 @@ import {
   AppUpdaterService,
   GitService,
   LogService,
+  MotionService,
   Services,
-  UserCommunityService,
   ValidationService,
 } from './services/index.js'
 import { SettingsService } from './services/SettingsService.js'
@@ -39,7 +38,7 @@ logService.info(`Gov4Git Version ${logService.getAppVersion()}`)
 async function setup(): Promise<void> {
   try {
     logService.info(`Initializing DB: ${DB_PATH}`)
-    const db = await loadDb(DB_PATH)
+    const db = loadDb(DB_PATH)
     services.register('db', db)
   } catch (ex) {
     logService.error(`Failed to load DB. ${ex}`)
@@ -62,11 +61,6 @@ async function setup(): Promise<void> {
   })
   services.register('settings', settingsService)
 
-  const userCommunityService = new UserCommunityService({
-    services,
-  })
-  services.register('userCommunity', userCommunityService)
-
   const userService = new UserService({
     services,
     identityRepoName: COMMUNITY_REPO_NAME,
@@ -79,10 +73,10 @@ async function setup(): Promise<void> {
   })
   services.register('community', communityService)
 
-  const ballotService = new BallotService({
+  const motionService = new MotionService({
     services,
   })
-  services.register('ballots', ballotService)
+  services.register('motion', motionService)
 
   const validationService = new ValidationService({
     services,
@@ -110,9 +104,6 @@ async function serviceHandler(
   try {
     const response = await services.invoke(invokeProps)
     logService.info(`Invoked ${invokeProps.service}:`, invokeProps)
-    // if (invokeProps.service !== 'log') {
-    //   logService.info('Response:', response)
-    // }
     return response
   } catch (ex) {
     try {

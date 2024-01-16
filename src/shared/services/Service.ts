@@ -1,8 +1,6 @@
 import { Promisify } from '../types/Functions.js'
 
 export type ServiceId =
-  | 'ballots'
-  | 'config'
   | 'user'
   | 'git'
   | 'gov4git'
@@ -12,8 +10,8 @@ export type ServiceId =
   | 'community'
   | 'settings'
   | 'cache'
-  | 'userCommunity'
   | 'validation'
+  | 'motion'
 
 export type ObjectProxy<T> = {
   [P in keyof T]: ServiceProxy<T[P]>

@@ -15,8 +15,9 @@ import { Add32Filled } from '@fluentui/react-icons'
 import { useAtomValue } from 'jotai'
 import { FC, FormEvent, useCallback, useEffect, useState } from 'react'
 
+import { useRefreshCache } from '../hooks/cache.js'
+import { useFetchCommunities } from '../hooks/communities.js'
 import { useCatchError } from '../hooks/useCatchError.js'
-import { eventBus } from '../lib/index.js'
 import { communityService } from '../services/index.js'
 import { communitiesAtom, communityAtom } from '../state/community.js'
 import { useButtonStyles } from '../styles/index.js'
@@ -41,6 +42,14 @@ export const CommunitySettings: FC = function CommunitySettings() {
   const buttonStyles = useButtonStyles()
   const [loading, setLoading] = useState(false)
   const styles = useCommunitySettingsStyle()
+  const getCommunities = useFetchCommunities()
+  const refreshCache = useRefreshCache()
+
+  useEffect(() => {
+    setLoading(false)
+    setNewProjectUrl('')
+    setShowJoinForm(false)
+  }, [communities, setLoading, setNewProjectUrl, setShowJoinForm])
 
   const save = useCallback(
     async (ev: FormEvent<HTMLFormElement>) => {
@@ -54,13 +63,21 @@ export const CommunitySettings: FC = function CommunitySettings() {
           setLoading(false)
           setCommunityErrors(communityErrors)
         } else {
-          eventBus.emit('community-saved')
+          await refreshCache()
+          await getCommunities()
         }
       } catch (ex) {
         await catchError(`Failed to save config. ${ex}`)
       }
     },
-    [setCommunityErrors, catchError, newProjectUrl, setLoading],
+    [
+      setCommunityErrors,
+      catchError,
+      newProjectUrl,
+      setLoading,
+      getCommunities,
+      refreshCache,
+    ],
   )
 
   const selectCommunity = useCallback(
@@ -68,12 +85,12 @@ export const CommunitySettings: FC = function CommunitySettings() {
       setSelectedCommunityUrl(url)
       try {
         await communityService.selectCommunity(url)
-        eventBus.emit('selected-community')
+        await getCommunities()
       } catch (ex) {
         await catchError(`Failed to select community ${url}. ${ex}`)
       }
     },
-    [setSelectedCommunityUrl, catchError],
+    [setSelectedCommunityUrl, catchError, getCommunities],
   )
 
   const dismissError = useCallback(() => {
@@ -83,14 +100,6 @@ export const CommunitySettings: FC = function CommunitySettings() {
   useEffect(() => {
     setSelectedCommunityUrl(selectedCommunity?.url ?? '')
   }, [selectedCommunity, setSelectedCommunityUrl])
-
-  useEffect(() => {
-    return eventBus.subscribe('new-community', () => {
-      setLoading(false)
-      setNewProjectUrl('')
-      setShowJoinForm(false)
-    })
-  }, [setNewProjectUrl, setLoading, setShowJoinForm])
 
   useEffect(() => {
     for (const c of communities) {
@@ -159,42 +168,44 @@ export const CommunitySettings: FC = function CommunitySettings() {
           className={messageStyles.error}
         />
       )}
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHeaderCell className={styles.firstCol}></TableHeaderCell>
-            <TableHeaderCell>Community</TableHeaderCell>
-            <TableHeaderCell>Membership Status</TableHeaderCell>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {communities.map((c) => (
-            <TableRow key={c.url}>
-              <TableCell className={styles.firstCol}>
-                <Checkbox
-                  disabled={!c.isMember}
-                  checked={c.url === selectedCommunityUrl}
-                  onChange={() => selectCommunity(c.url)}
-                />
-              </TableCell>
-              <TableCell>
-                <span
-                  dangerouslySetInnerHTML={{
-                    __html: communityPages[c.url] ?? '',
-                  }}
-                ></span>
-              </TableCell>
-              <TableCell>
-                <span
-                  dangerouslySetInnerHTML={{
-                    __html: status[c.url] ?? '',
-                  }}
-                ></span>
-              </TableCell>
+      {communities.length > 0 && (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHeaderCell className={styles.firstCol}></TableHeaderCell>
+              <TableHeaderCell>Community</TableHeaderCell>
+              <TableHeaderCell>Membership Status</TableHeaderCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {communities.map((c) => (
+              <TableRow key={c.url}>
+                <TableCell className={styles.firstCol}>
+                  <Checkbox
+                    disabled={!c.isMember}
+                    checked={c.url === selectedCommunityUrl}
+                    onChange={() => selectCommunity(c.url)}
+                  />
+                </TableCell>
+                <TableCell>
+                  <span
+                    dangerouslySetInnerHTML={{
+                      __html: communityPages[c.url] ?? '',
+                    }}
+                  ></span>
+                </TableCell>
+                <TableCell>
+                  <span
+                    dangerouslySetInnerHTML={{
+                      __html: status[c.url] ?? '',
+                    }}
+                  ></span>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
       <br />
       {showJoinForm && (
         <form onSubmit={save}>

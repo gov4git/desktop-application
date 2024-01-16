@@ -43,6 +43,20 @@
       "when": 1701993526190,
       "tag": "0005_sparkling_princess_powerful",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1705330040488,
+      "tag": "0006_white_nuke",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1705330060343,
+      "tag": "0007_shiny_mastermind",
+      "breakpoints": true
     }
   ]
 }
