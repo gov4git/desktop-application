@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.10.0
+
+### Minor Changes
+
+- 2c6654a: Upgrade to v2 protocol
+
 ## 0.9.2
 
 ### Patch Changes
