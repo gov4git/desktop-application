@@ -19,11 +19,13 @@ import {
   useState,
 } from 'react'
 
-import { Ballot, formatDecimal } from '~/shared'
+import { formatDecimal } from '~/shared'
 
+import type { Motion } from '../../../electron/db/schema.js'
+import { useRefreshCache } from '../hooks/cache.js'
+import { useFetchCommunities } from '../hooks/communities.js'
 import { useCatchError } from '../hooks/useCatchError.js'
-import { eventBus } from '../lib/index.js'
-import { ballotService } from '../services/index.js'
+import { motionService } from '../services/index.js'
 import { communityAtom } from '../state/community.js'
 import { useBadgeStyles } from '../styles/badges.js'
 import { useMessageStyles } from '../styles/messages.js'
@@ -32,15 +34,15 @@ import { useIssueBallotStyles } from './IssueBallot.styles.js'
 import { Message } from './Message.js'
 
 export type IssueBallotProps = {
-  ballot: Ballot
+  motion: Motion
 }
 
 export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
-  ballot,
+  motion,
 }) {
   const styles = useIssueBallotStyles()
   const badgeStyles = useBadgeStyles()
-  const [voteScore, setVoteScore] = useState(ballot.user.newScore)
+  const [voteScore, setVoteScore] = useState(motion.userScore)
   const [displayVoteScore, setDisplayVoteScore] = useState(
     formatDecimal(voteScore),
   )
@@ -54,12 +56,53 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
   const [inputWidth, setInputWidth] = useState(0)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [, setTimer] = useState<number | null>(null)
+  const refreshCache = useRefreshCache()
+  const getCommunities = useFetchCommunities()
+
+  const githubLink = useMemo(() => {
+    return motion.trackerUrl
+  }, [motion])
+
+  const githubLinkText = useMemo(() => {
+    const itemType = motion.type === 'concern' ? 'issue' : 'pull request'
+    return `GitHub ${itemType} #${motion.motionId}`
+  }, [motion])
+
+  const maxScore = useMemo(() => {
+    if (community == null) return 0
+    return Math.sqrt(
+      community.userVotingCredits + Math.abs(motion.userStrength),
+    )
+  }, [motion, community])
+
+  const minScore = useMemo(() => {
+    if (community == null) return 0
+    return -Math.sqrt(
+      community.userVotingCredits + Math.abs(motion.userStrength),
+    )
+  }, [motion, community])
 
   useEffect(() => {
-    return eventBus.subscribe(
-      'new-ballot',
-      (e: CustomEvent<{ ballotId: string }>) => {
-        if (ballot.identifier === e.detail.ballotId) {
+    const score = voteScore
+    const sign = score < 0 ? -1 : 1
+    const totalCredits = sign * Math.pow(score, 2)
+    setTotalCostInCredits(Math.abs(totalCredits))
+    const newCreditsToVote = totalCredits - motion.userStrength
+    setVoteStrengthInCredits(newCreditsToVote)
+  }, [voteScore, setVoteStrengthInCredits, motion, setTotalCostInCredits])
+
+  const vote = useCallback(() => {
+    async function run() {
+      if (voteStrengthInCredits !== 0) {
+        setFetchingNewBallot(true)
+        try {
+          await motionService.vote({
+            name: motion.ballotId,
+            choice: motion.choice ?? '',
+            strength: `${voteStrengthInCredits}`,
+          })
+          await refreshCache()
+          await getCommunities()
           const direction = voteScore < 0 ? 'decrease' : 'increase'
           setSuccessMessage(
             `Success. You have submitted a vote to ${direction} priority by ${Math.abs(
@@ -67,97 +110,44 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
             )}. Your vote is in pending status until it is tallied by the community. It may take a few hours for your vote to be tallied and reflected by the community.`,
           )
           setFetchingNewBallot(false)
+        } catch (ex: any) {
+          if (
+            ex != null &&
+            ex.message != null &&
+            typeof ex.message === 'string' &&
+            (ex.message as string).toLowerCase().endsWith('ballot is closed')
+          ) {
+            setFetchingNewBallot(false)
+            setVoteError(
+              'Sorry, this ballot is closed to voting. Please refresh the page to get the latest list of ballots.',
+            )
+          } else {
+            await catchError(`Failed to cast vote. ${ex}`)
+            setFetchingNewBallot(false)
+            setVoteError(
+              `There was an error voting. Please view the full logs at the top of the page.`,
+            )
+          }
         }
-      },
-    )
-  }, [setFetchingNewBallot, ballot, voteScore, setSuccessMessage])
-
-  const githubLink = useMemo(() => {
-    if (community == null) return null
-    const linkComponent = ballot.identifier.split('/').slice(1).join('/')
-    return `${community.projectUrl}/${linkComponent}`
-  }, [community, ballot])
-
-  const githubLinkText = useMemo(() => {
-    if (community == null) return null
-    const linkComponents = ballot.identifier.split('/')
-    const itemType =
-      linkComponents.at(-2) === 'issues' ? 'issue' : 'pull request'
-    return `GitHub ${itemType} #${linkComponents.at(-1)}`
-  }, [community, ballot])
-
-  const maxScore = useMemo(() => {
-    if (community == null) return 0
-    console.log(ballot)
-    return Math.sqrt(
-      community.votingCredits +
-        Math.abs(ballot.user.pendingCredits) +
-        Math.abs(ballot.user.talliedCredits),
-    )
-  }, [ballot, community])
-
-  const minScore = useMemo(() => {
-    if (community == null) return 0
-    return -Math.sqrt(
-      community.votingCredits +
-        Math.abs(ballot.user.pendingCredits) +
-        Math.abs(ballot.user.talliedCredits),
-    )
-  }, [ballot, community])
-
-  useEffect(() => {
-    const score = voteScore
-    const sign = score < 0 ? -1 : 1
-    const spentCredits = ballot.user.talliedCredits + ballot.user.pendingCredits
-    const totalCredits = sign * Math.pow(score, 2)
-    setTotalCostInCredits(Math.abs(totalCredits))
-    const newCreditsToVote = totalCredits - spentCredits
-    setVoteStrengthInCredits(newCreditsToVote)
-  }, [voteScore, setVoteStrengthInCredits, ballot, setTotalCostInCredits])
-
-  const vote = useCallback(() => {
-    async function run() {
-      if (voteStrengthInCredits !== 0) {
-        setFetchingNewBallot(true)
-        await ballotService
-          .vote({
-            name: ballot.identifier,
-            choice: ballot.choices[0] ?? '',
-            strength: `${voteStrengthInCredits}`,
-          })
-          .then(() => {
-            eventBus.emit('voted', { ballotId: ballot.identifier })
-          })
-          .catch(async (ex) => {
-            if (
-              ex != null &&
-              ex.message != null &&
-              typeof ex.message === 'string' &&
-              (ex.message as string).toLowerCase().endsWith('ballot is closed')
-            ) {
-              setFetchingNewBallot(false)
-              setVoteError(
-                'Sorry, this ballot is closed to voting. Please refresh the page to get the latest list of ballots.',
-              )
-            } else {
-              await catchError(`Failed to cast vote. ${ex}`)
-              setFetchingNewBallot(false)
-              setVoteError(
-                `There was an error voting. Please view the full logs at the top of the page.`,
-              )
-            }
-          })
       }
     }
     void run()
-  }, [ballot, voteStrengthInCredits, catchError, setFetchingNewBallot])
+  }, [
+    motion,
+    voteStrengthInCredits,
+    catchError,
+    setFetchingNewBallot,
+    refreshCache,
+    voteScore,
+    getCommunities,
+  ])
 
   const onChange: ChangeEventHandler<HTMLInputElement> = useCallback(
     (e) => {
       const val = e.target.value
       const regex = /^-?\d+\.?\d*$/
       if (val === '' || !regex.test(val)) {
-        setVoteScore((v) => {
+        setVoteScore((v: number) => {
           setDisplayVoteScore(formatDecimal(v))
           return v
         })
@@ -184,7 +174,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
 
   const change = useCallback(
     (amount: number) => {
-      setVoteScore((v) => {
+      setVoteScore((v: number) => {
         const newVal = v + amount
         if (newVal > maxScore) return +formatDecimal(maxScore)
         if (newVal < minScore) return +formatDecimal(minScore)
@@ -202,7 +192,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
             if (t != null) clearInterval(t)
             return window.setInterval(() => {
               change(1)
-            }, 100)
+            }, 150)
           })
           break
         case 'down':
@@ -210,7 +200,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
             if (t != null) clearInterval(t)
             return window.setInterval(() => {
               change(-1)
-            }, 100)
+            }, 150)
           })
           break
       }
@@ -226,8 +216,8 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
   }, [setTimer])
 
   const cancelVote = useCallback(() => {
-    setVoteScore(ballot.user.newScore)
-  }, [setVoteScore, ballot])
+    setVoteScore(motion.userScore)
+  }, [setVoteScore, motion])
 
   const dismissError = useCallback(() => {
     setVoteError(null)
@@ -253,31 +243,27 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
 
   return (
     <Card className={styles.card}>
-      <div className={styles.root} key={ballot.identifier}>
+      <div className={styles.root}>
         <div className={styles.rankArea}>
           <Badge
             className={badgeStyles.primary}
             size="extra-large"
             shape="circular"
           >
-            <Text size={400}>{formatDecimal(ballot.score)}</Text>
+            <Text size={400}>{formatDecimal(motion.score)}</Text>
           </Badge>
-          <Text size={200}>
-            {ballot.user.pendingScoreDiff === 0 && (
+          {motion.userVoted && (
+            <Text size={200}>
               <span>
-                Your contribution: {formatDecimal(ballot.user.talliedScore)}
+                Your {motion.userVotePending ? 'pending' : ''} contribution:{' '}
+                {formatDecimal(motion.userScore)}
               </span>
-            )}
-            {ballot.user.pendingScoreDiff !== 0 && (
-              <span>
-                Your pending contribution: {formatDecimal(ballot.user.newScore)}
-              </span>
-            )}
-          </Text>
+            </Text>
+          )}
         </div>
         <div className={styles.issueArea}>
           <hgroup className={styles.titleArea}>
-            <h2>{ballot.title}</h2>
+            <h2>{motion.title}</h2>
             {githubLink != null && (
               <a href={githubLink} target="_blank" rel="noreferrer">
                 {githubLinkText}
@@ -287,11 +273,11 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
           <div
             className={styles.description}
             dangerouslySetInnerHTML={{
-              __html: parse(ballot.description),
+              __html: parse(motion.description),
             }}
           ></div>
           <div>
-            {ballot.status === 'open' && (
+            {motion.status === 'open' && (
               <div className={styles.votingArea}>
                 <Accordion collapsible multiple>
                   <AccordionItem value="1">
@@ -305,9 +291,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
                         <div className={styles.voteArea}>
                           <div>
                             <div className={styles.label}>
-                              <label
-                                htmlFor={`ballot-vote-${ballot.identifier}`}
-                              >
+                              <label htmlFor={`ballot-vote-${motion.motionId}`}>
                                 Vote:
                               </label>
                             </div>
@@ -322,7 +306,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
                               </button>
                               <input
                                 className={styles.voteInput}
-                                id={`ballot-vote-${ballot.identifier}`}
+                                id={`ballot-vote-${motion.motionId}`}
                                 type="text"
                                 value={displayVoteScore}
                                 onInput={onChange}
@@ -350,9 +334,8 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
                               disabled={true}
                               min={0}
                               max={
-                                (community?.votingCredits ?? 0) +
-                                ballot.user.pendingCredits +
-                                ballot.user.talliedCredits
+                                (community?.userVotingCredits ?? 0) +
+                                motion.userStrength
                               }
                               ariaLabel="Cost in credits"
                               onChange={() => undefined}

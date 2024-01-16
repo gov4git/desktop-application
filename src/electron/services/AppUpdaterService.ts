@@ -2,7 +2,6 @@ import { autoUpdater } from 'electron-updater'
 
 import { AbstractAppUpdaterService, AppUpdateInfo } from '~/shared'
 
-import { BallotService } from './BallotService.js'
 import { LogService } from './LogService.js'
 import { Services } from './Services.js'
 
@@ -10,14 +9,12 @@ export class AppUpdaterService extends AbstractAppUpdaterService {
   protected declare updating: null | Promise<AppUpdateInfo>
   protected declare services: Services
   protected declare log: LogService
-  protected declare ballotService: BallotService
 
   constructor(services: Services) {
     super()
     this.updating = null
     this.services = services
     this.log = this.services.load<LogService>('log')
-    this.ballotService = this.services.load<BallotService>('ballots')
     this.init()
   }
 

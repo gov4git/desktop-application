@@ -51,10 +51,16 @@ export class Gov4GitService {
     command: string[],
     configPath?: string,
   ): Promise<T> => {
-    if (configPath != null) {
-      this.checkConfigPath(configPath)
-    } else {
-      configPath = await this.getConfigPath()
+    try {
+      if (configPath != null) {
+        this.checkConfigPath(configPath)
+      } else {
+        configPath = await this.getConfigPath()
+      }
+    } catch (ex) {
+      throw new Error(
+        `Failed to run Gov4Git command ${command.join(' ')}. ${ex}`,
+      )
     }
 
     command.push('--config', configPath)

@@ -1,23 +1,14 @@
-import { Badge, Text } from '@fluentui/react-components'
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Badge, Card, Text } from '@fluentui/react-components'
 
 import { routes } from '../App/Router.js'
-import { Login } from '../components/index.js'
-import { eventBus } from '../lib/index.js'
-import { useBadgeStyles } from '../styles/index.js'
+import { Login2 } from '../components/index.js'
+import { useBadgeStyles, useCardStyles } from '../styles/index.js'
 import { useLoginStyles } from './Login.styles.js'
 
 export const LoginPage = function LoginPage() {
   const loginStyles = useLoginStyles()
   const badgeStyles = useBadgeStyles()
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    return eventBus.subscribe('new-user', () => {
-      navigate(routes.communityJoin.path)
-    })
-  }, [navigate])
+  const cardStyles = useCardStyles()
 
   return (
     <>
@@ -31,7 +22,9 @@ export const LoginPage = function LoginPage() {
         </Badge>
         <h1 className={loginStyles.pageHeading}>Login</h1>
       </div>
-      <Login />
+      <Card className={cardStyles.primary}>
+        <Login2 redirectOnLogin={routes.communityJoin.path} />
+      </Card>
     </>
   )
 }

@@ -4,8 +4,9 @@ import { FC, FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { routes } from '../App/index.js'
+import { useRefreshCache } from '../hooks/cache.js'
+import { useFetchCommunities } from '../hooks/communities.js'
 import { useCatchError } from '../hooks/useCatchError.js'
-import { eventBus } from '../lib/index.js'
 import { communityService } from '../services/CommunityService.js'
 import { communityAtom } from '../state/community.js'
 import { useButtonStyles, useMessageStyles } from '../styles/index.js'
@@ -23,12 +24,14 @@ export const CommunityJoin: FC = function Login() {
   const [projectUrl, setProjectUrl] = useState(community?.projectUrl ?? '')
   const [statusMessage, setStatusMessage] = useState('')
   const navigate = useNavigate()
+  const getCommunities = useFetchCommunities()
+  const refreshCache = useRefreshCache()
 
   useEffect(() => {
     let message = ''
+    setLoading(false)
     if (community?.isMember) {
       navigate(routes.issues.path)
-      // message = `Your request has been approved. You are a member of ${community.name}.`
     } else if (community?.joinRequestStatus === 'closed') {
       message = `Your request is closed. `
     } else if (community?.joinRequestStatus === 'open') {
@@ -41,7 +44,7 @@ export const CommunityJoin: FC = function Login() {
       message = ''
     }
     setStatusMessage(message)
-  }, [community, setStatusMessage, navigate, projectUrl])
+  }, [community, setStatusMessage, navigate, projectUrl, setLoading])
 
   const dismissError = useCallback(() => {
     setCommunityErrors([])
@@ -66,15 +69,22 @@ export const CommunityJoin: FC = function Login() {
           setCommunityErrors(communityErrors)
           setLoading(false)
         } else {
-          setLoading(false)
-          eventBus.emit('community-saved')
+          await refreshCache()
+          await getCommunities()
         }
       } catch (ex) {
         setLoading(false)
         await catchError(`Failed to save config. ${ex}`)
       }
     },
-    [setCommunityErrors, catchError, setLoading, projectUrl],
+    [
+      setCommunityErrors,
+      catchError,
+      setLoading,
+      projectUrl,
+      getCommunities,
+      refreshCache,
+    ],
   )
 
   return (

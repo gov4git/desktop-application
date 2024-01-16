@@ -1,26 +1,22 @@
-import { BallotService } from './BallotService.js'
+import { AbstractCacheService } from '../../shared/index.js'
+import { MotionService } from './MotionService.js'
 import { Services } from './Services.js'
-import { UserService } from './UserService.js'
 
 export type CacheServiceOptions = {
   services: Services
 }
 
-export class CacheService {
+export class CacheService extends AbstractCacheService {
   private declare readonly services: Services
-  private declare readonly userService: UserService
-  private declare readonly ballotService: BallotService
+  private declare readonly motionService: MotionService
 
   constructor({ services }: CacheServiceOptions) {
+    super()
     this.services = services
-    this.ballotService = this.services.load<BallotService>('ballots')
-    this.userService = this.services.load<UserService>('user')
+    this.motionService = this.services.load<MotionService>('motion')
   }
 
   public refreshCache = async () => {
-    await Promise.all([
-      this.userService.loadUser(),
-      this.ballotService.loadBallots(),
-    ])
+    await Promise.all([this.motionService.loadMotions()])
   }
 }

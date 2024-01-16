@@ -2,34 +2,48 @@ import { Card } from '@fluentui/react-card'
 import { useAtomValue } from 'jotai'
 import { type FC, useEffect, useMemo, useState } from 'react'
 
-import { useFetchPullRequests } from '../hooks/ballots.js'
-import {
-  pullRequestsAtom,
-  pullRequestsearchOptionsAtom,
-  pullRequestsSearchAtom,
-  pullRequestsSearchResultsAtom,
-  pullRequestsStatusAtom,
-  pullRequestsVotedOnAtom,
-} from '../state/ballots.js'
+import { useFetchPullRequests } from '../hooks/motions.js'
+import { eventBus } from '../lib/index.js'
 import { communityAtom } from '../state/community.js'
+import {
+  proposalsAtom,
+  proposalsSearchAtom,
+  proposalsSearchOptionsAtom,
+  proposalsSearchResultsAtom,
+  proposalsStatusAtom,
+  proposalsVotedOnAtom,
+} from '../state/motions.js'
 import { useHeadingsStyles } from '../styles/headings.js'
 import { BallotControls } from './BallotControls.js'
 import { IssueBallot } from './IssueBallot.js'
+import { Loader } from './Loader.js'
 
 export const PullRequests: FC = function PullRequests() {
-  const ballots = useAtomValue(pullRequestsAtom)
+  const ballots = useAtomValue(proposalsAtom)
   const headingStyles = useHeadingsStyles()
   const community = useAtomValue(communityAtom)
-  const fetchPullRequestsOptions = useAtomValue(pullRequestsearchOptionsAtom)
-  const [globalSearchAtom] = useState(pullRequestsSearchAtom)
-  const [globalStatusAtom] = useState(pullRequestsStatusAtom)
-  const [globalVotedOnAtom] = useState(pullRequestsVotedOnAtom)
-  const [globalSearchResultsAtom] = useState(pullRequestsSearchResultsAtom)
+  const fetchPullRequestsOptions = useAtomValue(proposalsSearchOptionsAtom)
+  const [globalSearchAtom] = useState(proposalsSearchAtom)
+  const [globalStatusAtom] = useState(proposalsStatusAtom)
+  const [globalVotedOnAtom] = useState(proposalsVotedOnAtom)
+  const [globalSearchResultsAtom] = useState(proposalsSearchResultsAtom)
   const fetchPullRequests = useFetchPullRequests()
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetchPullRequests()
+    async function run() {
+      setLoading(true)
+      await fetchPullRequests()
+      setLoading(false)
+    }
+    void run()
   }, [fetchPullRequestsOptions, fetchPullRequests])
+
+  useEffect(() => {
+    return eventBus.subscribe('cache-refreshed', () => {
+      fetchPullRequests()
+    })
+  }, [fetchPullRequests])
 
   const pullRequestsLink = useMemo(() => {
     if (community == null) return null
@@ -53,15 +67,19 @@ export const PullRequests: FC = function PullRequests() {
         )}
       </BallotControls>
 
-      {(ballots == null || ballots.length === 0) && (
-        <Card>
-          <p>No matching ballots for pull requests to display at this time.</p>
-        </Card>
-      )}
-      {ballots != null &&
-        ballots.map((ballot) => {
-          return <IssueBallot key={ballot.identifier} ballot={ballot} />
-        })}
+      <Loader isLoading={loading}>
+        {(ballots == null || ballots.length === 0) && (
+          <Card>
+            <p>
+              No matching ballots for pull requests to display at this time.
+            </p>
+          </Card>
+        )}
+        {ballots != null &&
+          ballots.map((motion) => {
+            return <IssueBallot key={motion.motionId} motion={motion} />
+          })}
+      </Loader>
     </>
   )
 }

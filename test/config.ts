@@ -11,6 +11,7 @@ const baseUrl = 'https://github.com'
 const identityName = 'test-gov4git-identity'
 const projectRepo = `${baseUrl}/${user.username}/test-gov4git-project-repo`
 const communityUrl = `${projectRepo}-gov.public.git`
+const privateCommunityUrl = `${projectRepo}-gov.private.git`
 const publicRepo = `${baseUrl}/${user.username}/${identityName}-public.git`
 const privateRepo = `${baseUrl}/${user.username}/${identityName}-private.git`
 
@@ -22,6 +23,7 @@ export const config = {
   identityName,
   projectRepo,
   communityUrl,
+  privateCommunityUrl,
   publicRepo,
   privateRepo,
   configDir,

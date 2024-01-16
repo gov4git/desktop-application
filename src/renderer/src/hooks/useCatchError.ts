@@ -19,8 +19,8 @@ export function useCatchError() {
         const configErrors = await validationService.validateConfig()
         if (configErrors.length > 0) {
           setConfigErrors(configErrors)
-          navigate(routes.settings.path)
           eventBus.emit('error')
+          navigate(routes.settings.path)
         } else {
           setErrorMessage(error)
           eventBus.emit('error')

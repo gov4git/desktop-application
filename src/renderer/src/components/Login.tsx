@@ -1,9 +1,11 @@
 import { Button, Card, Field, Input } from '@fluentui/react-components'
 import { useAtomValue } from 'jotai'
 import { FC, FormEvent, useCallback, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
+import { routes } from '../App/Router.js'
 import { useCatchError } from '../hooks/useCatchError.js'
-import { eventBus } from '../lib/index.js'
+import { useFetchUser } from '../hooks/users.js'
 import { userService } from '../services/UserService.js'
 import { userAtom } from '../state/user.js'
 import { useButtonStyles, useMessageStyles } from '../styles/index.js'
@@ -20,6 +22,8 @@ export const Login: FC = function Login() {
   const messageStyles = useMessageStyles()
   const [username, setUsername] = useState(user?.username ?? '')
   const [pat, setPat] = useState(user?.pat ?? '')
+  const getUser = useFetchUser()
+  const navigate = useNavigate()
 
   const dismissError = useCallback(() => {
     setLoginErrors([])
@@ -44,15 +48,16 @@ export const Login: FC = function Login() {
           setLoginErrors(userErrors)
           setLoading(false)
         } else {
+          await getUser()
           setLoading(false)
-          eventBus.emit('user-logged-in')
+          navigate(routes.communityJoin.path)
         }
       } catch (ex) {
         setLoading(false)
         await catchError(`Failed to save config. ${ex}`)
       }
     },
-    [username, pat, setLoginErrors, catchError, setLoading],
+    [username, pat, setLoginErrors, catchError, setLoading, getUser, navigate],
   )
 
   return (

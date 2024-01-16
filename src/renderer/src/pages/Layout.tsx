@@ -11,22 +11,23 @@ import {
   SiteNav,
   UpdateNotification,
 } from '../components/index.js'
-import { eventBus } from '../lib/index.js'
 import { errorAtom } from '../state/error.js'
+import { loaderAtom } from '../state/loader.js'
 import { useLayoutStyles } from './Layout.styles.js'
 
 export const Layout = function Layout() {
   const classes = useLayoutStyles()
   const errorMessage = useAtomValue(errorAtom)
   const mainRef = useRef<HTMLElement>(null)
+  const isLoading = useAtomValue(loaderAtom)
 
   useEffect(() => {
-    return eventBus.subscribe('error', () => {
+    if (errorMessage !== '') {
       if (mainRef.current != null) {
         mainRef.current.scrollTo(0, 0)
       }
-    })
-  }, [mainRef])
+    }
+  }, [errorMessage])
 
   return (
     <div id="layout" className={classes.layout}>
@@ -42,7 +43,7 @@ export const Layout = function Layout() {
               <ErrorScreen message={errorMessage} showClose={true} />
             </>
           )}
-          <Loader>
+          <Loader isLoading={isLoading}>
             <RefreshButton />
             <Outlet />
           </Loader>

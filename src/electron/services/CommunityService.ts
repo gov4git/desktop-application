@@ -4,10 +4,12 @@ import { resolve } from 'path'
 import { AbstractCommunityService } from '~/shared'
 
 import { DB } from '../db/db.js'
-import { communities, Community, userCommunities } from '../db/schema.js'
+import { communities, Community, User } from '../db/schema.js'
 import { hashString, toResolvedPath } from '../lib/paths.js'
 import { GitService } from './GitService.js'
+import { Gov4GitService } from './Gov4GitService.js'
 import { Services } from './Services.js'
+import { SettingsService } from './SettingsService.js'
 import { UserService } from './UserService.js'
 
 export type CommunityServiceOptions = {
@@ -21,6 +23,8 @@ export class CommunityService extends AbstractCommunityService {
   private declare readonly db: DB
   private declare readonly gitService: GitService
   private declare readonly userService: UserService
+  private declare readonly settingsService: SettingsService
+  private declare readonly govService: Gov4GitService
 
   constructor({ services, configDir = '~/.gov4git' }: CommunityServiceOptions) {
     super()
@@ -29,6 +33,8 @@ export class CommunityService extends AbstractCommunityService {
     this.db = this.services.load<DB>('db')
     this.gitService = this.services.load<GitService>('git')
     this.userService = this.services.load<UserService>('user')
+    this.settingsService = this.services.load<SettingsService>('settings')
+    this.govService = this.services.load<Gov4GitService>('gov4git')
   }
 
   public validateCommunityUrl = async (
@@ -49,14 +55,34 @@ export class CommunityService extends AbstractCommunityService {
   }
 
   public getCommunity = async (): Promise<Community | null> => {
-    return (
-      (
-        await this.db
-          .select()
-          .from(communities)
-          .where(eq(communities.selected, true))
-      )[0] ?? null
-    )
+    const user = await this.userService.getUser()
+    if (user == null) return null
+    const community = (
+      await this.db
+        .select()
+        .from(communities)
+        .where(eq(communities.selected, true))
+        .limit(1)
+    )[0]
+    if (community == null) return null
+    return await this.syncCommunity(user, community)
+  }
+
+  public getCommunities = async () => {
+    const user = await this.userService.getUser()
+    if (user == null) return []
+    const allCommunities = await this.db.select().from(communities)
+    const syncCommunities = allCommunities.map((c) => {
+      return this.syncCommunity(user, c)
+    })
+    return await Promise.all(syncCommunities)
+  }
+
+  public setUserVotingCredits = async (votingCredits: number) => {
+    await this.db
+      .update(communities)
+      .set({ userVotingCredits: votingCredits })
+      .where(eq(communities.selected, true))
   }
 
   public selectCommunity = async (url: string) => {
@@ -75,24 +101,13 @@ export class CommunityService extends AbstractCommunityService {
       .where(eq(communities.url, url))
   }
 
-  private requestToJoin = async (community: Community): Promise<void> => {
-    const user = await this.userService.loadUser()
-
-    if (user == null) {
-      return
-    }
-
-    const currentCommunity = user.communities.find(
-      (c) => c.url === community.url,
-    )
-
-    if (currentCommunity == null) {
-      return
-    }
-
+  private requestToJoin = async (
+    user: User,
+    community: Community,
+  ): Promise<void> => {
     if (
-      currentCommunity.joinRequestUrl != null &&
-      currentCommunity.joinRequestStatus != null
+      community.isMember ||
+      (community.joinRequestUrl != null && community.joinRequestStatus != null)
     ) {
       return
     }
@@ -116,15 +131,76 @@ ${user.memberPublicBranch}`
     })
 
     await this.db
-      .update(userCommunities)
+      .update(communities)
       .set({
         joinRequestUrl: url,
         joinRequestStatus: 'open',
       })
-      .where(eq(userCommunities.id, currentCommunity.id))
+      .where(eq(communities.url, community.url))
+  }
+
+  private isCommunityMember = async (
+    user: User,
+    community: Community,
+  ): Promise<boolean> => {
+    const command = ['group', 'list', '--name', 'everybody']
+    const users = await this.govService.mustRun<string[]>(
+      command,
+      community.configPath,
+    )
+    return users.includes(user.username)
+  }
+
+  private getMembershipStatus = async (
+    user: User,
+    community: Community,
+  ): Promise<{ status: 'open' | 'closed'; url: string } | null> => {
+    const userJoinRequest = (
+      await this.gitService.searchUserIssues({
+        url: community.projectUrl,
+        user,
+        title: "I'd like to join this project's community",
+      })
+    )[0]
+
+    if (userJoinRequest == null) {
+      return null
+    } else {
+      return {
+        status: userJoinRequest.state,
+        url: userJoinRequest.html_url,
+      }
+    }
+  }
+
+  private syncCommunity = async (
+    user: User,
+    community: Community,
+  ): Promise<Community> => {
+    const [isCommunityMember, membershipStatus] = await Promise.all([
+      this.isCommunityMember(user, community),
+      this.getMembershipStatus(user, community),
+    ])
+
+    const syncedCommunity = (
+      await this.db
+        .update(communities)
+        .set({
+          isMember: isCommunityMember,
+          joinRequestStatus: membershipStatus?.status ?? null,
+          joinRequestUrl: membershipStatus?.url ?? null,
+        })
+        .where(eq(communities.url, community.url))
+        .returning()
+    )[0]!
+
+    return syncedCommunity
   }
 
   public insertCommunity = async (projectUrl: string): Promise<string[]> => {
+    const user = await this.userService.getUser()
+    if (user == null)
+      return ['Unauthorized. Please log in to join a new community']
     if (projectUrl === '') {
       return [`Community URL is a required field.`]
     }
@@ -135,6 +211,10 @@ ${user.memberPublicBranch}`
       /-gov\.public$/i,
       '',
     )}-gov.public.git`
+    const privateCommunityUrl = `${projectRepoUrl.replace(
+      /-gov\.public$/i,
+      '',
+    )}-gov.private.git`
 
     const [communityMainBranch, errors] =
       await this.validateCommunityUrl(communityUrl)
@@ -149,6 +229,7 @@ ${user.memberPublicBranch}`
 
     const community = {
       url: communityUrl,
+      privateUrl: privateCommunityUrl,
       branch: communityMainBranch!,
       name: communityName,
       projectUrl: projectRepoUrl,
@@ -160,15 +241,25 @@ ${user.memberPublicBranch}`
         count: sql<number>`count(*)`,
       })
       .from(communities)
-    await this.db.insert(communities).values(community).onConflictDoUpdate({
-      target: communities.url,
-      set: community,
-    })
+    const currentCommunity = (
+      await this.db
+        .insert(communities)
+        .values(community)
+        .onConflictDoUpdate({
+          target: communities.url,
+          set: community,
+        })
+        .returning()
+    )[0]!
     if (communityCount.length === 0 || communityCount[0]?.count === 0) {
       await this.selectCommunity(community.url)
     }
 
-    await this.requestToJoin(community)
+    await this.settingsService.generateConfig(user, currentCommunity)
+
+    const syncedCommunity = await this.syncCommunity(user, currentCommunity)
+
+    await this.requestToJoin(user, syncedCommunity)
 
     return []
   }
