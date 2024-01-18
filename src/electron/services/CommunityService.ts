@@ -258,11 +258,6 @@ ${user.memberPublicBranch}`
       configPath,
       selected: false,
     }
-    const communityCount = await this.db
-      .select({
-        count: sql<number>`count(*)`,
-      })
-      .from(communities)
     const currentCommunity = (
       await this.db
         .insert(communities)
@@ -273,7 +268,12 @@ ${user.memberPublicBranch}`
         })
         .returning()
     )[0]!
-    if (communityCount.length === 0 || communityCount[0]?.count === 0) {
+    const communityCount = await this.db
+      .select({
+        count: sql<number>`count(*)`,
+      })
+      .from(communities)
+    if (communityCount.length === 0 || communityCount[0]?.count === 1) {
       await this.selectCommunity(community.url)
     }
 

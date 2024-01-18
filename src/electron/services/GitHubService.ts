@@ -7,7 +7,6 @@ import {
 import { request } from '@octokit/request'
 
 import { retryAsync } from '../../shared/index.js'
-import { LogService } from './LogService.js'
 import { Services } from './Services.js'
 
 export type GitHubServiceOptions = {
@@ -67,14 +66,12 @@ export type IssueSearchResult2 = {
 
 export class GitHubService {
   protected declare readonly services: Services
-  protected declare readonly log: LogService
   protected declare readonly authenticate: OAuthAppAuthInterface
   protected declare authVerification: Verification | null
   protected declare oauthTokenInfo: Promise<OAuthAppAuthentication> | null
 
   constructor({ services, clientId }: GitHubServiceOptions) {
     this.services = services
-    this.log = this.services.load<LogService>('log')
     this.authenticate = createOAuthDeviceAuth({
       clientType: 'oauth-app',
       clientId,
@@ -165,17 +162,8 @@ export class GitHubService {
     expectedStatus: number,
     ...args: Parameters<typeof request>
   ): ReturnType<typeof request> => {
-    let response
-    try {
-      response = await req(...args)
-    } catch (ex) {
-      this.log.error(`Network error. Failed to communicate with GitHub`)
-      this.log.error(`Error: ${JSON.stringify(ex, undefined, 2)}`)
-      throw ex
-    }
+    const response = await req(...args)
     if (response.status !== expectedStatus) {
-      this.log.error(`Unexpected status from GitHub.`)
-      this.log.error(`Error: ${JSON.stringify(response, undefined, 2)}`)
       throw response
     }
     return response
@@ -203,10 +191,12 @@ export class GitHubService {
       return response.data.default_branch as string
     } catch (ex: any) {
       if (ex.status === 404) {
-        throw new Error(`404. ${args.repoName} not found.`)
+        throw new Error(
+          `${args.repoName} does not exist on GitHub. Please verify that the repo exists and is public.`,
+        )
       } else if (ex.status === 403) {
         throw new Error(
-          `403. Forbidden. Insufficient privileges to access ${args.repoName}`,
+          `Unauthorized. Insufficient privileges to access ${args.repoName}.`,
         )
       } else {
         throw new Error(
@@ -306,14 +296,20 @@ export class GitHubService {
     repoOwner,
     token,
   }: DeleteRepoArgs) => {
-    await this.run(
-      this.reqWithAuth(token),
-      204,
-      'DELETE /repos/{owner}/{repo}',
-      {
-        owner: repoOwner,
-        repo: repoName,
-      },
-    )
+    try {
+      await this.run(
+        this.reqWithAuth(token),
+        204,
+        'DELETE /repos/{owner}/{repo}',
+        {
+          owner: repoOwner,
+          repo: repoName,
+        },
+      )
+    } catch (ex: any) {
+      if (ex.status !== 404) {
+        throw ex
+      }
+    }
   }
 }

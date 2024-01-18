@@ -5,6 +5,7 @@ import { AbstractValidationService } from '~/shared'
 import { DB } from '../db/db.js'
 import { communities, users } from '../db/schema.js'
 import { CommunityService } from './CommunityService.js'
+import { GitHubService } from './GitHubService.js'
 import { Services } from './Services.js'
 import { SettingsService } from './SettingsService.js'
 import { UserService } from './UserService.js'
@@ -18,7 +19,8 @@ export class ValidationService extends AbstractValidationService {
   private declare readonly communityService: CommunityService
   private declare readonly userService: UserService
   private declare readonly settingsService: SettingsService
-  private declare db: DB
+  private declare readonly db: DB
+  private declare readonly gitHubService: GitHubService
 
   constructor({ services }: ValidationServiceOptions) {
     super()
@@ -27,10 +29,11 @@ export class ValidationService extends AbstractValidationService {
     this.userService = this.services.load<UserService>('user')
     this.settingsService = this.services.load<SettingsService>('settings')
     this.db = this.services.load<DB>('db')
+    this.gitHubService = this.services.load<GitHubService>('github')
   }
 
   public validateConfig = async (): Promise<string[]> => {
-    const [userRows, communityRows] = await Promise.all([
+    const [allUsers, allCommunities] = await Promise.all([
       this.db.select().from(users).limit(1),
       this.db
         .select()
@@ -39,18 +42,22 @@ export class ValidationService extends AbstractValidationService {
         .limit(1),
     ])
 
-    const [user, community] = [userRows[0], communityRows[0]]
+    const [user, community] = [allUsers[0], allCommunities[0]]
 
     if (user == null || community == null) {
       return []
     }
 
-    return []
+    const initializeUserErrors = await this.userService.initializeIdRepos()
+    if (initializeUserErrors.length > 0) {
+      return initializeUserErrors
+    }
+    const initializeCommunityErrors =
+      await this.communityService.insertCommunity(community.url)
+    if (initializeCommunityErrors.length > 0) {
+      return initializeCommunityErrors
+    }
 
-    // const config = await this.settingsService.generateConfig(user, community)
-    // if (config == null) return []
-    // const [, communityErrors] =
-    //   await this.communityService.validateCommunityUrl(config.gov_public_url)
-    // return communityErrors ?? []
+    return []
   }
 }
