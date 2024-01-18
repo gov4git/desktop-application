@@ -5,7 +5,8 @@ import { dirname } from 'path'
 
 import { DB } from '../db/db.js'
 import { communities, Community, User, users } from '../db/schema.js'
-import { GitService } from './GitService.js'
+import { urlToRepoSegments } from '../lib/github.js'
+import { GitHubService } from './GitHubService.js'
 import { Gov4GitService } from './Gov4GitService.js'
 import { Services } from './Services.js'
 
@@ -15,15 +16,15 @@ export type SettingsServiceOptions = {
 
 export class SettingsService {
   private declare readonly services: Services
-  private declare readonly gitService: GitService
   private declare readonly govService: Gov4GitService
   private declare readonly db: DB
+  private declare readonly gitHubService: GitHubService
 
   constructor({ services }: SettingsServiceOptions) {
     this.services = services
     this.db = this.services.load<DB>('db')
-    this.gitService = this.services.load<GitService>('git')
     this.govService = this.services.load<Gov4GitService>('gov4git')
+    this.gitHubService = this.services.load<GitHubService>('github')
   }
 
   private runGov4GitInit = async (config: {
@@ -35,14 +36,19 @@ export class SettingsService {
     }
   }) => {
     const user = config.user
-    const isPublicEmpty = !(await this.gitService.hasCommits(
-      config.member_public_url!,
-      user,
-    ))
-    const isPrivateEmpty = !(await this.gitService.hasCommits(
-      config.member_private_url!,
-      user,
-    ))
+    const publicRepoSegments = urlToRepoSegments(config.member_public_url)
+    const isPublicEmpty = !(await this.gitHubService.hasCommits({
+      repoName: publicRepoSegments.repo,
+      username: publicRepoSegments.owner,
+      token: user.pat,
+    }))
+
+    const privateRepoSegments = urlToRepoSegments(config.member_private_url)
+    const isPrivateEmpty = !(await this.gitHubService.hasCommits({
+      repoName: privateRepoSegments.repo,
+      username: privateRepoSegments.owner,
+      token: user.pat,
+    }))
 
     if (isPublicEmpty || isPrivateEmpty) {
       this.govService.mustRun(['init-id'])

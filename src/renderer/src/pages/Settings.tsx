@@ -2,7 +2,7 @@ import { Card } from '@fluentui/react-components'
 import { useAtom, useAtomValue } from 'jotai'
 import { useCallback } from 'react'
 
-import { CommunitySettings, Login, Login2 } from '../components/index.js'
+import { CommunitySettings, Login } from '../components/index.js'
 import { Message } from '../components/Message.js'
 import { settingsErrorAtom } from '../state/settings.js'
 import { userAtom } from '../state/user.js'
@@ -32,7 +32,7 @@ export const SettingsPage = function SettingsPage() {
       )}
       <h2 className={styles.header}>User Settings</h2>
       <Card className={cardStyles.primary}>
-        <Login2 />
+        <Login />
       </Card>
       <br />
       {user != null && (

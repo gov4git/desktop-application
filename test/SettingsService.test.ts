@@ -4,10 +4,12 @@ import { existsSync } from 'fs'
 
 import { DB } from '../src/electron/db/db.js'
 import { communities } from '../src/electron/db/schema.js'
+import { urlToRepoSegments } from '../src/electron/lib/github.js'
 import {
-  GitService,
+  GitHubService,
   Services,
   SettingsService,
+  UserService,
   ValidationService,
 } from '../src/electron/services/index.js'
 import { config } from './config.js'
@@ -15,7 +17,8 @@ import { config } from './config.js'
 export default function run(services: Services) {
   let settingsService: SettingsService
   let validationService: ValidationService
-  let gitService: GitService
+  let gitHubService: GitHubService
+  let userService: UserService
   let db: DB
 
   describe('Settings Tests', () => {
@@ -23,7 +26,8 @@ export default function run(services: Services) {
       settingsService = services.load<SettingsService>('settings')
       validationService = services.load<ValidationService>('validation')
       db = services.load<DB>('db')
-      gitService = services.load<GitService>('git')
+      gitHubService = services.load<GitHubService>('github')
+      userService = services.load<UserService>('user')
     })
 
     describe('Generate Config', () => {
@@ -41,28 +45,28 @@ export default function run(services: Services) {
         if (selectedCommunity == null) {
           throw new Error(`No selected community`)
         }
+        const user = await userService.getUser()
+        if (user == null) {
+          throw new Error(`No user`)
+        }
 
         const shouldExist1 = existsSync(selectedCommunity.configPath)
-        const shouldExist2 = await gitService.doesRemoteRepoExist(
-          config.publicRepo,
-          config.user,
-        )
-        const shouldExist3 = await gitService.doesRemoteRepoExist(
-          config.privateRepo,
-          config.user,
-        )
-        const shouldHaveCommits1 = await gitService.hasCommits(
-          config.publicRepo,
-          config.user,
-        )
-        const shouldHaveCommits2 = await gitService.hasCommits(
-          config.privateRepo,
-          config.user,
-        )
+
+        const publicRepoSegments = urlToRepoSegments(config.publicRepo)
+        const shouldHaveCommits1 = await gitHubService.hasCommits({
+          repoName: publicRepoSegments.repo,
+          username: publicRepoSegments.owner,
+          token: user.pat,
+        })
+
+        const privateRepoSegments = urlToRepoSegments(config.privateRepo)
+        const shouldHaveCommits2 = await gitHubService.hasCommits({
+          repoName: privateRepoSegments.repo,
+          username: privateRepoSegments.owner,
+          token: user.pat,
+        })
 
         expect(shouldExist1).toEqual(true)
-        expect(shouldExist2).toEqual(true)
-        expect(shouldExist3).toEqual(true)
         expect(shouldHaveCommits1).toEqual(true)
         expect(shouldHaveCommits2).toEqual(true)
       })
