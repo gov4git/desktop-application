@@ -11,3 +11,5 @@ export const DB_PATH = toResolvedPath(
 
 export const COMMUNITY_REPO_NAME =
   process.env['GOV4GIT_COMMUNITY_REPO_NAME'] ?? 'gov4git-identity'
+
+export const GITHUB_OAUTH_CLIENT_ID = '912c0ab18e0f0b4a1abe'

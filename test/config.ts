@@ -17,6 +17,7 @@ const privateRepo = `${baseUrl}/${user.username}/${identityName}-private.git`
 
 const configDir = resolve(__dirname, 'config')
 const dbPath = resolve(configDir, 'gov4git.db')
+const clientId = '912c0ab18e0f0b4a1abe'
 export const config = {
   user,
   baseUrl,
@@ -28,4 +29,5 @@ export const config = {
   privateRepo,
   configDir,
   dbPath,
+  clientId,
 }

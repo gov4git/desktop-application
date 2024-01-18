@@ -45,17 +45,12 @@ export class ValidationService extends AbstractValidationService {
       return []
     }
 
-    const config = await this.settingsService.generateConfig(user, community)
-    if (config == null) return []
-    const userErrors = await this.userService.validateUser(
-      config.user.username,
-      config.user.pat,
-    )
-    if (userErrors.length > 0) {
-      return userErrors
-    }
-    const [, communityErrors] =
-      await this.communityService.validateCommunityUrl(config.gov_public_url)
-    return communityErrors ?? []
+    return []
+
+    // const config = await this.settingsService.generateConfig(user, community)
+    // if (config == null) return []
+    // const [, communityErrors] =
+    //   await this.communityService.validateCommunityUrl(config.gov_public_url)
+    // return communityErrors ?? []
   }
 }

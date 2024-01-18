@@ -10,7 +10,12 @@ import {
 
 import type { InvokeServiceProps } from '~/shared'
 
-import { COMMUNITY_REPO_NAME, CONFIG_PATH, DB_PATH } from './configs.js'
+import {
+  COMMUNITY_REPO_NAME,
+  CONFIG_PATH,
+  DB_PATH,
+  GITHUB_OAUTH_CLIENT_ID,
+} from './configs.js'
 import { DB, loadDb } from './db/db.js'
 import { migrateDb } from './db/migrate.js'
 import { CacheService } from './services/CacheService.js'
@@ -18,7 +23,7 @@ import { CommunityService } from './services/CommunityService.js'
 import { Gov4GitService } from './services/Gov4GitService.js'
 import {
   AppUpdaterService,
-  GitService,
+  GitHubService,
   LogService,
   MotionService,
   Services,
@@ -50,8 +55,11 @@ async function setup(): Promise<void> {
     logService.error(ex)
   }
 
-  const gitService = new GitService()
-  services.register('git', gitService)
+  const gitHubService = new GitHubService({
+    services,
+    clientId: GITHUB_OAUTH_CLIENT_ID,
+  })
+  services.register('github', gitHubService)
 
   const gov4GitService = new Gov4GitService(services)
   services.register('gov4git', gov4GitService)

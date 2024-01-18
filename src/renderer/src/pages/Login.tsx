@@ -1,7 +1,7 @@
 import { Badge, Card, Text } from '@fluentui/react-components'
 
 import { routes } from '../App/Router.js'
-import { Login2 } from '../components/index.js'
+import { Login } from '../components/index.js'
 import { useBadgeStyles, useCardStyles } from '../styles/index.js'
 import { useLoginStyles } from './Login.styles.js'
 
@@ -23,7 +23,7 @@ export const LoginPage = function LoginPage() {
         <h1 className={loginStyles.pageHeading}>Login</h1>
       </div>
       <Card className={cardStyles.primary}>
-        <Login2 redirectOnLogin={routes.communityJoin.path} />
+        <Login redirectOnLogin={routes.communityJoin.path} />
       </Card>
     </>
   )

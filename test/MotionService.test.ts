@@ -1,9 +1,10 @@
 import { beforeAll, describe, expect, test } from '@jest/globals'
 
 import { Community, User } from '../src/electron/db/schema.js'
+import { urlToRepoSegments } from '../src/electron/lib/github.js'
 import {
   CommunityService,
-  GitService,
+  GitHubService,
   Gov4GitService,
   MotionService,
   Services,
@@ -16,7 +17,7 @@ export default function run(services: Services) {
   let userService: UserService
   let communityService: CommunityService
   let govService: Gov4GitService
-  let gitService: GitService
+  let gitHubService: GitHubService
   let user: User | null
   let community: Community | null
 
@@ -26,14 +27,20 @@ export default function run(services: Services) {
       userService = services.load<UserService>('user')
       communityService = services.load<CommunityService>('community')
       govService = services.load<Gov4GitService>('gov4git')
-      gitService = services.load<GitService>('git')
+      gitHubService = services.load<GitHubService>('github')
 
       user = await userService.getUser()
       if (user == null) {
         throw new Error('No User to use')
       }
 
-      const hasCommits = await gitService.hasCommits(config.communityUrl, user)
+      const communitySegments = urlToRepoSegments(config.communityUrl)
+      const hasCommits = await gitHubService.hasCommits({
+        repoName: communitySegments.repo,
+        username: communitySegments.owner,
+        token: user.pat,
+      })
+
       if (!hasCommits) {
         await govService.mustRun(['init-gov'])
       }

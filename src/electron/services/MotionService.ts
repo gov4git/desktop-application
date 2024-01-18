@@ -317,8 +317,6 @@ export class MotionService extends AbstractMotionService {
 
     query = query.where(where)
 
-    console.log(query.toSQL())
-
     const results = await query
 
     motionsCounts = (

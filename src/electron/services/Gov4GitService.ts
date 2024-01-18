@@ -2,6 +2,7 @@ import { runGov4Git } from '@gov4git/js-client'
 import { eq } from 'drizzle-orm'
 import { existsSync } from 'fs'
 
+import { retryAsync } from '../../shared/index.js'
 import { DB } from '../db/db.js'
 import { communities } from '../db/schema.js'
 import { parseStdout } from '../lib/stdout.js'
@@ -67,7 +68,7 @@ export class Gov4GitService {
 
     command.push('-v')
 
-    try {
+    const run = async () => {
       const { stdout, stderr } = await runGov4Git(...command)
       this.log.info('Running Gov4Git')
       this.log.info(`Command: ${command.join(' ')}`)
@@ -75,12 +76,15 @@ export class Gov4GitService {
       const output = parseStdout<T>(command, stdout)
       this.log.info('Gov4Git Response:', output)
       return output
+    }
+
+    try {
+      return await retryAsync(run, 2)()
     } catch (ex: any) {
-      if (!command.includes('track')) {
-        this.log.error('Exception running Gov4Git')
-        this.log.error(`Command: ${command.join(' ')}`)
-        this.log.error(ex.stderr)
-      }
+      this.log.error(`Exception running Gov4Git`)
+      this.log.error(`Command: ${command.join(' ')}`)
+      this.log.error(`stdout: ${ex.stdout}`)
+      this.log.error(`stderr: ${ex.stderr}`)
       throw ex
     }
   }

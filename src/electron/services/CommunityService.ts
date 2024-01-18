@@ -5,8 +5,9 @@ import { AbstractCommunityService } from '~/shared'
 
 import { DB } from '../db/db.js'
 import { communities, Community, User } from '../db/schema.js'
+import { RepoSegments, urlToRepoSegments } from '../lib/index.js'
 import { hashString, toResolvedPath } from '../lib/paths.js'
-import { GitService } from './GitService.js'
+import { GitHubService } from './GitHubService.js'
 import { Gov4GitService } from './Gov4GitService.js'
 import { Services } from './Services.js'
 import { SettingsService } from './SettingsService.js'
@@ -21,37 +22,20 @@ export class CommunityService extends AbstractCommunityService {
   private declare readonly services: Services
   private declare readonly configDir: string
   private declare readonly db: DB
-  private declare readonly gitService: GitService
   private declare readonly userService: UserService
   private declare readonly settingsService: SettingsService
   private declare readonly govService: Gov4GitService
+  private declare readonly gitHubService: GitHubService
 
   constructor({ services, configDir = '~/.gov4git' }: CommunityServiceOptions) {
     super()
     this.services = services
     this.configDir = toResolvedPath(configDir)
     this.db = this.services.load<DB>('db')
-    this.gitService = this.services.load<GitService>('git')
+    this.gitHubService = this.services.load<GitHubService>('github')
     this.userService = this.services.load<UserService>('user')
     this.settingsService = this.services.load<SettingsService>('settings')
     this.govService = this.services.load<Gov4GitService>('gov4git')
-  }
-
-  public validateCommunityUrl = async (
-    url: string,
-  ): Promise<[string | null, string[] | null]> => {
-    const errors: string[] = []
-    if (!(await this.gitService.doesRemoteRepoExist(url))) {
-      errors.push(
-        `Community url, ${url}, does not exist. Please enter a valid community URL.`,
-      )
-      return [null, errors]
-    }
-
-    const communityMainBranch =
-      (await this.gitService.getDefaultBranch(url)) ?? 'main'
-
-    return [communityMainBranch, null]
   }
 
   public getCommunity = async (): Promise<Community | null> => {
@@ -112,6 +96,8 @@ export class CommunityService extends AbstractCommunityService {
       return
     }
 
+    const repoSegments = urlToRepoSegments(community.projectUrl)
+
     const title = "I'd like to join this project's community"
     const body = `### Your public repo
 
@@ -122,9 +108,10 @@ ${user.memberPublicUrl}
 ${user.memberPublicBranch}`
     const labels = ['gov4git:join']
 
-    const url = await this.gitService.createIssue({
-      url: community.projectUrl,
-      user,
+    const url = await this.gitHubService.createIssue({
+      repoName: repoSegments.repo,
+      username: repoSegments.owner,
+      token: user.pat,
       title,
       body,
       labels,
@@ -155,10 +142,13 @@ ${user.memberPublicBranch}`
     user: User,
     community: Community,
   ): Promise<{ status: 'open' | 'closed'; url: string } | null> => {
+    const repoSegments = urlToRepoSegments(community.projectUrl)
     const userJoinRequest = (
-      await this.gitService.searchUserIssues({
-        url: community.projectUrl,
-        user,
+      await this.gitHubService.searchUserIssues({
+        repoOwner: repoSegments.owner,
+        repoName: repoSegments.repo,
+        username: user.username,
+        token: user.pat,
         title: "I'd like to join this project's community",
       })
     )[0]
@@ -197,6 +187,30 @@ ${user.memberPublicBranch}`
     return syncedCommunity
   }
 
+  private getDefaultBranchFromUrl = async (
+    user: User,
+    repoUrl: string,
+  ): Promise<[string | null, string | null]> => {
+    let repoSegments: RepoSegments
+    try {
+      repoSegments = urlToRepoSegments(repoUrl)
+    } catch (ex: any) {
+      return [null, ex.message as string]
+    }
+    try {
+      return [
+        await this.gitHubService.getDefaultBranch({
+          repoName: repoSegments.repo,
+          username: repoSegments.owner,
+          token: user.pat,
+        }),
+        null,
+      ]
+    } catch (ex: any) {
+      return [null, ex.message]
+    }
+  }
+
   public insertCommunity = async (projectUrl: string): Promise<string[]> => {
     const user = await this.userService.getUser()
     if (user == null)
@@ -216,10 +230,18 @@ ${user.memberPublicBranch}`
       '',
     )}-gov.private.git`
 
-    const [communityMainBranch, errors] =
-      await this.validateCommunityUrl(communityUrl)
-    if (errors != null && errors.length > 0) {
-      return errors
+    const [, projectRepoError] = await this.getDefaultBranchFromUrl(
+      user,
+      projectRepoUrl,
+    )
+    if (projectRepoError != null) {
+      return [projectRepoError]
+    }
+
+    const [communityMainBranch, communityRepoError] =
+      await this.getDefaultBranchFromUrl(user, communityUrl)
+    if (communityRepoError != null) {
+      return [communityRepoError]
     }
 
     const configPath = resolve(

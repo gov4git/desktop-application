@@ -56,6 +56,26 @@ export function debounceAsync<X extends (...args: any) => any>(
   }
 }
 
+export function retryAsync<X extends (...args: any) => Promise<any>>(
+  fn: X,
+  retry: number,
+): (...args: Parameters<X>) => Promise<Awaited<ReturnType<X>>> {
+  return async (...args: Parameters<X>): Promise<Awaited<ReturnType<X>>> => {
+    let count = 0
+    let error: any = null
+    while (count < retry) {
+      try {
+        // @ts-expect-error spreading
+        return await fn(...args)
+      } catch (ex) {
+        error = ex
+      }
+      count += 1
+    }
+    throw error
+  }
+}
+
 export class DeferredPromise<T> {
   public declare promise: Promise<T>
   public declare resolve: (value: T | PromiseLike<T>) => void
