@@ -15,7 +15,7 @@ export function useFetchCommunities() {
       const communities = await communityService.getCommunities()
       setCommunities(communities)
     } catch (ex) {
-      await catchError(`Failed to load user information. ${ex}`)
+      await catchError(`Failed to load community information. ${ex}`)
     }
   }, [catchError, setCommunities])
 

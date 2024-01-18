@@ -110,14 +110,18 @@ export class UserService extends AbstractUserService {
           } catch (er) {
             errors.push(
               `Error initializing ${repo}. ${ex.status}: ${JSON.stringify(
-                ex.response.data,
+                ex,
+                undefined,
+                2,
               )}`,
             )
           }
         } else {
           errors.push(
             `Error checking satus of ${repo}. ${ex.status}: ${JSON.stringify(
-              ex.response.data,
+              ex,
+              undefined,
+              2,
             )}`,
           )
         }
