@@ -1,14 +1,15 @@
 import { Button, Card, Field, Input } from '@fluentui/react-components'
-import { useAtomValue } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { FC, FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { routes } from '../App/index.js'
-import { useRefreshCache } from '../hooks/cache.js'
-import { useFetchCommunities } from '../hooks/communities.js'
-import { useCatchError } from '../hooks/useCatchError.js'
-import { communityService } from '../services/CommunityService.js'
-import { communityAtom } from '../state/community.js'
+import { useInsertCommunity } from '../hooks/communities.js'
+import {
+  communityAtom,
+  insertCommunityErrors,
+  newProjectUrlAtom,
+} from '../state/community.js'
 import { useButtonStyles, useMessageStyles } from '../styles/index.js'
 import { useCommunityJoinStyles } from './CommunityJoin.styles.js'
 import { Message } from './Message.js'
@@ -16,16 +17,18 @@ import { Message } from './Message.js'
 export const CommunityJoin: FC = function Login() {
   const styles = useCommunityJoinStyles()
   const buttonStyles = useButtonStyles()
-  const catchError = useCatchError()
-  const [communityErrors, setCommunityErrors] = useState<string[]>([])
+  const [communityErrors, setCommunityErrors] = useAtom(insertCommunityErrors)
   const [loading, setLoading] = useState(false)
   const messageStyles = useMessageStyles()
   const community = useAtomValue(communityAtom)
-  const [projectUrl, setProjectUrl] = useState(community?.projectUrl ?? '')
+  const [projectUrl, setProjectUrl] = useAtom(newProjectUrlAtom)
   const [statusMessage, setStatusMessage] = useState('')
   const navigate = useNavigate()
-  const getCommunities = useFetchCommunities()
-  const refreshCache = useRefreshCache()
+  const insertCommunity = useInsertCommunity()
+
+  useEffect(() => {
+    setProjectUrl(community?.projectUrl ?? '')
+  }, [setProjectUrl, community])
 
   useEffect(() => {
     let message = ''
@@ -33,7 +36,7 @@ export const CommunityJoin: FC = function Login() {
     if (community?.isMember) {
       navigate(routes.issues.path)
     } else if (community?.joinRequestStatus === 'closed') {
-      message = `Your request is closed. `
+      message = `Your request to join ${community.name} has been denied.`
     } else if (community?.joinRequestStatus === 'open') {
       message = `Your request to join ${community.name} is pending.`
     }
@@ -60,31 +63,11 @@ export const CommunityJoin: FC = function Login() {
   const save = useCallback(
     async (ev: FormEvent<HTMLFormElement>) => {
       ev.preventDefault()
-      setCommunityErrors([])
-      try {
-        setLoading(true)
-        const communityErrors =
-          await communityService.insertCommunity(projectUrl)
-        if (communityErrors.length > 0) {
-          setCommunityErrors(communityErrors)
-          setLoading(false)
-        } else {
-          await refreshCache()
-          await getCommunities()
-        }
-      } catch (ex) {
-        setLoading(false)
-        await catchError(`Failed to save config. ${ex}`)
-      }
+      setLoading(true)
+      await insertCommunity()
+      setLoading(false)
     },
-    [
-      setCommunityErrors,
-      catchError,
-      setLoading,
-      projectUrl,
-      getCommunities,
-      refreshCache,
-    ],
+    [setLoading, insertCommunity],
   )
 
   return (

@@ -12,14 +12,17 @@ import {
   TableRow,
 } from '@fluentui/react-components'
 import { Add32Filled } from '@fluentui/react-icons'
-import { useAtomValue } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import { FC, FormEvent, useCallback, useEffect, useState } from 'react'
 
-import { useRefreshCache } from '../hooks/cache.js'
-import { useFetchCommunities } from '../hooks/communities.js'
-import { useCatchError } from '../hooks/useCatchError.js'
-import { communityService } from '../services/index.js'
-import { communitiesAtom, communityAtom } from '../state/community.js'
+import { useInsertCommunity, useSelectCommunity } from '../hooks/communities.js'
+import {
+  communitiesAtom,
+  communityAtom,
+  insertCommunityErrors,
+  newProjectUrlAtom,
+  selectedCommunityUrlAtom,
+} from '../state/community.js'
 import { useButtonStyles } from '../styles/index.js'
 import { useMessageStyles } from '../styles/messages.js'
 import { useCommunitySettingsStyle } from './CommunitySettings.styles.js'
@@ -28,22 +31,22 @@ import { Message } from './Message.js'
 export const CommunitySettings: FC = function CommunitySettings() {
   const communities = useAtomValue(communitiesAtom)
   const selectedCommunity = useAtomValue(communityAtom)
-  const [selectedCommunityUrl, setSelectedCommunityUrl] = useState('')
+  const [selectedCommunityUrl, setSelectedCommunityUrl] = useAtom(
+    selectedCommunityUrlAtom,
+  )
   const [status, setStatus] = useState<Record<string, string>>({})
-  const [requestLinks, setRequestLinks] = useState<Record<string, string>>({})
   const [communityPages, setCommunityPages] = useState<Record<string, string>>(
     {},
   )
   const [showJoinForm, setShowJoinForm] = useState(false)
-  const [newProjectUrl, setNewProjectUrl] = useState('')
-  const [communityErrors, setCommunityErrors] = useState<string[]>([])
-  const catchError = useCatchError()
+  const [newProjectUrl, setNewProjectUrl] = useAtom(newProjectUrlAtom)
+  const [communityErrors, setCommunityErrors] = useAtom(insertCommunityErrors)
   const messageStyles = useMessageStyles()
   const buttonStyles = useButtonStyles()
   const [loading, setLoading] = useState(false)
   const styles = useCommunitySettingsStyle()
-  const getCommunities = useFetchCommunities()
-  const refreshCache = useRefreshCache()
+  const insertCommunity = useInsertCommunity()
+  const selectCommunity = useSelectCommunity()
 
   useEffect(() => {
     setLoading(false)
@@ -54,43 +57,13 @@ export const CommunitySettings: FC = function CommunitySettings() {
   const save = useCallback(
     async (ev: FormEvent<HTMLFormElement>) => {
       ev.preventDefault()
-      setCommunityErrors([])
-      try {
-        setLoading(true)
-        const communityErrors =
-          await communityService.insertCommunity(newProjectUrl)
-        if (communityErrors.length > 0) {
-          setLoading(false)
-          setCommunityErrors(communityErrors)
-        } else {
-          await refreshCache()
-          await getCommunities()
-        }
-      } catch (ex) {
-        await catchError(`Failed to save config. ${ex}`)
-      }
-    },
-    [
-      setCommunityErrors,
-      catchError,
-      newProjectUrl,
-      setLoading,
-      getCommunities,
-      refreshCache,
-    ],
-  )
 
-  const selectCommunity = useCallback(
-    async (url: string) => {
-      setSelectedCommunityUrl(url)
-      try {
-        await communityService.selectCommunity(url)
-        await getCommunities()
-      } catch (ex) {
-        await catchError(`Failed to select community ${url}. ${ex}`)
-      }
+      setLoading(true)
+      await insertCommunity()
+      setNewProjectUrl('')
+      setLoading(false)
     },
-    [setSelectedCommunityUrl, catchError, getCommunities],
+    [setLoading, insertCommunity, setNewProjectUrl],
   )
 
   const dismissError = useCallback(() => {
@@ -127,7 +100,7 @@ export const CommunitySettings: FC = function CommunitySettings() {
         c.joinRequestStatus != null &&
         c.joinRequestStatus === 'closed'
       ) {
-        s = 'Closed'
+        s = 'Denied'
       } else {
         s = 'Not Available'
       }
@@ -143,21 +116,6 @@ export const CommunitySettings: FC = function CommunitySettings() {
       })
     }
   }, [communities, setStatus])
-
-  useEffect(() => {
-    for (const c of communities) {
-      let l = ''
-      if (c.joinRequestUrl != null && c.joinRequestUrl !== '') {
-        l = `<a href="${c.joinRequestUrl}" target="_blank">View Request</a>`
-      }
-      setRequestLinks((requests) => {
-        return {
-          ...requests,
-          [c.url]: l,
-        }
-      })
-    }
-  }, [communities, setRequestLinks])
 
   return (
     <Card className={styles.card}>
@@ -248,7 +206,7 @@ export const CommunitySettings: FC = function CommunitySettings() {
           icon={!loading ? <Add32Filled /> : <></>}
           onClick={() => setShowJoinForm(true)}
         >
-          Join a New Community
+          Join a Community
         </Button>
       )}
     </Card>

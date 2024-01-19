@@ -9,3 +9,8 @@ export const communityAtom = atom<Community | null>((get) => {
   const selectedCommunity = communities.filter((c) => c.selected === true)[0]
   return selectedCommunity ?? null
 })
+
+export const selectedCommunityUrlAtom = atom<string>('')
+
+export const newProjectUrlAtom = atom<string>('')
+export const insertCommunityErrors = atom<string[]>([])
