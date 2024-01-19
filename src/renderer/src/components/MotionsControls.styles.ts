@@ -1,6 +1,6 @@
 import { makeStyles, shorthands } from '@fluentui/react-components'
 
-export const useBallotControlStyles = makeStyles({
+export const useMotionsControlStyles = makeStyles({
   controls: {
     display: 'flex',
     justifyContent: 'space-between',

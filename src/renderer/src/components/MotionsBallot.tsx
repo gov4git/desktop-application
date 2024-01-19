@@ -22,22 +22,19 @@ import {
 import { formatDecimal } from '~/shared'
 
 import type { Motion } from '../../../electron/db/schema.js'
-import { useRefreshCache } from '../hooks/cache.js'
-import { useFetchCommunities } from '../hooks/communities.js'
-import { useCatchError } from '../hooks/useCatchError.js'
-import { motionService } from '../services/index.js'
+import { useVote } from '../hooks/motions.js'
 import { communityAtom } from '../state/community.js'
 import { useBadgeStyles } from '../styles/badges.js'
 import { useMessageStyles } from '../styles/messages.js'
 import { BubbleSlider } from './BubbleSlider.js'
-import { useIssueBallotStyles } from './IssueBallot.styles.js'
 import { Message } from './Message.js'
+import { useIssueBallotStyles } from './MotionsBallot.styles.js'
 
 export type IssueBallotProps = {
   motion: Motion
 }
 
-export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
+export const MotionsBallot: FC<IssueBallotProps> = function MotionsBallot({
   motion,
 }) {
   const styles = useIssueBallotStyles()
@@ -48,7 +45,6 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
   )
   const [voteStrengthInCredits, setVoteStrengthInCredits] = useState(0)
   const [totalCostInCredits, setTotalCostInCredits] = useState(0)
-  const catchError = useCatchError()
   const messageStyles = useMessageStyles()
   const community = useAtomValue(communityAtom)
   const [fetchingNewBallot, setFetchingNewBallot] = useState(false)
@@ -56,8 +52,7 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
   const [inputWidth, setInputWidth] = useState(0)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [, setTimer] = useState<number | null>(null)
-  const refreshCache = useRefreshCache()
-  const getCommunities = useFetchCommunities()
+  const _vote = useVote()
 
   const githubLink = useMemo(() => {
     return motion.trackerUrl
@@ -95,52 +90,26 @@ export const IssueBallot: FC<IssueBallotProps> = function IssueBallot({
     async function run() {
       if (voteStrengthInCredits !== 0) {
         setFetchingNewBallot(true)
-        try {
-          await motionService.vote({
-            name: motion.ballotId,
-            choice: motion.choice ?? '',
-            strength: `${voteStrengthInCredits}`,
-          })
-          await refreshCache()
-          await getCommunities()
+        const error = await _vote({
+          name: motion.ballotId,
+          choice: motion.choice ?? '',
+          strength: `${voteStrengthInCredits}`,
+        })
+        if (error != null) {
+          setVoteError(error)
+        } else {
           const direction = voteScore < 0 ? 'decrease' : 'increase'
           setSuccessMessage(
             `Success. You have submitted a vote to ${direction} priority by ${Math.abs(
               voteScore,
             )}. Your vote is in pending status until it is tallied by the community. It may take a few hours for your vote to be tallied and reflected by the community.`,
           )
-          setFetchingNewBallot(false)
-        } catch (ex: any) {
-          if (
-            ex != null &&
-            ex.message != null &&
-            typeof ex.message === 'string' &&
-            (ex.message as string).toLowerCase().endsWith('ballot is closed')
-          ) {
-            setFetchingNewBallot(false)
-            setVoteError(
-              'Sorry, this ballot is closed to voting. Please refresh the page to get the latest list of ballots.',
-            )
-          } else {
-            await catchError(`Failed to cast vote. ${ex}`)
-            setFetchingNewBallot(false)
-            setVoteError(
-              `There was an error voting. Please view the full logs at the top of the page.`,
-            )
-          }
         }
+        setFetchingNewBallot(false)
       }
     }
     void run()
-  }, [
-    motion,
-    voteStrengthInCredits,
-    catchError,
-    setFetchingNewBallot,
-    refreshCache,
-    voteScore,
-    getCommunities,
-  ])
+  }, [motion, voteStrengthInCredits, setFetchingNewBallot, voteScore, _vote])
 
   const onChange: ChangeEventHandler<HTMLInputElement> = useCallback(
     (e) => {
