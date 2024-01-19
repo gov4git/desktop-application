@@ -35,7 +35,6 @@ export function useInsertCommunity() {
   const newProjectUrl = useAtomValue(newProjectUrlAtom)
   const catchError = useCatchError()
   const refreshCache = useRefreshCache()
-  const getCommunities = useFetchCommunities()
 
   const _insertCommunity = useCallback(async () => {
     try {
@@ -44,18 +43,11 @@ export function useInsertCommunity() {
       setCommunityErrors(insertErrors)
       if (insertErrors.length === 0) {
         await refreshCache()
-        await getCommunities()
       }
     } catch (ex) {
       await catchError(`Failed to join community ${newProjectUrl}. ${ex}`)
     }
-  }, [
-    catchError,
-    newProjectUrl,
-    setCommunityErrors,
-    refreshCache,
-    getCommunities,
-  ])
+  }, [catchError, newProjectUrl, setCommunityErrors, refreshCache])
 
   return useMemo(() => {
     return serialAsync(_insertCommunity)
@@ -63,7 +55,6 @@ export function useInsertCommunity() {
 }
 
 export function useSelectCommunity() {
-  const getCommunities = useFetchCommunities()
   const catchError = useCatchError()
   const refreshCache = useRefreshCache()
   const setSelectedCommunityUrl = useSetAtom(selectedCommunityUrlAtom)
@@ -74,12 +65,11 @@ export function useSelectCommunity() {
         setSelectedCommunityUrl(urlToSelect)
         await communityService.selectCommunity(urlToSelect)
         await refreshCache()
-        await getCommunities()
       } catch (ex) {
         await catchError(`Failed to select community ${urlToSelect}, ${ex}`)
       }
     },
-    [getCommunities, catchError, refreshCache, setSelectedCommunityUrl],
+    [catchError, refreshCache, setSelectedCommunityUrl],
   )
 
   return useMemo(() => {

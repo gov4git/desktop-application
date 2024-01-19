@@ -1,10 +1,8 @@
 import { eq, sql } from 'drizzle-orm'
-import { SQLiteColumn } from 'drizzle-orm/sqlite-core/index.js'
 
 import { AbstractMotionService, serialAsync } from '../../shared/index.js'
 import { DB } from '../db/db.js'
 import {
-  Motion,
   type MotionInsert,
   motions,
   type MotionSearch,
