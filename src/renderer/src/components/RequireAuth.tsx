@@ -15,10 +15,10 @@ export const RequireAuth: FC<PropsWithChildren> = function RequireAuth({
 
   if (!isUserLoaded) {
     return <></>
-  } else if (user == null) {
-    return <Navigate to={routes.login.path} />
-  } else if (community == null || !community.isMember) {
-    return <Navigate to={routes.communityJoin.path} />
+  } else if (user == null || community == null || !community.isMember) {
+    return <Navigate to={routes.settings.path} />
+    // } else if (community == null || !community.isMember) {
+    //   return <Navigate to={routes.communityJoin.path} />
   } else {
     return children
   }

@@ -234,8 +234,11 @@ export class MotionService extends AbstractMotionService {
   public getMotions = async (
     options?: MotionSearch,
   ): Promise<MotionSearchResults> => {
-    const community = await this.communityService.getCommunity()
-    if (community == null) {
+    const [user, community] = await Promise.all([
+      this.userService.getUser(),
+      this.communityService.getCommunity(),
+    ])
+    if (user == null || community == null) {
       return {
         totalCount: 0,
         matchingCount: 0,

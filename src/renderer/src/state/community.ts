@@ -14,3 +14,8 @@ export const selectedCommunityUrlAtom = atom<string>('')
 
 export const newProjectUrlAtom = atom<string>('')
 export const insertCommunityErrors = atom<string[]>([])
+
+export type CommunityDashboardState = 'initial' | 'join' | 'deploy' | 'manage'
+export const communityDashboardStateAtom =
+  atom<CommunityDashboardState>('initial')
+export const communityManagedAtom = atom<Community | null>(null)

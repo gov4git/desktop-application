@@ -4,12 +4,8 @@ import { useCallback, useMemo } from 'react'
 import { serialAsync } from '~/shared'
 
 import { userService } from '../services/index.js'
-import {
-  userAtom,
-  userLoadedAtom,
-  userLoginErrorsAtom,
-  userVerificationAtom,
-} from '../state/user.js'
+import { userAtom, userLoadedAtom } from '../state/user.js'
+import { useRefreshCache } from './cache.js'
 import { useCatchError } from './useCatchError.js'
 
 export function useFetchUser() {
@@ -31,25 +27,32 @@ export function useFetchUser() {
   }, [_getUser])
 }
 
-export function useLogin() {
-  const getUser = useFetchUser()
-  const setVerification = useSetAtom(userVerificationAtom)
-  const setLoginErrors = useSetAtom(userLoginErrorsAtom)
+export function useStartLoginFlow() {
   const catchError = useCatchError()
   const _login = useCallback(async () => {
     try {
-      const verification = await userService.startLoginFlow()
-      setVerification(verification)
-      const errors = await userService.finishLoginFlow()
-      setLoginErrors(errors)
-      if (errors == null || errors.length === 0) {
-        await getUser()
-      }
-      setVerification(null)
+      return await userService.startLoginFlow()
     } catch (ex) {
       await catchError(`Failed to login. ${ex}`)
+      return null
     }
-  }, [catchError, setVerification, setLoginErrors, getUser])
+  }, [catchError])
+
+  return useMemo(() => {
+    return serialAsync(_login)
+  }, [_login])
+}
+
+export function useFinishLoginFlow() {
+  const catchError = useCatchError()
+  const _login = useCallback(async () => {
+    try {
+      return await userService.finishLoginFlow()
+    } catch (ex) {
+      await catchError(`Failed to login. ${ex}`)
+      return null
+    }
+  }, [catchError])
 
   return useMemo(() => {
     return serialAsync(_login)
@@ -57,22 +60,55 @@ export function useLogin() {
 }
 
 export function useLogout() {
-  const getUser = useFetchUser()
-  const setVerification = useSetAtom(userVerificationAtom)
-  const setLoginErrors = useSetAtom(userLoginErrorsAtom)
+  const refreshCache = useRefreshCache()
   const catchError = useCatchError()
   const _logout = useCallback(async () => {
     try {
-      setVerification(null)
-      setLoginErrors(null)
       await userService.logout()
-      await getUser()
+      await refreshCache()
     } catch (ex) {
       await catchError(`Failed to logout. ${ex}`)
     }
-  }, [catchError, setVerification, setLoginErrors, getUser])
+  }, [catchError, refreshCache])
 
   return useMemo(() => {
     return serialAsync(_logout)
   }, [_logout])
+}
+
+export function useGetUserAdminOrgs() {
+  const catchError = useCatchError()
+
+  const _getOrgs = useCallback(async () => {
+    try {
+      return userService.getUserAdminOrgs()
+    } catch (ex) {
+      await catchError(`Failed to load user orgs. ${ex}`)
+      return []
+    }
+  }, [catchError])
+
+  return useMemo(() => {
+    return serialAsync(_getOrgs)
+  }, [_getOrgs])
+}
+
+export function useGetOrgRepos() {
+  const catchError = useCatchError()
+
+  const _getRepos = useCallback(
+    async (org: string) => {
+      try {
+        return userService.getPublicOrgRepos(org)
+      } catch (ex) {
+        await catchError(`Failed to load Repos for ${org}. ${ex}`)
+        return []
+      }
+    },
+    [catchError],
+  )
+
+  return useMemo(() => {
+    return serialAsync(_getRepos)
+  }, [_getRepos])
 }

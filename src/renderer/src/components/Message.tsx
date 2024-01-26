@@ -21,7 +21,14 @@ export const Message: FC<ShowErrorProps> = function Message({
         <i className="codicon codicon-chrome-close" />
       </button>
       {messages.map((m) => {
-        return <p key={m}>{m}</p>
+        return (
+          <p
+            key={m}
+            dangerouslySetInnerHTML={{
+              __html: m,
+            }}
+          ></p>
+        )
       })}
     </div>
   )

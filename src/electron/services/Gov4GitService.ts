@@ -51,11 +51,12 @@ export class Gov4GitService {
   public mustRun = async <T>(
     command: string[],
     configPath?: string,
+    skipConfig = false,
   ): Promise<T> => {
     try {
       if (configPath != null) {
         this.checkConfigPath(configPath)
-      } else {
+      } else if (!skipConfig) {
         configPath = await this.getConfigPath()
       }
     } catch (ex) {
@@ -64,7 +65,9 @@ export class Gov4GitService {
       )
     }
 
-    command.push('--config', configPath)
+    if (!skipConfig) {
+      command.push('--config', configPath!)
+    }
 
     command.push('-v')
 
