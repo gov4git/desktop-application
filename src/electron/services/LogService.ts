@@ -33,6 +33,7 @@ export class LogService extends AbstractLogService {
         'user.pat',
         'pat',
         'auth.*.*',
+        'args[*].token',
       ],
       serialize: (o) => {
         return JSON.stringify(o, undefined, 2)

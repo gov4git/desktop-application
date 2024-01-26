@@ -27,4 +27,11 @@ export const useButtonStyles = makeStyles({
       },
     },
   },
+  link: {
+    backgroundColor: 'none!important',
+    ...shorthands.border('none'),
+    color: '-webkit-link',
+    ...shorthands.textDecoration('underline'),
+    cursor: 'pointer',
+  },
 })

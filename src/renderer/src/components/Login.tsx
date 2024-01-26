@@ -1,111 +1,97 @@
 import { Button } from '@fluentui/react-components'
-import { useAtom, useAtomValue } from 'jotai'
-import { FC, useCallback, useEffect, useMemo } from 'react'
+import { Verification } from '@octokit/auth-oauth-device/dist-types/types.js'
+import { useAtomValue } from 'jotai'
+import { FC, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { useLogin, useLogout } from '../hooks/users.js'
-import {
-  userAtom,
-  userLoginErrorsAtom,
-  userVerificationAtom,
-} from '../state/user.js'
-import { useButtonStyles, useMessageStyles } from '../styles/index.js'
-import { useLoginStyles2 } from './Login.styles.js'
-import { Message } from './Message.js'
+import { useRefreshCache } from '../hooks/cache.js'
+import { useLogout, useStartLoginFlow } from '../hooks/users.js'
+import { userAtom } from '../state/user.js'
+import { useButtonStyles } from '../styles/index.js'
+import { Loader } from './Loader.js'
+import { useLoginStyles } from './Login.styles.js'
+import { LoginVerification } from './LoginVerification.js'
 
 export type LoginProps = {
   redirectOnLogin?: string
 }
 
 export const Login: FC<LoginProps> = function Login({ redirectOnLogin = '' }) {
-  const styles = useLoginStyles2()
+  const styles = useLoginStyles()
   const buttonStyles = useButtonStyles()
   const user = useAtomValue(userAtom)
-  const messageStyles = useMessageStyles()
   const navigate = useNavigate()
-  const _login = useLogin()
   const _logout = useLogout()
-  const [userLoginErrors, setUserLoginErrors] = useAtom(userLoginErrorsAtom)
-  const [userVerification, setUserVerification] = useAtom(userVerificationAtom)
-
-  useEffect(() => {
-    if (redirectOnLogin !== '' && user != null) {
-      setUserVerification(null)
-      navigate(redirectOnLogin)
-    }
-  }, [user, setUserVerification, navigate, redirectOnLogin])
-
-  const showVerification = useMemo(() => {
-    return userVerification != null
-  }, [userVerification])
-
-  const dismissError = useCallback(() => {
-    setUserLoginErrors(null)
-  }, [setUserLoginErrors])
+  const [verification, setVerification] = useState<Verification | null>(null)
+  const startLoginFlow = useStartLoginFlow()
+  const [waitingForVericationCode, setWaitingForVerificationCode] =
+    useState(false)
+  const refreshCache = useRefreshCache()
+  const [dataLoading, setDataLoading] = useState(false)
 
   const login = useCallback(async () => {
-    void _login()
-  }, [_login])
+    setWaitingForVerificationCode(true)
+    const verification = await startLoginFlow()
+    setVerification(verification)
+    setWaitingForVerificationCode(false)
+  }, [startLoginFlow, setWaitingForVerificationCode, setVerification])
+
+  const onLoggedIn = useCallback(async () => {
+    setVerification(null)
+    setDataLoading(true)
+    await refreshCache()
+    setDataLoading(false)
+    if (redirectOnLogin !== '') {
+      navigate(redirectOnLogin)
+    }
+  }, [setVerification, refreshCache, setDataLoading, navigate, redirectOnLogin])
 
   const logout = useCallback(async () => {
     void _logout()
   }, [_logout])
 
   return (
-    <>
-      {userLoginErrors != null && userLoginErrors.length > 0 && (
-        <Message
-          messages={userLoginErrors}
-          onClose={dismissError}
-          className={messageStyles.error}
-        />
-      )}
-
-      {user != null && (
-        <div>
-          <div className={styles.logoutArea}>
-            Logged in as <strong>{user.username}</strong>
-          </div>
+    <div>
+      {verification == null && (
+        <Loader isLoading={dataLoading}>
           <div>
-            <Button shape="circular" onClick={logout}>
-              Log Out
-            </Button>
-          </div>
-        </div>
-      )}
-
-      {user == null && (
-        <div>
-          {!showVerification && (
+            {user != null && (
+              <div className={styles.logoutArea}>
+                Logged in as <strong>{user.username}</strong>
+              </div>
+            )}
             <div className={styles.buttons}>
+              {user != null && (
+                <Button shape="circular" onClick={logout}>
+                  Log Out
+                </Button>
+              )}
               <Button
-                shape="circular"
                 onClick={login}
+                shape="circular"
                 className={buttonStyles.primary}
+                disabled={waitingForVericationCode}
               >
-                <i className="codicon codicon-github" />
-                &nbsp;Login with GitHub
+                {waitingForVericationCode && (
+                  <i className="codicon codicon-loading codicon-modifier-spin" />
+                )}
+                {!waitingForVericationCode && user != null && (
+                  <>
+                    <i className="codicon codicon-github" /> &nbsp;Reauthorize
+                  </>
+                )}
+                {!waitingForVericationCode && user == null && (
+                  <>
+                    <i className="codicon codicon-github" />
+                    &nbsp;Login with GitHub
+                  </>
+                )}
               </Button>
             </div>
-          )}
-
-          {showVerification && (
-            <div className={styles.verificationArea}>
-              Login with your deviec at{' '}
-              <a
-                href={userVerification?.verification_uri}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {userVerification?.verification_uri}
-              </a>
-              <br />
-              <br />
-              Verification code: <strong>{userVerification?.user_code}</strong>
-            </div>
-          )}
-        </div>
+          </div>
+        </Loader>
       )}
-    </>
+      <LoginVerification verification={verification} onLoggedIn={onLoggedIn} />
+    </div>
   )
 }

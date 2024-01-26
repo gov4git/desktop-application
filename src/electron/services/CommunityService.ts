@@ -18,6 +18,27 @@ export type CommunityServiceOptions = {
   configDir?: string
 }
 
+export type DeployCommunityArgs = {
+  org: string
+  repo: string
+  token: string
+}
+
+export type UserCredits = {
+  username: string
+  credits: number
+}
+
+export type IssueVotingCreditsArgs = {
+  communityUrl: string
+  username: string
+  credits: string
+}
+
+export type ManageIssueArgs = {
+  communityUrl: string
+  issueNumber: number
+}
 export class CommunityService extends AbstractCommunityService {
   private declare readonly services: Services
   private declare readonly configDir: string
@@ -91,6 +112,7 @@ export class CommunityService extends AbstractCommunityService {
   ): Promise<void> => {
     if (
       community.isMember ||
+      community.isMaintainer ||
       (community.joinRequestUrl != null && community.joinRequestStatus != null)
     ) {
       return
@@ -126,28 +148,50 @@ ${user.memberPublicBranch}`
       .where(eq(communities.url, community.url))
   }
 
+  private getCommunityMembers = async (community: Community) => {
+    const command = ['group', 'list', '--name', 'everybody']
+    return await this.govService.mustRun<string[]>(
+      command,
+      community.configPath,
+    )
+  }
+
   private isCommunityMember = async (
     user: User,
     community: Community,
   ): Promise<boolean> => {
-    const command = ['group', 'list', '--name', 'everybody']
-    const users = await this.govService.mustRun<string[]>(
-      command,
-      community.configPath,
-    )
+    const users = await this.getCommunityMembers(community)
     return users.includes(user.username)
   }
 
-  private getMembershipStatus = async (
+  private isCommunityMaintainer = async (
+    community: Community,
+  ): Promise<boolean> => {
+    const orgs = await this.userService.getUserAdminOrgs()
+    const repoSegments = urlToRepoSegments(community.url)
+    const ind = orgs.findIndex((o) => {
+      return o.organizationName === repoSegments.owner
+    })
+    return ind !== -1
+  }
+
+  private getMembershipStatus = async (user: User, community: Community) => {
+    return {
+      isMember: await this.isCommunityMember(user, community),
+      isMaintainer: await this.isCommunityMaintainer(community),
+    }
+  }
+
+  private getJoinRequestStatus = async (
     user: User,
     community: Community,
   ): Promise<{ status: 'open' | 'closed'; url: string } | null> => {
     const repoSegments = urlToRepoSegments(community.projectUrl)
     const userJoinRequest = (
-      await this.gitHubService.searchUserIssues({
+      await this.gitHubService.searchRepoIssues({
         repoOwner: repoSegments.owner,
         repoName: repoSegments.repo,
-        username: user.username,
+        creator: user.username,
         token: user.pat,
         title: "I'd like to join this project's community",
       })
@@ -167,18 +211,19 @@ ${user.memberPublicBranch}`
     user: User,
     community: Community,
   ): Promise<Community> => {
-    const [isCommunityMember, membershipStatus] = await Promise.all([
-      this.isCommunityMember(user, community),
+    const [membershipStatus, joinRequestStatus] = await Promise.all([
       this.getMembershipStatus(user, community),
+      this.getJoinRequestStatus(user, community),
     ])
 
     const syncedCommunity = (
       await this.db
         .update(communities)
         .set({
-          isMember: isCommunityMember,
-          joinRequestStatus: membershipStatus?.status ?? null,
-          joinRequestUrl: membershipStatus?.url ?? null,
+          isMember: membershipStatus.isMember,
+          isMaintainer: membershipStatus.isMaintainer,
+          joinRequestStatus: joinRequestStatus?.status ?? null,
+          joinRequestUrl: joinRequestStatus?.url ?? null,
         })
         .where(eq(communities.url, community.url))
         .returning()
@@ -219,7 +264,9 @@ ${user.memberPublicBranch}`
       return [`Community URL is a required field.`]
     }
 
-    const projectRepoUrl = projectUrl.replace(/(\/|\.git)$/i, '')
+    const projectRepoUrl = projectUrl
+      .replace(/(\/|\.git)$/i, '')
+      .replace(/-gov\.(?:public|private)$/i, '')
     const communityName = projectRepoUrl.split('/').at(-1)!
     const communityUrl = `${projectRepoUrl.replace(
       /-gov\.public$/i,
@@ -284,5 +331,187 @@ ${user.memberPublicBranch}`
     await this.requestToJoin(user, syncedCommunity)
 
     return []
+  }
+
+  public deployCommunity = async ({
+    org,
+    repo,
+    token,
+  }: DeployCommunityArgs) => {
+    const user = await this.userService.getUser()
+
+    if (user == null) {
+      return
+    }
+
+    const command = [
+      'github',
+      'deploy',
+      '--token',
+      token,
+      '--project',
+      `${org}/${repo}`,
+      '--release',
+      'v2.0.1',
+    ]
+    await this.govService.mustRun(command, undefined, true)
+
+    const projectUrl = `https://github.com/${org}/${repo}`
+
+    const errors = await this.insertCommunity(projectUrl)
+
+    if (errors.length) {
+      throw new Error(JSON.stringify(errors, undefined, 2))
+    }
+
+    await this.govService.mustRun([
+      'user',
+      'add',
+      '--name',
+      user.username,
+      '--repo',
+      user.memberPublicUrl,
+      '--branch',
+      user.memberPublicBranch,
+    ])
+  }
+
+  private getCommunityByUrl = async (url: string) => {
+    const community = (
+      await this.db
+        .select()
+        .from(communities)
+        .where(eq(communities.url, url))
+        .limit(1)
+    )[0]
+
+    return community ?? null
+  }
+
+  private getUserCredits = async (
+    username: string,
+    community: Community,
+  ): Promise<UserCredits> => {
+    const command = [
+      'account',
+      'balance',
+      '--id',
+      `user:${username}`,
+      '--asset',
+      'plural',
+    ]
+    const credits = await this.govService.mustRun<number>(
+      command,
+      community.configPath,
+    )
+    return { username, credits }
+  }
+
+  public getCommunityUsers = async (url: string): Promise<UserCredits[]> => {
+    const community = await this.getCommunityByUrl(url)
+
+    if (community == null) {
+      throw new Error(
+        `Failed to load users for ${url}. Community not present in application.`,
+      )
+    }
+
+    const users = await this.getCommunityMembers(community)
+
+    return await Promise.all(
+      users.map((u) => this.getUserCredits(u, community)),
+    )
+  }
+
+  public issueVotingCredits = async ({
+    communityUrl,
+    username,
+    credits,
+  }: IssueVotingCreditsArgs) => {
+    const community = await this.getCommunityByUrl(communityUrl)
+    if (community == null) {
+      throw new Error(
+        `Failed to issue voting credits. ${communityUrl} not present in application.`,
+      )
+    }
+    if (!community.isMaintainer) {
+      throw new Error(
+        `Failed to issue voting credits. Current user does not have sufficient privileges to issue credits for ${communityUrl}.`,
+      )
+    }
+
+    const command = [
+      'account',
+      'issue',
+      '--asset',
+      'plural',
+      '--to',
+      `user:${username}`,
+      '--quantity',
+      credits,
+    ]
+    await this.govService.mustRun(command, community.configPath)
+  }
+
+  public getCommunityIssues = async (communityUrl: string) => {
+    const user = await this.userService.getUser()
+    if (user == null) {
+      throw new Error(
+        `Faild to load issues for ${communityUrl}. Unauthenticated. Please log in first.`,
+      )
+    }
+
+    const community = await this.getCommunityByUrl(communityUrl)
+    if (community == null) {
+      throw new Error(
+        `Failed to load issues for ${communityUrl}. ${communityUrl} not present in application.`,
+      )
+    }
+    if (!community.isMaintainer) {
+      throw new Error(
+        `Failed to load issues for ${communityUrl}. Current user does not have sufficient privileges to view issues.`,
+      )
+    }
+
+    const repoSegments = urlToRepoSegments(community.projectUrl)
+    return await this.gitHubService.searchRepoIssues({
+      repoOwner: repoSegments.owner,
+      repoName: repoSegments.repo,
+      token: user.pat,
+      state: 'open',
+    })
+  }
+
+  public manageIssue = async ({
+    communityUrl,
+    issueNumber,
+  }: ManageIssueArgs) => {
+    const user = await this.userService.getUser()
+    if (user == null) {
+      throw new Error(
+        `Faild to manage issue #${issueNumber} for ${communityUrl}. Unauthenticated. Please log in first.`,
+      )
+    }
+
+    const community = await this.getCommunityByUrl(communityUrl)
+    if (community == null) {
+      throw new Error(
+        `Failed to manage issue #${issueNumber}for ${communityUrl}. ${communityUrl} not present in application.`,
+      )
+    }
+    if (!community.isMaintainer) {
+      throw new Error(
+        `Failed to manage issue #${issueNumber} for ${communityUrl}. Current user does not have sufficient privileges to view issues.`,
+      )
+    }
+
+    const repoSegments = urlToRepoSegments(community.projectUrl)
+    await this.gitHubService.updateIssue({
+      owner: repoSegments.owner,
+      repo: repoSegments.repo,
+      token: user.pat,
+      issueNumber,
+      labels: ['gov4git:managed'],
+    })
   }
 }

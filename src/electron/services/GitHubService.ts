@@ -48,20 +48,57 @@ export type CreateIssueArgs = {
   labels?: string[]
 }
 
-export type SearchUserIssues = {
-  repoOwner: string
-  repoName: string
-  username: string
+export type UpdateIssueArgs = {
+  owner: string
+  repo: string
   token: string
-  title: string
+  issueNumber: number
+  title?: string
+  body?: string
+  labels?: string[]
+  state?: 'open' | 'closed'
+  stateReason?: 'completed' | 'not_planned' | 'reopened'
 }
 
-export type IssueSearchResult2 = {
+export type SearchRepoIssuesArgs = {
+  repoOwner: string
+  repoName: string
+  token: string
+  creator?: string
+  title?: string
+  state?: 'open' | 'closed' | 'all'
+}
+
+export type IssueSearchResults = {
   id: number
   html_url: string
   title: string
   body: string
   state: 'open' | 'closed'
+  number: number
+  labels: Array<{
+    id: number
+    url: string
+    name: string
+  }>
+}
+
+export type GetOrgsArgs = {
+  token: string
+  state?: 'active' | 'pending'
+  role?: 'admin' | 'member'
+}
+
+export type OrgMembershipInfo = {
+  state: 'active' | 'pending'
+  role: 'admin' | 'member'
+  organizationName: string
+}
+
+export type GetOrgReposArgs = {
+  org: string
+  token: string
+  type?: 'all' | 'public' | 'private' | 'forks' | 'sources' | 'member'
 }
 
 export class GitHubService {
@@ -69,17 +106,11 @@ export class GitHubService {
   protected declare readonly authenticate: OAuthAppAuthInterface
   protected declare authVerification: Verification | null
   protected declare oauthTokenInfo: Promise<OAuthAppAuthentication> | null
+  protected declare clientId: string
 
   constructor({ services, clientId }: GitHubServiceOptions) {
     this.services = services
-    this.authenticate = createOAuthDeviceAuth({
-      clientType: 'oauth-app',
-      clientId,
-      scopes: ['repo'],
-      onVerification: (verification) => {
-        this.authVerification = verification
-      },
-    })
+    this.clientId = clientId
   }
 
   private awaitAuthCode = async (maxInSeconds = 120): Promise<Verification> => {
@@ -102,7 +133,15 @@ export class GitHubService {
   public startLoginFlow = async () => {
     this.authVerification = null
     this.oauthTokenInfo = null
-    this.oauthTokenInfo = this.authenticate({ type: 'oauth' })
+    const authenticate = createOAuthDeviceAuth({
+      clientType: 'oauth-app',
+      clientId: this.clientId,
+      scopes: ['repo'],
+      onVerification: (verification) => {
+        this.authVerification = verification
+      },
+    })
+    this.oauthTokenInfo = authenticate({ type: 'oauth' })
     return this.awaitAuthCode()
   }
 
@@ -261,15 +300,45 @@ export class GitHubService {
     return response.data.html_url as string
   }
 
-  public searchUserIssues = async ({
+  public updateIssue = async ({
+    owner,
+    repo,
+    token,
+    issueNumber,
+    body,
+    title,
+    labels,
+    state,
+    stateReason,
+  }: UpdateIssueArgs) => {
+    await this.run(
+      this.reqWithAuth(token),
+      200,
+      'PATCH /repos/{owner}/{repo}/issues/{issue_number}',
+      {
+        owner,
+        repo,
+        issue_number: issueNumber,
+        ...(title != null ? { title } : null),
+        ...(body != null ? { body } : null),
+        ...(state != null ? { state } : null),
+        ...(stateReason != null ? { state_reason: stateReason } : null),
+        ...(labels != null ? { labels } : null),
+      },
+    )
+  }
+
+  public searchRepoIssues = async ({
     repoOwner,
     repoName,
-    username,
+    creator,
     token,
     title,
-  }: SearchUserIssues) => {
-    let allResponses: IssueSearchResult2[] = []
+    state = 'all',
+  }: SearchRepoIssuesArgs) => {
+    let allResponses: IssueSearchResults[] = []
     let currentResponse
+    let page = 1
     do {
       currentResponse = await this.run(
         this.reqWithAuth(token),
@@ -278,15 +347,20 @@ export class GitHubService {
         {
           owner: repoOwner,
           repo: repoName,
-          creator: username,
-          state: 'all',
+          ...(creator != null ? { creator } : null),
+          state,
           per_page: 100,
+          page,
         },
       )
       allResponses = [
         ...allResponses,
-        ...currentResponse.data.filter((i: any) => i.title === title),
+        ...currentResponse.data.filter((i: any) => {
+          if (title == null) return !('pull_request' in i)
+          return !('pull_request' in i) && i.title === title
+        }),
       ]
+      page += 1
     } while (currentResponse.data.length === 100)
     return allResponses
   }
@@ -311,5 +385,65 @@ export class GitHubService {
         throw ex
       }
     }
+  }
+
+  public getOrgs = async ({ token, state, role }: GetOrgsArgs) => {
+    let allResponses: OrgMembershipInfo[] = []
+    let currentResponse
+    let page = 1
+    do {
+      currentResponse = await this.run(
+        this.reqWithAuth(token),
+        200,
+        'GET /user/memberships/orgs',
+        {
+          ...(state != null ? { state } : null),
+          per_page: 100,
+          page,
+        },
+      )
+      allResponses = [
+        ...allResponses,
+        ...currentResponse.data
+          .filter((d: any) => {
+            if (role == null) {
+              return true
+            }
+            return d.role === role
+          })
+          .map((d: any) => ({
+            state: d.state,
+            role: d.role,
+            organizationName: d.organization.login,
+          })),
+      ]
+      page += 1
+    } while (currentResponse.data.length === 100)
+    return allResponses
+  }
+
+  public getOrgRepos = async ({ org, type, token }: GetOrgReposArgs) => {
+    let allResponses: string[] = []
+    let currentResponse
+    let page = 1
+    do {
+      currentResponse = await this.run(
+        this.reqWithAuth(token),
+        200,
+        'GET /orgs/{org}/repos',
+        {
+          org: org,
+          ...(type != null ? { type } : null),
+          per_page: 100,
+          page,
+        },
+      )
+      allResponses = [
+        ...allResponses,
+        ...currentResponse.data.map((d: any) => d.name as string),
+      ]
+      page += 1
+    } while (currentResponse.data.length === 100)
+    return allResponses
   }
 }

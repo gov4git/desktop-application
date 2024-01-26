@@ -3,13 +3,13 @@ import { createHashRouter, RouterProvider } from 'react-router-dom'
 import { RequireAuth } from '../components/RequireAuth.js'
 import { AboutPage } from '../pages/About.js'
 import { CommunityJoinPage } from '../pages/CommunityJoin.js'
+import { DashboardPage } from '../pages/Dashboard.js'
 import { ErrorPage } from '../pages/Error.js'
 import { Layout } from '../pages/Layout.js'
 import { LicensePage } from '../pages/License.js'
 import { LoginPage } from '../pages/Login.js'
 import { LogsPage } from '../pages/Logs.js'
 import { PollsPage } from '../pages/Polls.js'
-import { SettingsPage } from '../pages/Settings.js'
 
 export type Route = {
   path: string
@@ -87,14 +87,14 @@ export const routes = {
     ),
   },
   settings: {
-    path: '/settings',
+    path: '/dashboard',
     name: 'Settings',
     siteNav: true,
     forAdmin: false,
     iconClass: 'codicon-settings-gear',
     footer: true,
     toolTip: 'Settings',
-    element: <SettingsPage />,
+    element: <DashboardPage />,
   },
   login: {
     path: '/login',

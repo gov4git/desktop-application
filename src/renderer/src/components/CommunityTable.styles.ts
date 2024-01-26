@@ -2,7 +2,7 @@ import { makeStyles, shorthands } from '@fluentui/react-components'
 
 import { gov4GitTokens } from '../App/theme/index.js'
 
-export const useCommunitySettingsStyle = makeStyles({
+export const useCommunityTableStyle = makeStyles({
   formRow: {
     display: 'flex',
     ...shorthands.gap('12px'),

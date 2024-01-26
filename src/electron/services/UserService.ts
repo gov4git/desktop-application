@@ -162,14 +162,16 @@ export class UserService extends AbstractUserService {
     } catch (ex: any) {
       return [
         `Error retreiving user info. ${ex.status}: ${JSON.stringify(
-          ex.response.data,
+          ex,
+          undefined,
+          2,
         )}`,
       ]
     }
 
     const existingUser = (await this.db.select().from(users).limit(1))[0]
 
-    if (existingUser != null && existingUser.username !== username) {
+    if (existingUser == null || existingUser.username !== username) {
       await this.deleteDBTables()
     }
 
@@ -195,13 +197,40 @@ export class UserService extends AbstractUserService {
   }
 
   public logout = serialAsync(async () => {
-    const allCommunities = await this.db.select().from(communities)
+    await this.db.delete(users)
+    // const allCommunities = await this.db.select().from(communities)
 
-    for (const community of allCommunities) {
-      if (existsSync(community.configPath)) {
-        rmSync(community.configPath)
-      }
+    // for (const community of allCommunities) {
+    //   if (existsSync(community.configPath)) {
+    //     rmSync(community.configPath)
+    //   }
+    // }
+    // await this.deleteDBTables()
+  })
+
+  public getUserAdminOrgs = serialAsync(async () => {
+    const user = await this.getUser()
+    if (user == null) {
+      return []
     }
-    await this.deleteDBTables()
+
+    return await this.gitHubService.getOrgs({
+      token: user.pat,
+      state: 'active',
+      role: 'admin',
+    })
+  })
+
+  public getPublicOrgRepos = serialAsync(async (org: string) => {
+    const user = await this.getUser()
+    if (user == null) {
+      return []
+    }
+
+    return await this.gitHubService.getOrgRepos({
+      org: org,
+      token: user.pat,
+      type: 'public',
+    })
   })
 }

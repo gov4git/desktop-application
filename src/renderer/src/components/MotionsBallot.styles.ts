@@ -24,6 +24,7 @@ export const useIssueBallotStyles = makeStyles({
     '& img': {
       ...shorthands.margin('20px'),
       ...shorthands.border('1px', 'solid', gov4GitTokens.g4gColorNeutralDarker),
+      maxWidth: 'calc(100% - 20px)',
     },
     '& p': {
       ...shorthands.padding('12px', 0),
