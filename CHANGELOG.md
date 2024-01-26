@@ -1,5 +1,18 @@
 # gov4git-desktop-app
 
+## 0.11.0
+
+### Minor Changes
+
+- 0764a53: Add deploy community
+
+  - Addresses gov4git/gov4git#141
+
+### Patch Changes
+
+- 1d72dc0: Upgrade git service to use Octokit
+- ffc168d: Revalidate user and community settings on error
+
 ## 0.10.0
 
 ### Minor Changes
