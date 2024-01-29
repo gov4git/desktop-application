@@ -1,6 +1,5 @@
 import { Dropdown, Option, Text } from '@fluentui/react-components'
 import { SearchBox } from '@fluentui/react-search-preview'
-import { useAtom, useAtomValue } from 'jotai'
 import {
   FC,
   PropsWithChildren,
@@ -13,22 +12,28 @@ import {
 import { debounceAsync } from '~/shared'
 
 import {
-  motionsSearchResultsAtom,
-  motionsSearchTermAtom,
-  motionsStatusAtom,
-  motionsVoteStatusAtom,
-} from '../state/motions.js'
+  useMotionsSearchResults,
+  useMotionsSearchTerm,
+  useMotionsStatus,
+  useMotionsVoteStatus,
+  useSetMotionsSearchTerm,
+  useSetMotionsStatus,
+  useSetMotionsVoteStatus,
+} from '../store/hooks/motionHooks.js'
 import { useMotionsControlStyles } from './MotionsControls.styles.js'
 
 export const MotionsControls: FC<PropsWithChildren> = function MotionsControls({
   children,
 }) {
   const styles = useMotionsControlStyles()
-  const [globalSearch, setGlobalSearch] = useAtom(motionsSearchTermAtom)
+  const globalSearch = useMotionsSearchTerm()
+  const setGlobalSearch = useSetMotionsSearchTerm()
   const [search, setSearch] = useState<string>(globalSearch)
-  const [globalStatus, setGlobalStatus] = useAtom(motionsStatusAtom)
-  const [globalVotedOn, setGlobalVotedOn] = useAtom(motionsVoteStatusAtom)
-  const searchResults = useAtomValue(motionsSearchResultsAtom)
+  const globalStatus = useMotionsStatus()
+  const setGlobalStatus = useSetMotionsStatus()
+  const globalVotedOn = useMotionsVoteStatus()
+  const setGlobalVotedOn = useSetMotionsVoteStatus()
+  const searchResults = useMotionsSearchResults()
   const StatusOptions = ['Open', 'Closed', 'Cancelled', 'Frozen']
   const VoteStatusOptions = ['Voted', 'Not Voted']
 

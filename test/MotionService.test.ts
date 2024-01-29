@@ -73,7 +73,7 @@ export default function run(services: Services) {
         '10',
       ])
 
-      const currentMotions = await motionService.getMotions()
+      const currentMotions = await motionService.getMotions(undefined, true)
       if (currentMotions.motions.length === 0) {
         await govService.mustRun([
           'motion',
@@ -91,7 +91,6 @@ export default function run(services: Services) {
           '--type',
           'concern',
         ])
-        await motionService.loadMotions()
       }
     })
 
@@ -100,7 +99,7 @@ export default function run(services: Services) {
         throw new Error('User or Community is null')
       }
 
-      let motions = (await motionService.getMotions()).motions
+      let motions = (await motionService.getMotions(undefined, true)).motions
       expect(motions.length).toEqual(1)
       let motion = motions[0]!
       expect(motion.motionId).toEqual('motionTest1')
@@ -114,8 +113,7 @@ export default function run(services: Services) {
         choice: motion.choice,
         strength: '4',
       })
-      await motionService.loadMotions()
-      motions = (await motionService.getMotions()).motions
+      motions = (await motionService.getMotions(undefined, true)).motions
       expect(motions.length).toEqual(1)
       motion = motions[0]!
       expect(motion.motionId).toEqual('motionTest1')
@@ -125,8 +123,7 @@ export default function run(services: Services) {
       expect(motion.userVotePending).toEqual(true)
 
       await govService.mustRun(['ballot', 'tally', '--name', motion.ballotId])
-      await motionService.loadMotions()
-      motions = (await motionService.getMotions()).motions
+      motions = (await motionService.getMotions(undefined, true)).motions
       expect(motions.length).toEqual(1)
       motion = motions[0]!
       expect(motion.motionId).toEqual('motionTest1')

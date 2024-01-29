@@ -1,19 +1,18 @@
 import { Badge } from '@fluentui/react-components'
-import { useAtomValue } from 'jotai'
 import type { FC } from 'react'
 import { Link } from 'react-router-dom'
 
 import { formatDecimal } from '~/shared'
 
 import { routes } from '../App/index.js'
-import { communityAtom } from '../state/community.js'
-import { userAtom } from '../state/user.js'
+import { useCommunity } from '../store/hooks/communityHooks.js'
+import { useUser } from '../store/hooks/userHooks.js'
 import { useUserBadgeStyles } from './UserBadge.styles.js'
 
 export const UserBadge: FC = function UserBadge() {
   const classes = useUserBadgeStyles()
-  const user = useAtomValue(userAtom)
-  const community = useAtomValue(communityAtom)
+  const user = useUser()
+  const community = useCommunity()
 
   if (user == null) return <></>
 

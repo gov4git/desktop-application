@@ -1,30 +1,41 @@
 import { Button, Card, Field, Input } from '@fluentui/react-components'
-import { useAtom, useAtomValue } from 'jotai'
-import { FC, FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  FC,
+  FormEvent,
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import { useNavigate } from 'react-router-dom'
 
 import { routes } from '../App/index.js'
-import { useInsertCommunity } from '../hooks/communities.js'
 import {
-  communityAtom,
-  insertCommunityErrors,
-  newProjectUrlAtom,
-} from '../state/community.js'
+  useCommunity,
+  useCommunityJoinErrors,
+  useCommunityProjectJoinUrl,
+  useJoinCommunity,
+  useSetCommunityJoinErrors,
+  useSetCommunityProjectJoinUrl,
+} from '../store/hooks/communityHooks.js'
 import { useButtonStyles, useMessageStyles } from '../styles/index.js'
 import { useCommunityJoinStyles } from './CommunityJoin.styles.js'
 import { Message } from './Message.js'
 
-export const CommunityJoin: FC = function Login() {
+export const CommunityJoin: FC = memo(function Login() {
   const styles = useCommunityJoinStyles()
   const buttonStyles = useButtonStyles()
-  const [communityErrors, setCommunityErrors] = useAtom(insertCommunityErrors)
+  const communityErrors = useCommunityJoinErrors()
+  const setCommunityErrors = useSetCommunityJoinErrors()
   const [loading, setLoading] = useState(false)
   const messageStyles = useMessageStyles()
-  const community = useAtomValue(communityAtom)
-  const [projectUrl, setProjectUrl] = useAtom(newProjectUrlAtom)
+  const community = useCommunity()
+  const projectUrl = useCommunityProjectJoinUrl()
+  const setProjectUrl = useSetCommunityProjectJoinUrl()
   const [statusMessage, setStatusMessage] = useState('')
   const navigate = useNavigate()
-  const insertCommunity = useInsertCommunity()
+  const insertCommunity = useJoinCommunity()
 
   useEffect(() => {
     setProjectUrl(community?.projectUrl ?? '')
@@ -122,9 +133,9 @@ export const CommunityJoin: FC = function Login() {
       )}
     </Card>
   )
-}
+})
 
-const CommunityUrlMoreInfo: FC = function CommunityUrlMoreInfo() {
+const CommunityUrlMoreInfo: FC = memo(function CommunityUrlMoreInfo() {
   return (
     <div>
       <p>
@@ -133,4 +144,4 @@ const CommunityUrlMoreInfo: FC = function CommunityUrlMoreInfo() {
       </p>
     </div>
   )
-}
+})

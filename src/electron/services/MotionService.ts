@@ -145,7 +145,7 @@ export class MotionService extends AbstractMotionService {
     return null
   }
 
-  public loadMotions = serialAsync(async () => {
+  private loadMotions = serialAsync(async () => {
     const [user, community] = await Promise.all([
       this.userService.getUser(),
       this.communityService.getCommunity(),
@@ -233,6 +233,7 @@ export class MotionService extends AbstractMotionService {
 
   public getMotions = async (
     options?: MotionSearch,
+    skipCache = false,
   ): Promise<MotionSearchResults> => {
     const [user, community] = await Promise.all([
       this.userService.getUser(),
@@ -262,7 +263,7 @@ export class MotionService extends AbstractMotionService {
         .where(eq(motions.communityUrl, community.url))
     )[0]
 
-    if (motionsCounts == null || motionsCounts.count === 0) {
+    if (motionsCounts == null || motionsCounts.count === 0 || skipCache) {
       await this.loadMotions()
     }
 

@@ -10,5 +10,6 @@ export abstract class AbstractMotionService {
   // public abstract tallyBallot(ballotName: string): Promise<void>
   public abstract getMotions(
     options?: MotionSearch,
+    skipCache?: boolean,
   ): Promise<MotionSearchResults>
 }

@@ -1,15 +1,16 @@
 import { Button, Card, Text } from '@fluentui/react-components'
-import { useAtomValue } from 'jotai'
 import { FC, useCallback } from 'react'
 
-import { useCatchError } from '../hooks/useCatchError.js'
 import { appUpdaterService } from '../services/AppUpdaterService.js'
-import { updatesAtom } from '../state/updates.js'
+import {
+  useCatchError,
+  useGlobalAppUpdateInfo,
+} from '../store/hooks/globalHooks.js'
 import { useUpdateNotificationStyles } from './UpdateNotification.styles.js'
 
 export const UpdateNotification: FC = function UpdateNotification() {
   const catchError = useCatchError()
-  const updates = useAtomValue(updatesAtom)
+  const updates = useGlobalAppUpdateInfo()
   const styles = useUpdateNotificationStyles()
 
   const update = useCallback(() => {

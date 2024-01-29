@@ -18,7 +18,6 @@ import {
 } from './configs.js'
 import { DB, loadDb } from './db/db.js'
 import { migrateDb } from './db/migrate.js'
-import { CacheService } from './services/CacheService.js'
 import { CommunityService } from './services/CommunityService.js'
 import { Gov4GitService } from './services/Gov4GitService.js'
 import {
@@ -93,9 +92,6 @@ async function setup(): Promise<void> {
 
   const appUpdaterService = new AppUpdaterService(services)
   services.register('appUpdater', appUpdaterService)
-
-  const cacheService = new CacheService({ services })
-  services.register('cache', cacheService)
 }
 
 async function serviceHandler(

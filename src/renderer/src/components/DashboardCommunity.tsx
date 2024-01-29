@@ -1,12 +1,13 @@
 import { Button, Card } from '@fluentui/react-components'
 import { Add32Filled, People32Filled } from '@fluentui/react-icons'
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { FC, useCallback, useMemo } from 'react'
+import { FC, memo, useCallback, useMemo } from 'react'
 
 import {
-  communityDashboardStateAtom,
-  insertCommunityErrors,
-} from '../state/community.js'
+  useCommunityDashboardState,
+  useCommunityJoinErrors,
+  useSetCommunityDashboardState,
+  useSetCommunityJoinErrors,
+} from '../store/hooks/communityHooks.js'
 import { useCardStyles, useHeadingsStyles } from '../styles/index.js'
 import { useMessageStyles } from '../styles/messages.js'
 import { CommunityDeploy } from './CommunityDeploy.js'
@@ -16,12 +17,13 @@ import { CommunityTable } from './CommunityTable.js'
 import { useDashboardCommunityStyle } from './DashboardCommunity.styles.js'
 import { Message } from './Message.js'
 
-export const DashboardCommunity: FC = function DashboardCommunity() {
+export const DashboardCommunity: FC = memo(function DashboardCommunity() {
   const headerStyles = useHeadingsStyles()
-  const [communityErrors, setCommunityErrors] = useAtom(insertCommunityErrors)
+  const communityErrors = useCommunityJoinErrors()
+  const setCommunityErrors = useSetCommunityJoinErrors()
   const messageStyles = useMessageStyles()
   const cardStyles = useCardStyles()
-  const communityDashboardState = useAtomValue(communityDashboardStateAtom)
+  const communityDashboardState = useCommunityDashboardState()
 
   const Component: FC = useMemo(() => {
     switch (communityDashboardState) {
@@ -57,12 +59,12 @@ export const DashboardCommunity: FC = function DashboardCommunity() {
       </Card>
     </>
   )
-}
+})
 
-export const DashboardCommunityButtons: FC =
+export const DashboardCommunityButtons: FC = memo(
   function DashboardCommunityButtons() {
     const styles = useDashboardCommunityStyle()
-    const setCommunityDashboardState = useSetAtom(communityDashboardStateAtom)
+    const setCommunityDashboardState = useSetCommunityDashboardState()
 
     return (
       <div className={styles.buttonRow}>
@@ -82,4 +84,5 @@ export const DashboardCommunityButtons: FC =
         </Button>
       </div>
     )
-  }
+  },
+)

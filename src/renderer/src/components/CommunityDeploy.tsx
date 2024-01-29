@@ -17,17 +17,24 @@ import {
   TableRow,
 } from '@fluentui/react-components'
 import { Verification } from '@octokit/auth-oauth-device/dist-types/types.js'
-import { atom, useAtom, useAtomValue, useSetAtom } from 'jotai'
-import { FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { FC, memo, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { OrgMembershipInfo } from '../../../electron/services/GitHubService.js'
-import { useDeployCommunity } from '../hooks/communities.js'
 import {
-  useGetOrgRepos,
-  useGetUserAdminOrgs,
-  useStartLoginFlow,
-} from '../hooks/users.js'
-import { communityDashboardStateAtom } from '../state/community.js'
+  useCommunityDeployFetchOrgs,
+  useCommunityDeployOrg,
+  useCommunityDeployOrgs,
+  useCommunityDeployPat,
+  useCommunityDeployRepo,
+  useCommunityDeployRepos,
+  useCommunityDeployState,
+  useDeployCommunity,
+  useSetCommunityDashboardState,
+  useSetCommunityDeployOrg,
+  useSetCommunityDeployPat,
+  useSetCommunityDeployRepo,
+  useSetCommunityDeployState,
+} from '../store/hooks/communityHooks.js'
+import { useStartLoginFlow } from '../store/hooks/userHooks.js'
 import { useButtonStyles } from '../styles/buttons.js'
 import { useMessageStyles } from '../styles/messages.js'
 import { useCommunityDeployStyle } from './CommunityDeploy.styles.js'
@@ -35,19 +42,8 @@ import { Loader } from './Loader.js'
 import { LoginVerification } from './LoginVerification.js'
 import { Message } from './Message.js'
 
-type CommunityDeployState =
-  | 'initial'
-  | 'repo-select'
-  | 'provide-token'
-  | 'deploy'
-
-const communityDeployStateAtom = atom<CommunityDeployState>('initial')
-const selectedOrgAtom = atom<string>('')
-const selectedRepoAtom = atom<string>('')
-const patAtom = atom<string>('')
-
-export const CommunityDeploy: FC = function CommunityDeploy() {
-  const state = useAtomValue(communityDeployStateAtom)
+export const CommunityDeploy: FC = memo(function CommunityDeploy() {
+  const state = useCommunityDeployState()
 
   const Component: FC = useMemo(() => {
     switch (state) {
@@ -69,16 +65,17 @@ export const CommunityDeploy: FC = function CommunityDeploy() {
       <Component />
     </>
   )
-}
+})
 
-const CommunityOrgs: FC = function CommunityOrgs() {
+const CommunityOrgs: FC = memo(function CommunityOrgs() {
   const buttonStyles = useButtonStyles()
-  const [orgs, setOrgs] = useState<OrgMembershipInfo[] | null>(null)
-  const getOrgs = useGetUserAdminOrgs()
-  const [selectedOrg, setSelectedOrg] = useAtom(selectedOrgAtom)
+  const orgs = useCommunityDeployOrgs()
+  const getOrgs = useCommunityDeployFetchOrgs()
+  const selectedOrg = useCommunityDeployOrg()
+  const setSelectedOrg = useSetCommunityDeployOrg()
   const styles = useCommunityDeployStyle()
-  const setCommunityDashboardState = useSetAtom(communityDashboardStateAtom)
-  const setCommunityDeployState = useSetAtom(communityDeployStateAtom)
+  const setCommunityDashboardState = useSetCommunityDashboardState()
+  const setCommunityDeployState = useSetCommunityDeployState()
   const [dataLoading, setDataLoading] = useState(false)
   const [verification, setVerification] = useState<Verification | null>(null)
   const [vericationLoading, setVerificationLoading] = useState(false)
@@ -86,10 +83,9 @@ const CommunityOrgs: FC = function CommunityOrgs() {
 
   const loadData = useCallback(async () => {
     setDataLoading(true)
-    const newOrgs = await getOrgs()
-    setOrgs(newOrgs)
+    await getOrgs()
     setDataLoading(false)
-  }, [setDataLoading, setOrgs, getOrgs])
+  }, [setDataLoading, getOrgs])
 
   const reauthorize = useCallback(async () => {
     setVerificationLoading(true)
@@ -170,24 +166,15 @@ const CommunityOrgs: FC = function CommunityOrgs() {
       </Loader>
     </>
   )
-}
+})
 
-const CommunityOrgRepos: FC = function CommunityOrgRepos() {
-  const selectedOrg = useAtomValue(selectedOrgAtom)
-  const [selectedRepo, setSelectedRepo] = useAtom(selectedRepoAtom)
-  const [repos, setRepos] = useState<string[] | null>(null)
+const CommunityOrgRepos: FC = memo(function CommunityOrgRepos() {
+  const selectedOrg = useCommunityDeployOrg()
+  const selectedRepo = useCommunityDeployRepo()
+  const setSelectedRepo = useSetCommunityDeployRepo()
+  const repos = useCommunityDeployRepos()
   const styles = useCommunityDeployStyle()
-  const setCommunityDeployState = useSetAtom(communityDeployStateAtom)
-  const getOrgRepos = useGetOrgRepos()
-
-  useEffect(() => {
-    async function run() {
-      const newRepos = await getOrgRepos(selectedOrg)
-      console.log(newRepos)
-      setRepos(newRepos)
-    }
-    void run()
-  }, [setRepos, getOrgRepos, selectedOrg])
+  const setCommunityDeployState = useSetCommunityDeployState()
 
   return (
     <>
@@ -233,12 +220,13 @@ const CommunityOrgRepos: FC = function CommunityOrgRepos() {
       </Loader>
     </>
   )
-}
+})
 
-const Token: FC = function Deploy() {
-  const [pat, setPat] = useAtom(patAtom)
-  const setCommunityDeployState = useSetAtom(communityDeployStateAtom)
-  const selectedOrg = useAtomValue(selectedOrgAtom)
+const Token: FC = memo(function Deploy() {
+  const pat = useCommunityDeployPat()
+  const setPat = useSetCommunityDeployPat()
+  const setCommunityDeployState = useSetCommunityDeployState()
+  const selectedOrg = useCommunityDeployOrg()
   const styles = useCommunityDeployStyle()
 
   return (
@@ -368,26 +356,21 @@ const Token: FC = function Deploy() {
       </div>
     </>
   )
-}
+})
 
-const Deploy: FC = function Deploy() {
-  const pat = useAtomValue(patAtom)
+const Deploy: FC = memo(function Deploy() {
   const [loading, setLoading] = useState(false)
-  const setCommunityDashboardState = useSetAtom(communityDashboardStateAtom)
-  const setCommunityDeployState = useSetAtom(communityDeployStateAtom)
-  const selectedOrg = useAtomValue(selectedOrgAtom)
-  const selectedRepo = useAtomValue(selectedRepoAtom)
+  const setCommunityDashboardState = useSetCommunityDashboardState()
+  const setCommunityDeployState = useSetCommunityDeployState()
+  const selectedOrg = useCommunityDeployOrg()
+  const selectedRepo = useCommunityDeployRepo()
   const deployCommunity = useDeployCommunity()
   const messageStyles = useMessageStyles()
   const [successMessage, setSuccessMessage] = useState('')
 
   const deploy = useCallback(async () => {
     setLoading(true)
-    await deployCommunity({
-      org: selectedOrg,
-      repo: selectedRepo,
-      token: pat,
-    })
+    await deployCommunity()
     setLoading(false)
     const message = [
       `Success. A Gov4Git community has been deployed for ${selectedOrg}/${selectedRepo}.`,
@@ -399,7 +382,6 @@ const Deploy: FC = function Deploy() {
     setSuccessMessage(message)
   }, [
     setLoading,
-    pat,
     selectedOrg,
     selectedRepo,
     deployCommunity,
@@ -417,7 +399,7 @@ const Deploy: FC = function Deploy() {
       {successMessage === '' && (
         <div>
           <Button
-            disabled={loading || pat === ''}
+            disabled={loading}
             appearance="primary"
             type="submit"
             onClick={deploy}
@@ -441,10 +423,11 @@ const Deploy: FC = function Deploy() {
       )}
     </>
   )
-}
+})
 
-const Nav: FC = function Nav() {
-  const [state, setState] = useAtom(communityDeployStateAtom)
+const Nav: FC = memo(function Nav() {
+  const state = useCommunityDeployState()
+  const setState = useSetCommunityDeployState()
 
   return (
     <Breadcrumb>
@@ -485,4 +468,4 @@ const Nav: FC = function Nav() {
       )}
     </Breadcrumb>
   )
-}
+})

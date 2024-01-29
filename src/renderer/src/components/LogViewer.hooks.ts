@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
-import { useCatchError } from '../hooks/useCatchError.js'
 import { logService } from '../services/index.js'
+import { useCatchError } from '../store/hooks/globalHooks.js'
 
 export function useLogs(): string | null {
   const [logs, setLogs] = useState<string | null>(null)

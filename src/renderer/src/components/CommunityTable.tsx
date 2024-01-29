@@ -8,26 +8,25 @@ import {
   TableHeaderCell,
   TableRow,
 } from '@fluentui/react-components'
-import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { Community } from '../../../electron/db/schema.js'
-import { useSelectCommunity } from '../hooks/communities.js'
 import {
-  communitiesAtom,
-  communityAtom,
-  communityDashboardStateAtom,
-  communityManagedAtom,
-  selectedCommunityUrlAtom,
-} from '../state/community.js'
+  useCommunites,
+  useCommunity,
+  useSelectCommunity,
+  useSelectedCommunityUrl,
+  useSetCommunityDashboardState,
+  useSetSelectedCommunityToManage,
+  useSetSelectedCommunityUrl,
+} from '../store/hooks/communityHooks.js'
 import { useCommunityTableStyle } from './CommunityTable.styles.js'
 
 export const CommunityTable: FC = function CommunityTable() {
-  const communities = useAtomValue(communitiesAtom)
-  const selectedCommunity = useAtomValue(communityAtom)
-  const [selectedCommunityUrl, setSelectedCommunityUrl] = useAtom(
-    selectedCommunityUrlAtom,
-  )
+  const communities = useCommunites()
+  const selectedCommunity = useCommunity()
+  const selectedCommunityUrl = useSelectedCommunityUrl()
+  const setSelectedCommunityUrl = useSetSelectedCommunityUrl()
   const [communityPages, setCommunityPages] = useState<Record<string, string>>(
     {},
   )
@@ -125,8 +124,8 @@ const CommunityMembershipStatus: FC<CommunityMembersipStatusProps> =
 
 const CommunityAction: FC<CommunityMembersipStatusProps> =
   function CommunityAction({ community }) {
-    const setCommunityDashboardState = useSetAtom(communityDashboardStateAtom)
-    const setManagedCommunity = useSetAtom(communityManagedAtom)
+    const setCommunityDashboardState = useSetCommunityDashboardState()
+    const setManagedCommunity = useSetSelectedCommunityToManage()
 
     const manage = useCallback(() => {
       setManagedCommunity(community)

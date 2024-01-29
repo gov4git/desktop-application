@@ -1,7 +1,7 @@
 import type { Verification } from '@octokit/auth-oauth-device/dist-types/types.js'
 import { FC, useCallback, useEffect, useState } from 'react'
 
-import { useFinishLoginFlow } from '../hooks/users.js'
+import { useFinishLoginFlow } from '../store/hooks/userHooks.js'
 import { useMessageStyles } from '../styles/index.js'
 import { useLoginVerificationStyle } from './LoginVerification.styles.js'
 import { Message } from './Message.js'
