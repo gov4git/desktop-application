@@ -8,7 +8,6 @@ import {
   Card,
   Text,
 } from '@fluentui/react-components'
-import { useAtomValue } from 'jotai'
 import { parse } from 'marked'
 import {
   ChangeEventHandler,
@@ -22,8 +21,8 @@ import {
 import { formatDecimal } from '~/shared'
 
 import type { Motion } from '../../../electron/db/schema.js'
-import { useVote } from '../hooks/motions.js'
-import { communityAtom } from '../state/community.js'
+import { useCommunity } from '../store/hooks/communityHooks.js'
+import { useMotionsVote } from '../store/hooks/motionHooks.js'
 import { useBadgeStyles } from '../styles/badges.js'
 import { useMessageStyles } from '../styles/messages.js'
 import { BubbleSlider } from './BubbleSlider.js'
@@ -46,13 +45,13 @@ export const MotionsBallot: FC<IssueBallotProps> = function MotionsBallot({
   const [voteStrengthInCredits, setVoteStrengthInCredits] = useState(0)
   const [totalCostInCredits, setTotalCostInCredits] = useState(0)
   const messageStyles = useMessageStyles()
-  const community = useAtomValue(communityAtom)
+  const community = useCommunity()
   const [fetchingNewBallot, setFetchingNewBallot] = useState(false)
   const [voteError, setVoteError] = useState<string | null>(null)
   const [inputWidth, setInputWidth] = useState(0)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [, setTimer] = useState<number | null>(null)
-  const _vote = useVote()
+  const _vote = useMotionsVote()
 
   const githubLink = useMemo(() => {
     return motion.trackerUrl

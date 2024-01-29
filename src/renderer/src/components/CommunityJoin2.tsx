@@ -1,20 +1,21 @@
 import { Button, Field, InfoLabel, Input } from '@fluentui/react-components'
-import { useAtom, useSetAtom } from 'jotai'
-import { FC, FormEvent, useCallback, useState } from 'react'
+import { FC, FormEvent, memo, useCallback, useState } from 'react'
 
-import { useInsertCommunity } from '../hooks/communities.js'
 import {
-  communityDashboardStateAtom,
-  newProjectUrlAtom,
-} from '../state/community.js'
+  useCommunityProjectJoinUrl,
+  useJoinCommunity,
+  useSetCommunityDashboardState,
+  useSetCommunityProjectJoinUrl,
+} from '../store/hooks/communityHooks.js'
 import { useCommunityJoinStyle } from './CommunityJoin2.styles.js'
 
-export const CommunityJoin2: FC = function CommunityJoin2() {
-  const [newProjectUrl, setNewProjectUrl] = useAtom(newProjectUrlAtom)
+export const CommunityJoin2: FC = memo(function CommunityJoin2() {
+  const newProjectUrl = useCommunityProjectJoinUrl()
+  const setNewProjectUrl = useSetCommunityProjectJoinUrl()
   const [loading, setLoading] = useState(false)
   const styles = useCommunityJoinStyle()
-  const insertCommunity = useInsertCommunity()
-  const setCommunityDashboardState = useSetAtom(communityDashboardStateAtom)
+  const insertCommunity = useJoinCommunity()
+  const setCommunityDashboardState = useSetCommunityDashboardState()
 
   const save = useCallback(
     async (ev: FormEvent<HTMLFormElement>) => {
@@ -73,4 +74,4 @@ export const CommunityJoin2: FC = function CommunityJoin2() {
       </form>
     </>
   )
-}
+})

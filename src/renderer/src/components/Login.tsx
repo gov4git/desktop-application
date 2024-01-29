@@ -1,12 +1,14 @@
 import { Button } from '@fluentui/react-components'
 import { Verification } from '@octokit/auth-oauth-device/dist-types/types.js'
-import { useAtomValue } from 'jotai'
 import { FC, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-import { useRefreshCache } from '../hooks/cache.js'
-import { useLogout, useStartLoginFlow } from '../hooks/users.js'
-import { userAtom } from '../state/user.js'
+import { useGlobalRefreshCache } from '../store/hooks/globalHooks.js'
+import {
+  useLogout,
+  useStartLoginFlow,
+  useUser,
+} from '../store/hooks/userHooks.js'
 import { useButtonStyles } from '../styles/index.js'
 import { Loader } from './Loader.js'
 import { useLoginStyles } from './Login.styles.js'
@@ -19,14 +21,14 @@ export type LoginProps = {
 export const Login: FC<LoginProps> = function Login({ redirectOnLogin = '' }) {
   const styles = useLoginStyles()
   const buttonStyles = useButtonStyles()
-  const user = useAtomValue(userAtom)
+  const user = useUser()
   const navigate = useNavigate()
   const _logout = useLogout()
   const [verification, setVerification] = useState<Verification | null>(null)
   const startLoginFlow = useStartLoginFlow()
   const [waitingForVericationCode, setWaitingForVerificationCode] =
     useState(false)
-  const refreshCache = useRefreshCache()
+  const refreshCache = useGlobalRefreshCache()
   const [dataLoading, setDataLoading] = useState(false)
 
   const login = useCallback(async () => {

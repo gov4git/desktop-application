@@ -11,61 +11,27 @@ import {
   TableRow,
   TabList,
 } from '@fluentui/react-components'
-import { atom, useAtom, useAtomValue } from 'jotai'
 import { parse } from 'marked'
-import { type FC, FormEvent, useCallback, useEffect, useState } from 'react'
+import { type FC, FormEvent, memo, useCallback, useState } from 'react'
 
-import type {
-  IssueSearchResults,
-  UserCredits,
-} from '../../../electron/services/index.js'
+import type { IssueSearchResults } from '../../../electron/services/index.js'
 import {
-  useFetchCommunityIssues,
-  useFetchCommunityUsers,
+  useCommunityManageLoading,
   useIssueVotingCredits,
+  useManagedCommunityIssues,
+  useManagedCommunityUsers,
   useManageIssue,
-} from '../hooks/communities.js'
-import { eventBus } from '../lib/eventBus.js'
-import { communityManagedAtom } from '../state/community.js'
+  useSelectedCommunityToManage,
+} from '../store/hooks/communityHooks.js'
 import { useMessageStyles } from '../styles/messages.js'
 import { useCommunityManageStyle } from './CommunityManage.styles.js'
 import { Loader } from './Loader.js'
 import { Message } from './Message.js'
 
-const selectedIssueAtom = atom<IssueSearchResults | null>(null)
-
-export const CommunityManage: FC = function CommunityManage() {
+export const CommunityManage: FC = memo(function CommunityManage() {
   const [selectedTab, setSelectedTab] = useState('users')
-  const selectedCommunity = useAtomValue(communityManagedAtom)!
-  const getCommunityUsers = useFetchCommunityUsers()
-  const [usersLoading, setUsersLoading] = useState(false)
-  const [users, setUsers] = useState<UserCredits[]>([])
-  const getCommunityIssues = useFetchCommunityIssues()
-  const [issuesLoading, setIssuesLoading] = useState(false)
-  const [issues, setIssues] = useState<IssueSearchResults[]>([])
-
-  const loadUsers = useCallback(async () => {
-    setUsersLoading(true)
-    const users = await getCommunityUsers(selectedCommunity.url)
-    setUsers(users)
-    setUsersLoading(false)
-  }, [selectedCommunity, setUsers, getCommunityUsers, setUsersLoading])
-
-  const loadIssues = useCallback(async () => {
-    setIssuesLoading(true)
-    const issues = await getCommunityIssues(selectedCommunity.url)
-    console.log(issues)
-    setIssues(issues)
-    setIssuesLoading(false)
-  }, [selectedCommunity, setIssuesLoading, setIssues, getCommunityIssues])
-
-  useEffect(() => {
-    void loadUsers()
-    void loadIssues()
-    return eventBus.subscribe('managed-issue', async () => {
-      await loadIssues()
-    })
-  }, [loadUsers, loadIssues])
+  const selectedCommunity = useSelectedCommunityToManage()!
+  const loading = useCommunityManageLoading()
 
   return (
     <>
@@ -86,37 +52,24 @@ export const CommunityManage: FC = function CommunityManage() {
           </Tab>
         </TabList>
         <div>
-          {selectedTab === 'users' && (
-            <Loader isLoading={usersLoading}>
-              <UserPanel users={users} onIssuedCredits={loadUsers} />
-            </Loader>
-          )}
-          {selectedTab === 'issues' && (
-            <Loader isLoading={issuesLoading}>
-              <IssuesPanel issues={issues} />
-            </Loader>
-          )}
+          <Loader isLoading={loading}>
+            {selectedTab === 'users' && <UserPanel />}
+            {selectedTab === 'issues' && <IssuesPanel />}
+          </Loader>
         </div>
       </div>
     </>
   )
-}
+})
 
-type UsersPanelProps = {
-  users: UserCredits[]
-  onIssuedCredits: () => void | Promise<void>
-}
-
-const UserPanel: FC<UsersPanelProps> = function UserPanel({
-  users,
-  onIssuedCredits,
-}) {
-  const selectedCommunity = useAtomValue(communityManagedAtom)!
+const UserPanel: FC = memo(function UserPanel() {
+  const selectedCommunity = useSelectedCommunityToManage()!
   const [selectedUsername, setSelectedUsername] = useState('')
   const [votingCredits, setVotingCredits] = useState('')
   const issueVotingCredits = useIssueVotingCredits()
   const [loading, setLoading] = useState(false)
   const styles = useCommunityManageStyle()
+  const users = useManagedCommunityUsers()
 
   const issueCredits = useCallback(
     async (ev: FormEvent<HTMLFormElement>) => {
@@ -130,7 +83,6 @@ const UserPanel: FC<UsersPanelProps> = function UserPanel({
       setSelectedUsername('')
       setVotingCredits('0')
       setLoading(false)
-      await onIssuedCredits()
     },
     [
       setLoading,
@@ -140,7 +92,6 @@ const UserPanel: FC<UsersPanelProps> = function UserPanel({
       votingCredits,
       setSelectedUsername,
       setVotingCredits,
-      onIssuedCredits,
     ],
   )
 
@@ -205,25 +156,24 @@ const UserPanel: FC<UsersPanelProps> = function UserPanel({
       )}
     </>
   )
-}
-
-type IssuesPanelProps = {
-  issues: IssueSearchResults[]
-}
+})
 
 const isManaged = (issue: IssueSearchResults): boolean => {
   const foundIndex = issue.labels.findIndex((i) => i.name === 'gov4git:managed')
   return foundIndex !== -1
 }
 
-const IssuesPanel: FC<IssuesPanelProps> = function IssuesPanel({ issues }) {
+const IssuesPanel: FC = memo(function IssuesPanel() {
   const styles = useCommunityManageStyle()
   const messageStyles = useMessageStyles()
   const [loading, setLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
-  const selectedCommunity = useAtomValue(communityManagedAtom)!
-  const [selectedIssue, setSelectedIssue] = useAtom(selectedIssueAtom)
+  const selectedCommunity = useSelectedCommunityToManage()!
+  const [selectedIssue, setSelectedIssue] = useState<IssueSearchResults | null>(
+    null,
+  )
   const manageIssue = useManageIssue()
+  const issues = useManagedCommunityIssues()
 
   const onSelect = useCallback(
     (issue: IssueSearchResults) => {
@@ -251,7 +201,6 @@ const IssuesPanel: FC<IssuesPanelProps> = function IssuesPanel({ issues }) {
 
   const dismissMessage = useCallback(() => {
     setSuccessMessage('')
-    eventBus.emit('managed-issue')
   }, [setSuccessMessage])
 
   return (
@@ -327,4 +276,4 @@ const IssuesPanel: FC<IssuesPanelProps> = function IssuesPanel({ issues }) {
       )}
     </div>
   )
-}
+})

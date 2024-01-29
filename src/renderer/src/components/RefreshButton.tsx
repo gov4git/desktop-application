@@ -1,16 +1,19 @@
 import { Tooltip } from '@fluentui/react-tooltip'
-import { useSetAtom } from 'jotai'
 import { FC, useCallback, useEffect } from 'react'
 
 import { serialAsync } from '../../../shared/index.js'
-import { useRefreshCache } from '../hooks/cache.js'
-import { loaderAtom } from '../state/loader.js'
+import { useGlobalRefreshCache } from '../store/hooks/globalHooks.js'
+import {
+  useMotionsLoading,
+  useSetMotionsLoading,
+} from '../store/hooks/motionHooks.js'
 import { useRefreshButtonStyles } from './RefreshButton.styles.js'
 
 export const RefreshButton: FC = function RefreshButton() {
   const styles = useRefreshButtonStyles()
-  const refreshCache = useRefreshCache()
-  const setLoading = useSetAtom(loaderAtom)
+  const refreshCache = useGlobalRefreshCache()
+  const setLoading = useSetMotionsLoading()
+  const isLoading = useMotionsLoading()
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -28,12 +31,17 @@ export const RefreshButton: FC = function RefreshButton() {
     return () => {
       clearInterval(updateCacheInterval)
     }
-  }, [refreshCache, setLoading])
+  }, [refreshCache])
 
   return (
     <button onClick={refresh} className={styles.refreshButton}>
       <Tooltip content="Refresh" relationship="description">
-        <i className="codicon codicon-sync" />
+        <span>
+          {isLoading && (
+            <i className="codicon codicon-sync codicon-modifier-spin" />
+          )}
+          {!isLoading && <i className="codicon codicon-sync" />}
+        </span>
       </Tooltip>
     </button>
   )

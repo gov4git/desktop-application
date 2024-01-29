@@ -1,16 +1,19 @@
-import { useAtom, useAtomValue } from 'jotai'
 import { useCallback } from 'react'
 
-import { settingsErrorAtom } from '../state/settings.js'
-import { userAtom } from '../state/user.js'
+import {
+  useGlobalSettingsErrors,
+  useSetGlobalSettingsError,
+} from '../store/hooks/globalHooks.js'
+import { useUser } from '../store/hooks/userHooks.js'
 import { useMessageStyles } from '../styles/index.js'
 import { DashboardUser } from './DashboardUser.js'
 import { DashboardCommunity, Message } from './index.js'
 
 export const Dashboard = function Dashboard() {
-  const [configErrors, setConfigErrors] = useAtom(settingsErrorAtom)
+  const configErrors = useGlobalSettingsErrors()
+  const setConfigErrors = useSetGlobalSettingsError()
   const messageStyles = useMessageStyles()
-  const user = useAtomValue(userAtom)
+  const user = useUser()
 
   const onClose = useCallback(() => {
     setConfigErrors([])

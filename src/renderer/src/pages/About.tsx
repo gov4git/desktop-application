@@ -9,8 +9,8 @@ import {
 import { useCallback, useEffect, useState } from 'react'
 
 import { LicenseViewer, LogViewer } from '../components/index.js'
-import { useCatchError } from '../hooks/useCatchError.js'
 import { logService } from '../services/LogService.js'
+import { useCatchError } from '../store/hooks/globalHooks.js'
 
 export const AboutPage = function AboutPage() {
   const [version, setVersion] = useState('')

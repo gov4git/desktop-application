@@ -1,31 +1,50 @@
 import { Card } from '@fluentui/react-components'
-import { useAtomValue } from 'jotai'
-import { type FC, useMemo } from 'react'
+import { type FC, useEffect, useMemo } from 'react'
 
-import { communityAtom } from '../state/community.js'
-import { motionsAtom, motionsLoadingAton } from '../state/motions.js'
+import { useCommunity } from '../store/hooks/communityHooks.js'
+import {
+  useFetchMotions,
+  useMotions,
+  useMotionsLoading,
+  useMotionsSearchArgs,
+  useSetMotionsLoading,
+} from '../store/hooks/motionHooks.js'
 import { useHeadingsStyles } from '../styles/headings.js'
 import { Loader } from './Loader.js'
 import { MotionsBallot } from './MotionsBallot.js'
 import { MotionsControls } from './MotionsControls.js'
+import { RefreshButton } from './RefreshButton.js'
 
 export type MotionsProps = {
   title: string
 }
 
 export const Motions: FC<MotionsProps> = function Motions({ title }) {
-  const motions = useAtomValue(motionsAtom)
+  const motions = useMotions()
   const headingStyles = useHeadingsStyles()
-  const community = useAtomValue(communityAtom)
-  const motionsLoading = useAtomValue(motionsLoadingAton)
+  const community = useCommunity()
+  const motionsLoading = useMotionsLoading()
+  const setMotionsLoading = useSetMotionsLoading()
+  const motionSearchArgs = useMotionsSearchArgs()
+  const fetchMotions = useFetchMotions()
 
   const issuesLink = useMemo(() => {
     if (community == null) return null
     return `${community.projectUrl}/issues?q=is:open is:issue label:gov4git:managed`
   }, [community])
 
+  useEffect(() => {
+    async function run() {
+      setMotionsLoading(true)
+      await fetchMotions()
+      setMotionsLoading(false)
+    }
+    void run()
+  }, [setMotionsLoading, motionSearchArgs, fetchMotions])
+
   return (
     <>
+      <RefreshButton />
       <h1 className={headingStyles.pageHeading}>{title}</h1>
 
       <MotionsControls>

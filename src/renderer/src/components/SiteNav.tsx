@@ -1,17 +1,16 @@
 import { Tooltip } from '@fluentui/react-components'
-import { useAtomValue } from 'jotai'
 import { FC, useCallback, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 
 import { routes } from '../App/index.js'
-import { communityAtom } from '../state/community.js'
-import { userAtom } from '../state/user.js'
+import { useCommunity } from '../store/hooks/communityHooks.js'
+import { useUser } from '../store/hooks/userHooks.js'
 import { useSiteNavStyles } from './SiteNav.styles.js'
 
 export const SiteNav: FC = function SiteNav() {
   const styles = useSiteNavStyles()
-  const user = useAtomValue(userAtom)
-  const community = useAtomValue(communityAtom)
+  const user = useUser()
+  const community = useCommunity()
   const [pinned, setPinned] = useState('')
 
   const onExpand = useCallback(() => {

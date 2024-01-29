@@ -6,10 +6,9 @@ import {
   Card,
   Text,
 } from '@fluentui/react-components'
-import { useSetAtom } from 'jotai'
 import { type FC, useCallback } from 'react'
 
-import { errorAtom } from '../state/error.js'
+import { useSetGlobalError } from '../store/hooks/globalHooks.js'
 import { useErrorScreenStyles } from './ErrorScreen.styles.js'
 import { LogViewer } from './LogViewer.js'
 
@@ -23,7 +22,7 @@ export const ErrorScreen: FC<ErrorScreenProps> = function ErrorScreen({
   showClose = false,
 }) {
   const styles = useErrorScreenStyles()
-  const setErrorMessage = useSetAtom(errorAtom)
+  const setErrorMessage = useSetGlobalError()
 
   const onClose = useCallback(() => {
     setErrorMessage('')

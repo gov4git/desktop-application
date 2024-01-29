@@ -1,25 +1,29 @@
-import { useAtomValue } from 'jotai'
 import { useEffect, useRef } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 
+import { routes } from '../App/Router.js'
 import { ErrorScreen } from '../components/ErrorScreen.js'
 import {
   DataLoader,
   Header,
   Loader,
-  RefreshButton,
   SiteNav,
   UpdateNotification,
 } from '../components/index.js'
-import { errorAtom } from '../state/error.js'
-import { loaderAtom } from '../state/loader.js'
+import {
+  useGlobalError,
+  useGlobalLoading,
+  useGlobalSettingsErrors,
+} from '../store/hooks/globalHooks.js'
 import { useLayoutStyles } from './Layout.styles.js'
 
 export const Layout = function Layout() {
   const classes = useLayoutStyles()
-  const errorMessage = useAtomValue(errorAtom)
+  const errorMessage = useGlobalError()
   const mainRef = useRef<HTMLElement>(null)
-  const isLoading = useAtomValue(loaderAtom)
+  const isLoading = useGlobalLoading()
+  const navigate = useNavigate()
+  const settingsError = useGlobalSettingsErrors()
 
   useEffect(() => {
     if (errorMessage !== '') {
@@ -28,6 +32,12 @@ export const Layout = function Layout() {
       }
     }
   }, [errorMessage])
+
+  useEffect(() => {
+    if (settingsError.length > 0) {
+      navigate(routes.settings.path)
+    }
+  }, [navigate, settingsError])
 
   return (
     <div id="layout" className={classes.layout}>
@@ -44,7 +54,6 @@ export const Layout = function Layout() {
             </>
           )}
           <Loader isLoading={isLoading}>
-            <RefreshButton />
             <Outlet />
           </Loader>
         </main>
