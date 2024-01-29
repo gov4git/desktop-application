@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.11.2
+
+### Patch Changes
+
+- 71e8082: Update Gov4Git to v2.0.2
+
 ## 0.11.1
 
 ### Patch Changes
