@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.11.1
+
+### Patch Changes
+
+- 51577f8: Refactor state management
+
 ## 0.11.0
 
 ### Minor Changes
