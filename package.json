@@ -1,7 +1,7 @@
 {
   "name": "gov4git-desktop-app",
   "private": true,
-  "version": "0.11.1",
+  "version": "0.11.2",
   "description": "Gov4Git Desktop Application",
   "type": "commonjs",
   "main": "./build/electron/main.js",
