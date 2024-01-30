@@ -1,5 +1,14 @@
 # gov4git-desktop-app
 
+## 0.11.3
+
+### Patch Changes
+
+- 1df47a4: Upgrade Gov4Git CLI to v2.0.3
+- 2151a6d: Fix filtering
+
+  - Addresses #78
+
 ## 0.11.2
 
 ### Patch Changes
