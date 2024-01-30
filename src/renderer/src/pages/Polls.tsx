@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react'
+import { FC, useLayoutEffect, useState } from 'react'
 
 import { Motions } from '../components/index.js'
 import {
@@ -17,8 +17,8 @@ export const PollsPage: FC<PollsPageProps> = function PollsPage({ state }) {
   const resetMotionsSearchOptions = useResetMotionsSearchArgs()
   const [title, setTitle] = useState('')
 
-  useEffect(() => {
-    console.log(`=========== STATE: ${state}`)
+  useLayoutEffect(() => {
+    resetMotionsSearchOptions()
     switch (state) {
       case 'PULL_REQUESTS':
         setMotionsType('proposal')
@@ -28,8 +28,7 @@ export const PollsPage: FC<PollsPageProps> = function PollsPage({ state }) {
         setMotionsType('concern')
         setTitle('Prioritize Issues')
     }
-    resetMotionsSearchOptions()
-  }, [state, setMotionsType, resetMotionsSearchOptions, setTitle])
+  }, [state, setMotionsType, setTitle, resetMotionsSearchOptions])
 
   return <Motions title={title} />
 }
