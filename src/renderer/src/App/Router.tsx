@@ -1,15 +1,11 @@
 import { createHashRouter, RouterProvider } from 'react-router-dom'
 
 import { RequireAuth } from '../components/RequireAuth.js'
-import { AboutPage } from '../pages/About.js'
-import { CommunityJoinPage } from '../pages/CommunityJoin.js'
-import { DashboardPage } from '../pages/Dashboard.js'
+import { AboutPage } from '../pages/about/About.js'
+import { Dashboard } from '../pages/dashboard/Dashboard.js'
 import { ErrorPage } from '../pages/Error.js'
-import { Layout } from '../pages/Layout.js'
-import { LicensePage } from '../pages/License.js'
-import { LoginPage } from '../pages/Login.js'
-import { LogsPage } from '../pages/Logs.js'
-import { PollsPage } from '../pages/Polls.js'
+import { Layout } from '../pages/layout/Layout.js'
+import { PollsPage } from '../pages/polls/Polls.js'
 
 export type Route = {
   path: string
@@ -26,10 +22,6 @@ export type Routes = {
   pullRequests: Route
   info: Route
   settings: Route
-  login: Route
-  communityJoin: Route
-  license: Route
-  logs: Route
 }
 
 export const routes = {
@@ -72,20 +64,6 @@ export const routes = {
     toolTip: 'About Gov4Git',
     element: <AboutPage />,
   },
-  logs: {
-    path: '/logs',
-    name: 'Logs',
-    siteNav: false,
-    forAdmin: false,
-    iconClass: '',
-    footer: false,
-    toolTip: '',
-    element: (
-      <RequireAuth>
-        <LogsPage />
-      </RequireAuth>
-    ),
-  },
   settings: {
     path: '/dashboard',
     name: 'Settings',
@@ -94,37 +72,7 @@ export const routes = {
     iconClass: 'codicon-settings-gear',
     footer: true,
     toolTip: 'Settings',
-    element: <DashboardPage />,
-  },
-  login: {
-    path: '/login',
-    name: 'Login',
-    siteNav: false,
-    forAdmin: false,
-    iconClass: '',
-    footer: false,
-    toolTip: '',
-    element: <LoginPage />,
-  },
-  communityJoin: {
-    path: '/community-join',
-    name: 'Community Join',
-    siteNav: false,
-    forAdmin: false,
-    iconClass: '',
-    footer: false,
-    toolTip: '',
-    element: <CommunityJoinPage />,
-  },
-  license: {
-    path: '/license',
-    name: 'License',
-    siteNav: false,
-    forAdmin: false,
-    iconClass: '',
-    footer: false,
-    toolTip: '',
-    element: <LicensePage />,
+    element: <Dashboard />,
   },
 } as Routes
 
