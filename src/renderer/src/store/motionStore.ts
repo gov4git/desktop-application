@@ -2,10 +2,12 @@ import { type StateCreator } from 'zustand'
 import type {} from 'zustand/middleware/immer'
 
 import type {
+  MotionSearch,
   MotionStatus,
   MotionVotedStatus,
   MotionVoteOption,
 } from '../../../electron/db/schema.js'
+import { serialAsync } from '../../../shared/index.js'
 import { motionService } from '../services/MotionService.js'
 import type { MotionStore, Store } from './types.js'
 
@@ -15,72 +17,57 @@ export const createMotionStore: StateCreator<
   [],
   MotionStore
 > = (set, get) => ({
-  motions: {
-    data: [],
-    loading: false,
+  motionInfo: {
+    motions: [],
     searchArgs: {
       type: 'concern',
-      searchTerm: '',
+      search: '',
       status: ['open'],
-      voteStatus: [],
+      voted: [],
     },
     searchResults: {
       totalCount: 0,
       matchingCount: 0,
     },
-    setLoading: (loading: boolean) => {
-      set((s) => {
-        s.motions.loading = loading
-      })
-    },
-    setType: (t: 'concern' | 'proposal') => {
-      set((s) => {
-        s.motions.searchArgs.type = t
-      })
-    },
-    setSearchTerm: (term: string) => {
-      set((s) => {
-        s.motions.searchArgs.searchTerm = term
-      })
-    },
-    setStatus: (status: MotionStatus[]) => {
-      set((s) => {
-        s.motions.searchArgs.status = status
-      })
-    },
-    setVoteStatus: (status: MotionVotedStatus[]) => {
-      set((s) => {
-        s.motions.searchArgs.voteStatus = status
-      })
-    },
-    fetchMotions: async (skipCache = false) => {
-      const args = get().motions.searchArgs
-      set((s) => {
-        s.motions.searchResults = {
-          totalCount: 0,
-          matchingCount: 0,
-        }
-      })
-      try {
+    fetchMotions: serialAsync(async (args: MotionSearch, skipCache = false) => {
+      await get().tryRun(async () => {
         const motions = await motionService.getMotions(args, skipCache)
         set((s) => {
-          s.motions.data = motions.motions
-          s.motions.searchResults = {
+          s.motionInfo.motions = motions.motions
+          s.motionInfo.searchResults = {
             totalCount: motions.totalCount,
             matchingCount: motions.matchingCount,
           }
         })
-      } catch (ex) {
-        await get().catchError(`Failed to fetch motions. ${ex}`)
-      }
+      })
+    }),
+    setType: (t: 'concern' | 'proposal') => {
+      set((s) => {
+        s.motionInfo.searchArgs.type = t
+      })
+    },
+    setSearchTerm: (term: string) => {
+      set((s) => {
+        s.motionInfo.searchArgs.search = term
+      })
+    },
+    setStatus: (status: MotionStatus[]) => {
+      set((s) => {
+        s.motionInfo.searchArgs.status = status
+      })
+    },
+    setVoteStatus: (status: MotionVotedStatus[]) => {
+      set((s) => {
+        s.motionInfo.searchArgs.voted = status
+      })
     },
     resetSearchArgs: () => {
       set((s) => {
-        s.motions.searchArgs = {
+        s.motionInfo.searchArgs = {
           type: 'concern',
-          searchTerm: '',
+          search: '',
           status: ['open'],
-          voteStatus: [],
+          voted: [],
         }
       })
     },
@@ -98,7 +85,7 @@ export const createMotionStore: StateCreator<
         ) {
           return 'Sorry, this ballot is closed to voting. Please refresh the page to get the latest list of ballots.'
         } else {
-          await get().catchError(`Failed to cast vote. ${ex}`)
+          get().setError(`${ex}`)
           return `There was an error voting. Please view the full logs at the top of the page.`
         }
       }

@@ -2,17 +2,20 @@ import { Tab, TabList } from '@fluentui/react-components'
 import { type FC, memo, useMemo, useState } from 'react'
 
 import { Loader } from '../../../../components/Loader.js'
-import {
-  useCommunityManageLoading,
-  useSelectedCommunityToManage,
-} from '../../../../store/hooks/communityHooks.js'
+import { useDataStore } from '../../../../store/store.js'
 import { IssuesPanel } from './IssuesPanel.js'
 import { UserPanel } from './UserPanel.js'
 
 export const ManageCommunity: FC = memo(function ManageCommunity() {
   const [selectedTab, setSelectedTab] = useState('users')
-  const selectedCommunity = useSelectedCommunityToManage()!
-  const loading = useCommunityManageLoading()
+  const selectedCommunity = useDataStore(
+    (s) => s.communityManage.communityToManage,
+  )!
+  const managedUsers = useDataStore((s) => s.communityManage.users)
+  const managedIssues = useDataStore((s) => s.communityManage.issues)
+  const loading = useMemo(() => {
+    return managedUsers == null || managedIssues == null
+  }, [managedUsers, managedIssues])
 
   const Component: FC = useMemo(() => {
     if (selectedTab === 'issues') {

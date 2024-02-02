@@ -2,22 +2,20 @@ import { Button } from '@fluentui/react-components'
 import { FC, memo, useCallback, useState } from 'react'
 
 import { Message } from '../../../../components/Message.js'
-import {
-  useCommunityDeployOrg,
-  useCommunityDeployRepo,
-  useDeployCommunity,
-  useSetCommunityDashboardState,
-  useSetCommunityDeployState,
-} from '../../../../store/hooks/communityHooks.js'
+import { useDataStore } from '../../../../store/store.js'
 import { useMessageStyles } from '../../../../styles/index.js'
 
 export const ReviewDeploy: FC = memo(function ReviewDeploy() {
   const [loading, setLoading] = useState(false)
-  const setCommunityDashboardState = useSetCommunityDashboardState()
-  const setCommunityDeployState = useSetCommunityDeployState()
-  const selectedOrg = useCommunityDeployOrg()
-  const selectedRepo = useCommunityDeployRepo()
-  const deployCommunity = useDeployCommunity()
+  const setCommunityDashboardState = useDataStore(
+    (s) => s.communityDashboard.setState,
+  )
+  const setCommunityDeployState = useDataStore(
+    (s) => s.communityDeploy.setState,
+  )
+  const selectedOrg = useDataStore((s) => s.communityDeploy.selectedOrg)
+  const selectedRepo = useDataStore((s) => s.communityDeploy.selectedRepo)
+  const deployCommunity = useDataStore((s) => s.communityDeploy.deployCommunity)
   const messageStyles = useMessageStyles()
   const [successMessage, setSuccessMessage] = useState('')
 

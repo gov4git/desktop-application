@@ -1,25 +1,28 @@
 import { Tooltip } from '@fluentui/react-tooltip'
-import { FC, useCallback, useEffect } from 'react'
+import { FC, useCallback, useEffect, useState } from 'react'
 
 import { serialAsync } from '../../../../../shared/index.js'
-import { useGlobalRefreshCache } from '../../../store/hooks/globalHooks.js'
-import {
-  useMotionsLoading,
-  useSetMotionsLoading,
-} from '../../../store/hooks/motionHooks.js'
+import { useDataStore } from '../../../store/store.js'
 import { useRefreshButtonStyles } from './RefreshButton.styles.js'
 
-export const RefreshButton: FC = function RefreshButton() {
+export type RefreshButtonProps = {
+  onLoadingChange: (loading: boolean) => void
+}
+
+export const RefreshButton: FC<RefreshButtonProps> = function RefreshButton({
+  onLoadingChange,
+}) {
   const styles = useRefreshButtonStyles()
-  const refreshCache = useGlobalRefreshCache()
-  const setLoading = useSetMotionsLoading()
-  const isLoading = useMotionsLoading()
+  const refreshCache = useDataStore((s) => s.refreshCache)
+  const [loading, setLoading] = useState(false)
 
   const refresh = useCallback(async () => {
     setLoading(true)
+    onLoadingChange(true)
     await refreshCache()
+    onLoadingChange(false)
     setLoading(false)
-  }, [refreshCache, setLoading])
+  }, [refreshCache, onLoadingChange, setLoading])
 
   useEffect(() => {
     const updateCacheInterval = setInterval(
@@ -37,10 +40,10 @@ export const RefreshButton: FC = function RefreshButton() {
     <button onClick={refresh} className={styles.refreshButton}>
       <Tooltip content="Refresh" relationship="description">
         <span>
-          {isLoading && (
+          {loading && (
             <i className="codicon codicon-sync codicon-modifier-spin" />
           )}
-          {!isLoading && <i className="codicon codicon-sync" />}
+          {!loading && <i className="codicon codicon-sync" />}
         </span>
       </Tooltip>
     </button>

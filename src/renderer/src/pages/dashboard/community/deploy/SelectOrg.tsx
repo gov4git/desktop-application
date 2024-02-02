@@ -15,31 +15,27 @@ import { FC, memo, useCallback, useEffect, useState } from 'react'
 
 import { Loader } from '../../../../components/Loader.js'
 import { LoginVerification } from '../../../../components/LoginVerification.js'
-import {
-  useCommunityDeployFetchOrgs,
-  useCommunityDeployOrg,
-  useCommunityDeployOrgs,
-  useSetCommunityDashboardState,
-  useSetCommunityDeployOrg,
-  useSetCommunityDeployState,
-} from '../../../../store/hooks/communityHooks.js'
-import { useStartLoginFlow } from '../../../../store/hooks/userHooks.js'
+import { useDataStore } from '../../../../store/store.js'
 import { useButtonStyles } from '../../../../styles/index.js'
 import { useCommunityDeployStyle } from './styles.js'
 
 export const SelectOrg: FC = memo(function SelectOrg() {
   const buttonStyles = useButtonStyles()
-  const orgs = useCommunityDeployOrgs()
-  const getOrgs = useCommunityDeployFetchOrgs()
-  const selectedOrg = useCommunityDeployOrg()
-  const setSelectedOrg = useSetCommunityDeployOrg()
+  const orgs = useDataStore((s) => s.communityDeploy.orgs)
+  const getOrgs = useDataStore((s) => s.communityDeploy.fetchOrgs)
+  const selectedOrg = useDataStore((s) => s.communityDeploy.selectedOrg)
+  const setSelectedOrg = useDataStore((s) => s.communityDeploy.selectOrg)
   const styles = useCommunityDeployStyle()
-  const setCommunityDashboardState = useSetCommunityDashboardState()
-  const setCommunityDeployState = useSetCommunityDeployState()
+  const setCommunityDashboardState = useDataStore(
+    (s) => s.communityDashboard.setState,
+  )
+  const setCommunityDeployState = useDataStore(
+    (s) => s.communityDeploy.setState,
+  )
   const [dataLoading, setDataLoading] = useState(false)
   const [verification, setVerification] = useState<Verification | null>(null)
   const [vericationLoading, setVerificationLoading] = useState(false)
-  const startLoginFlow = useStartLoginFlow()
+  const startLoginFlow = useDataStore((s) => s.userInfo.startLoginFlow)
 
   const loadData = useCallback(async () => {
     setDataLoading(true)

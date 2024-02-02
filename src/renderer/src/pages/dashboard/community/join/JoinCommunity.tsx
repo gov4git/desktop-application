@@ -1,38 +1,59 @@
 import { Button, Field, InfoLabel, Input } from '@fluentui/react-components'
 import { FC, FormEvent, memo, useCallback, useState } from 'react'
 
-import {
-  useCommunityProjectJoinUrl,
-  useJoinCommunity,
-  useSetCommunityDashboardState,
-  useSetCommunityProjectJoinUrl,
-} from '../../../../store/hooks/communityHooks.js'
+import { Message } from '../../../../components/Message.js'
+import { useDataStore } from '../../../../store/store.js'
+import { useMessageStyles } from '../../../../styles/index.js'
 import { useJoinCommunityStyles } from './styles.js'
 
 export const JoinCommunity: FC = memo(function JoinCommunity() {
-  const newProjectUrl = useCommunityProjectJoinUrl()
-  const setNewProjectUrl = useSetCommunityProjectJoinUrl()
+  const messageStyles = useMessageStyles()
+  const [newProjectUrl, setNewProjectUrl] = useState('')
   const [loading, setLoading] = useState(false)
   const styles = useJoinCommunityStyles()
-  const insertCommunity = useJoinCommunity()
-  const setCommunityDashboardState = useSetCommunityDashboardState()
+  const joinCommunity = useDataStore((s) => s.joinCommunity)
+  const [errors, setErrors] = useState<string[]>([])
+  const setCommunityDashboardState = useDataStore(
+    (s) => s.communityDashboard.setState,
+  )
 
   const save = useCallback(
     async (ev: FormEvent<HTMLFormElement>) => {
       ev.preventDefault()
 
       setLoading(true)
-      await insertCommunity()
+      const errors = await joinCommunity(newProjectUrl)
+      setErrors(errors)
       setNewProjectUrl('')
       setLoading(false)
-      setCommunityDashboardState('initial')
+      if (errors.length === 0) {
+        setCommunityDashboardState('initial')
+      }
     },
-    [setLoading, insertCommunity, setNewProjectUrl, setCommunityDashboardState],
+    [
+      setLoading,
+      joinCommunity,
+      setNewProjectUrl,
+      setCommunityDashboardState,
+      newProjectUrl,
+      setErrors,
+    ],
   )
+
+  const dismissError = useCallback(() => {
+    setErrors([])
+  }, [setErrors])
 
   return (
     <>
       <h2>Join a Community</h2>
+      {errors.length > 0 && (
+        <Message
+          messages={errors}
+          onClose={dismissError}
+          className={messageStyles.error}
+        />
+      )}
       <form onSubmit={save}>
         <Field
           className={styles.inputField}

@@ -1,16 +1,9 @@
 import { Button, Card } from '@fluentui/react-components'
 import { Add32Filled, People32Filled } from '@fluentui/react-icons'
-import { FC, memo, useCallback, useMemo } from 'react'
+import { FC, memo, useMemo } from 'react'
 
-import { Message } from '../../../components/Message.js'
-import {
-  useCommunityDashboardState,
-  useCommunityJoinErrors,
-  useSetCommunityDashboardState,
-  useSetCommunityJoinErrors,
-} from '../../../store/hooks/communityHooks.js'
+import { useDataStore } from '../../../store/store.js'
 import { useCardStyles, useHeadingsStyles } from '../../../styles/index.js'
-import { useMessageStyles } from '../../../styles/messages.js'
 import { CommunityTable } from './CommunityTable.js'
 import { useDashboardCommunityStyle } from './DashboardCommunity.styles.js'
 import { CommunityDeploy } from './deploy/CommunityDeploy.js'
@@ -19,11 +12,10 @@ import { ManageCommunity } from './manage/ManageCommunity.js'
 
 export const DashboardCommunity: FC = memo(function DashboardCommunity() {
   const headerStyles = useHeadingsStyles()
-  const communityErrors = useCommunityJoinErrors()
-  const setCommunityErrors = useSetCommunityJoinErrors()
-  const messageStyles = useMessageStyles()
   const cardStyles = useCardStyles()
-  const communityDashboardState = useCommunityDashboardState()
+  const communityDashboardState = useDataStore(
+    (s) => s.communityDashboard.state,
+  )
 
   const Component: FC = useMemo(() => {
     switch (communityDashboardState) {
@@ -38,21 +30,10 @@ export const DashboardCommunity: FC = memo(function DashboardCommunity() {
     }
   }, [communityDashboardState])
 
-  const dismissError = useCallback(() => {
-    setCommunityErrors([])
-  }, [setCommunityErrors])
-
   return (
     <>
       <h2 className={headerStyles.pageHeading}>Communities</h2>
       <Card className={cardStyles.primary}>
-        {communityErrors.length > 0 && (
-          <Message
-            messages={communityErrors}
-            onClose={dismissError}
-            className={messageStyles.error}
-          />
-        )}
         <CommunityTable />
         <br />
         <Component />
@@ -64,7 +45,9 @@ export const DashboardCommunity: FC = memo(function DashboardCommunity() {
 export const DashboardCommunityButtons: FC = memo(
   function DashboardCommunityButtons() {
     const styles = useDashboardCommunityStyle()
-    const setCommunityDashboardState = useSetCommunityDashboardState()
+    const setCommunityDashboardState = useDataStore(
+      (s) => s.communityDashboard.setState,
+    )
 
     return (
       <div className={styles.buttonRow}>

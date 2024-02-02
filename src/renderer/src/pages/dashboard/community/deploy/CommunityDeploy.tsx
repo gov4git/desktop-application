@@ -1,6 +1,6 @@
 import { FC, memo, useMemo } from 'react'
 
-import { useCommunityDeployState } from '../../../../store/hooks/communityHooks.js'
+import { useDataStore } from '../../../../store/store.js'
 import { Nav } from './Nav.js'
 import { ReviewDeploy } from './ReviewDeploy.js'
 import { SelectOrg } from './SelectOrg.js'
@@ -8,7 +8,7 @@ import { SelectRepo } from './SelectRepo.js'
 import { Token } from './Token.js'
 
 export const CommunityDeploy: FC = memo(function CommunityDeploy() {
-  const state = useCommunityDeployState()
+  const state = useDataStore((s) => s.communityDeploy.state)
 
   const Component: FC = useMemo(() => {
     switch (state) {

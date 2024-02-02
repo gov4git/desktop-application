@@ -11,47 +11,52 @@ import {
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { Community } from '../../../../../electron/db/schema.js'
-import {
-  useCommunites,
-  useCommunity,
-  useSelectCommunity,
-  useSelectedCommunityUrl,
-  useSetCommunityDashboardState,
-  useSetSelectedCommunityToManage,
-  useSetSelectedCommunityUrl,
-} from '../../../store/hooks/communityHooks.js'
+import { useDataStore } from '../../../store/store.js'
 import { useCommunityTableStyle } from './CommunityTable.styles.js'
 
 export const CommunityTable: FC = function CommunityTable() {
-  const communities = useCommunites()
-  const selectedCommunity = useCommunity()
-  const selectedCommunityUrl = useSelectedCommunityUrl()
-  const setSelectedCommunityUrl = useSetSelectedCommunityUrl()
+  const communities = useDataStore((s) => s.communityInfo.communities)
+  const selectedCommunity = useDataStore(
+    (s) => s.communityInfo.selectedCommunity,
+  )
+  const [selectedCommunityUrl, setSelectedCommunityUrl] = useState(
+    selectedCommunity?.url ?? '',
+  )
   const [communityPages, setCommunityPages] = useState<Record<string, string>>(
     {},
   )
   const styles = useCommunityTableStyle()
-  const selectCommunity = useSelectCommunity()
+  const _selectCommunity = useDataStore((s) => s.communityInfo.selectCommunity)
+
+  const selectCommunity = useCallback(
+    async (url: string) => {
+      setSelectedCommunityUrl(url)
+      await _selectCommunity(url)
+    },
+    [_selectCommunity, setSelectedCommunityUrl],
+  )
 
   useEffect(() => {
     setSelectedCommunityUrl(selectedCommunity?.url ?? '')
   }, [selectedCommunity, setSelectedCommunityUrl])
 
   useEffect(() => {
-    for (const c of communities) {
-      const l = `<a href="${c.projectUrl}" target="_blank">${c.name}</a>`
-      setCommunityPages((p) => {
-        return {
-          ...p,
-          [c.url]: l,
-        }
-      })
+    if (communities != null) {
+      for (const c of communities) {
+        const l = `<a href="${c.projectUrl}" target="_blank">${c.name}</a>`
+        setCommunityPages((p) => {
+          return {
+            ...p,
+            [c.url]: l,
+          }
+        })
+      }
     }
   }, [communities, setCommunityPages])
 
   return (
     <>
-      {communities.length > 0 && (
+      {communities != null && communities.length > 0 && (
         <Table>
           <TableHeader>
             <TableRow>
@@ -124,8 +129,12 @@ const CommunityMembershipStatus: FC<CommunityMembersipStatusProps> =
 
 const CommunityAction: FC<CommunityMembersipStatusProps> =
   function CommunityAction({ community }) {
-    const setCommunityDashboardState = useSetCommunityDashboardState()
-    const setManagedCommunity = useSetSelectedCommunityToManage()
+    const setCommunityDashboardState = useDataStore(
+      (s) => s.communityDashboard.setState,
+    )
+    const setManagedCommunity = useDataStore(
+      (s) => s.communityManage.setCommunity,
+    )
 
     const manage = useCallback(() => {
       setManagedCommunity(community)

@@ -12,11 +12,7 @@ import { type FC, memo, useCallback, useState } from 'react'
 
 import type { IssueSearchResults } from '../../../../../../electron/services/index.js'
 import { Message } from '../../../../components/Message.js'
-import {
-  useManagedCommunityIssues,
-  useManageIssue,
-  useSelectedCommunityToManage,
-} from '../../../../store/hooks/communityHooks.js'
+import { useDataStore } from '../../../../store/store.js'
 import { useMessageStyles } from '../../../../styles/messages.js'
 import { useManageCommunityStyles } from './styles.js'
 
@@ -30,12 +26,14 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
   const messageStyles = useMessageStyles()
   const [loading, setLoading] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
-  const selectedCommunity = useSelectedCommunityToManage()!
+  const selectedCommunity = useDataStore(
+    (s) => s.communityManage.communityToManage,
+  )!
   const [selectedIssue, setSelectedIssue] = useState<IssueSearchResults | null>(
     null,
   )
-  const manageIssue = useManageIssue()
-  const issues = useManagedCommunityIssues()
+  const manageIssue = useDataStore((s) => s.communityManage.manageIssue)
+  const issues = useDataStore((s) => s.communityManage.issues)
 
   const onSelect = useCallback(
     (issue: IssueSearchResults) => {
@@ -76,29 +74,30 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {issues.map((i) => (
-              <TableRow
-                key={i.id}
-                onClick={() => onSelect(i)}
-                className={
-                  selectedIssue != null && selectedIssue.id === i.id
-                    ? styles.selectedRow
-                    : ''
-                }
-              >
-                <TableCell>
-                  <span
-                    style={{
-                      color: 'var(--colorBrandBackground)',
-                      fontSize: '1.2rem',
-                    }}
-                  >
-                    {isManaged(i) && <i className="codicon codicon-check" />}
-                  </span>
-                </TableCell>
-                <TableCell>{i.title}</TableCell>
-              </TableRow>
-            ))}
+            {issues != null &&
+              issues.map((i) => (
+                <TableRow
+                  key={i.id}
+                  onClick={() => onSelect(i)}
+                  className={
+                    selectedIssue != null && selectedIssue.id === i.id
+                      ? styles.selectedRow
+                      : ''
+                  }
+                >
+                  <TableCell>
+                    <span
+                      style={{
+                        color: 'var(--colorBrandBackground)',
+                        fontSize: '1.2rem',
+                      }}
+                    >
+                      {isManaged(i) && <i className="codicon codicon-check" />}
+                    </span>
+                  </TableCell>
+                  <TableCell>{i.title}</TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </div>

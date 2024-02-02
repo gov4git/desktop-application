@@ -9,41 +9,32 @@ import {
 import { type FC, useCallback } from 'react'
 
 import { LogViewer } from '../../components/index.js'
-import { useSetGlobalError } from '../../store/hooks/globalHooks.js'
+import { useDataStore } from '../../store/store.js'
 import { useErrorScreenStyles } from './ErrorScreen.styles.js'
 
-export type ErrorScreenProps = {
-  message: string
-  showClose?: boolean
-}
-
-export const ErrorScreen: FC<ErrorScreenProps> = function ErrorScreen({
-  message,
-  showClose = false,
-}) {
+export const ErrorScreen: FC = function ErrorScreen() {
   const styles = useErrorScreenStyles()
-  const setErrorMessage = useSetGlobalError()
+  const clearErrorMessage = useDataStore((s) => s.clearError)
+  const errorMessage = useDataStore((s) => s.error)
 
   const onClose = useCallback(() => {
-    setErrorMessage('')
-  }, [setErrorMessage])
+    clearErrorMessage()
+  }, [clearErrorMessage])
+
+  if (errorMessage == null || errorMessage === '') {
+    return <></>
+  }
 
   return (
     <div className={styles.root}>
       <Card>
-        {showClose && (
-          <button
-            title="close errors"
-            className={styles.close}
-            onClick={onClose}
-          >
-            <i className="codicon codicon-chrome-close" />
-          </button>
-        )}
+        <button title="close errors" className={styles.close} onClick={onClose}>
+          <i className="codicon codicon-chrome-close" />
+        </button>
         <Text size={500} weight="semibold">
           Error
         </Text>
-        <p>Message: {message}</p>
+        <p>Message: {errorMessage}</p>
         <Accordion collapsible>
           <AccordionItem value="1">
             <AccordionHeader>Logs</AccordionHeader>
