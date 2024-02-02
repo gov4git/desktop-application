@@ -2,22 +2,20 @@ import { Button, Card, Text } from '@fluentui/react-components'
 import { FC, useCallback } from 'react'
 
 import { appUpdaterService } from '../../services/AppUpdaterService.js'
-import {
-  useCatchError,
-  useGlobalAppUpdateInfo,
-} from '../../store/hooks/globalHooks.js'
+import { useGlobalAppUpdateInfo } from '../../store/hooks/globalHooks.js'
+import { useDataStore } from '../../store/store.js'
 import { useUpdateNotificationStyles } from './UpdateNotification.styles.js'
 
 export const UpdateNotification: FC = function UpdateNotification() {
-  const catchError = useCatchError()
+  const tryRun = useDataStore((s) => s.tryRun)
   const updates = useGlobalAppUpdateInfo()
   const styles = useUpdateNotificationStyles()
 
-  const update = useCallback(() => {
-    appUpdaterService.restartAndUpdate().catch(async (ex) => {
-      await catchError(`Failed to restart for updates. ${ex}`)
+  const update = useCallback(async () => {
+    await tryRun(async () => {
+      appUpdaterService.restartAndUpdate()
     })
-  }, [catchError])
+  }, [tryRun])
 
   if (updates === null) {
     return <></>

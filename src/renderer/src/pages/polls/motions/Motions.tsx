@@ -1,15 +1,8 @@
 import { Card } from '@fluentui/react-components'
-import { type FC, useEffect, useMemo } from 'react'
+import { type FC, useEffect, useMemo, useState } from 'react'
 
 import { Loader } from '../../../components/index.js'
-import { useCommunity } from '../../../store/hooks/communityHooks.js'
-import {
-  useFetchMotions,
-  useMotions,
-  useMotionsLoading,
-  useMotionsSearchArgs,
-  useSetMotionsLoading,
-} from '../../../store/hooks/motionHooks.js'
+import { useDataStore } from '../../../store/store.js'
 import { useHeadingsStyles } from '../../../styles/headings.js'
 import { MotionsBallot } from './MotionsBallot.js'
 import { MotionsControls } from './MotionsControls.js'
@@ -20,13 +13,12 @@ export type MotionsProps = {
 }
 
 export const Motions: FC<MotionsProps> = function Motions({ title }) {
-  const motions = useMotions()
+  const motions = useDataStore((s) => s.motionInfo.motions)
   const headingStyles = useHeadingsStyles()
-  const community = useCommunity()
-  const motionsLoading = useMotionsLoading()
-  const setMotionsLoading = useSetMotionsLoading()
-  const motionSearchArgs = useMotionsSearchArgs()
-  const fetchMotions = useFetchMotions()
+  const community = useDataStore((s) => s.communityInfo.selectedCommunity)
+  const [motionsLoading, setMotionsLoading] = useState(false)
+  const motionSearchArgs = useDataStore((s) => s.motionInfo.searchArgs)
+  const fetchMotions = useDataStore((s) => s.motionInfo.fetchMotions)
 
   const issuesLink = useMemo(() => {
     if (community == null) return null
@@ -36,7 +28,7 @@ export const Motions: FC<MotionsProps> = function Motions({ title }) {
   useEffect(() => {
     async function run() {
       setMotionsLoading(true)
-      await fetchMotions()
+      await fetchMotions(motionSearchArgs, false)
       setMotionsLoading(false)
     }
     void run()
@@ -44,7 +36,7 @@ export const Motions: FC<MotionsProps> = function Motions({ title }) {
 
   return (
     <>
-      <RefreshButton />
+      <RefreshButton onLoadingChange={setMotionsLoading} />
       <h1 className={headingStyles.pageHeading}>{title}</h1>
 
       <MotionsControls>

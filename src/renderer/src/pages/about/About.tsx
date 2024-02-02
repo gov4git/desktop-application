@@ -10,21 +10,19 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { LogViewer } from '../../components/index.js'
 import { logService } from '../../services/LogService.js'
-import { useCatchError } from '../../store/hooks/globalHooks.js'
+import { useDataStore } from '../../store/store.js'
 import { LicenseViewer } from './LicenseViewer.js'
 
 export const AboutPage = function AboutPage() {
   const [version, setVersion] = useState('')
-  const catchError = useCatchError()
+  const tryRun = useDataStore((s) => s.tryRun)
 
   const getVersion = useCallback(async () => {
-    try {
+    await tryRun(async () => {
       const ver = await logService.getAppVersion()
       setVersion(ver)
-    } catch (ex) {
-      await catchError(`Failed to load app version. ${ex}`)
-    }
-  }, [setVersion, catchError])
+    })
+  }, [setVersion, tryRun])
 
   useEffect(() => {
     void getVersion()

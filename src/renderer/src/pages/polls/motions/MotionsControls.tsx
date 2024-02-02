@@ -11,29 +11,21 @@ import {
 
 import { debounceAsync } from '~/shared'
 
-import {
-  useMotionsSearchResults,
-  useMotionsSearchTerm,
-  useMotionsStatus,
-  useMotionsVoteStatus,
-  useSetMotionsSearchTerm,
-  useSetMotionsStatus,
-  useSetMotionsVoteStatus,
-} from '../../../store/hooks/motionHooks.js'
+import { useDataStore } from '../../../store/store.js'
 import { useMotionsControlStyles } from './MotionsControls.styles.js'
 
 export const MotionsControls: FC<PropsWithChildren> = function MotionsControls({
   children,
 }) {
   const styles = useMotionsControlStyles()
-  const globalSearch = useMotionsSearchTerm()
-  const setGlobalSearch = useSetMotionsSearchTerm()
+  const globalSearch = useDataStore((s) => s.motionInfo.searchArgs.search)
+  const setGlobalSearch = useDataStore((s) => s.motionInfo.setSearchTerm)
   const [search, setSearch] = useState<string>(globalSearch)
-  const globalStatus = useMotionsStatus()
-  const setGlobalStatus = useSetMotionsStatus()
-  const globalVotedOn = useMotionsVoteStatus()
-  const setGlobalVotedOn = useSetMotionsVoteStatus()
-  const searchResults = useMotionsSearchResults()
+  const globalStatus = useDataStore((s) => s.motionInfo.searchArgs.status)
+  const setGlobalStatus = useDataStore((s) => s.motionInfo.setStatus)
+  const globalVotedOn = useDataStore((s) => s.motionInfo.searchArgs.voted)
+  const setGlobalVotedOn = useDataStore((s) => s.motionInfo.setVoteStatus)
+  const searchResults = useDataStore((s) => s.motionInfo.searchResults)
   const StatusOptions = ['Open', 'Closed', 'Cancelled', 'Frozen']
   const VoteStatusOptions = ['Voted', 'Not Voted']
 

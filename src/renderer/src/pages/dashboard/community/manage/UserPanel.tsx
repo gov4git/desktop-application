@@ -11,21 +11,21 @@ import {
 } from '@fluentui/react-components'
 import { type FC, FormEvent, memo, useCallback, useState } from 'react'
 
-import {
-  useIssueVotingCredits,
-  useManagedCommunityUsers,
-  useSelectedCommunityToManage,
-} from '../../../../store/hooks/communityHooks.js'
+import { useDataStore } from '../../../../store/store.js'
 import { useManageCommunityStyles } from './styles.js'
 
 export const UserPanel: FC = memo(function UserPanel() {
-  const selectedCommunity = useSelectedCommunityToManage()!
+  const selectedCommunity = useDataStore(
+    (s) => s.communityManage.communityToManage,
+  )!
   const [selectedUsername, setSelectedUsername] = useState('')
   const [votingCredits, setVotingCredits] = useState('')
-  const issueVotingCredits = useIssueVotingCredits()
+  const issueVotingCredits = useDataStore(
+    (s) => s.communityManage.issueVotingCredits,
+  )
   const [loading, setLoading] = useState(false)
   const styles = useManageCommunityStyles()
-  const users = useManagedCommunityUsers()
+  const users = useDataStore((s) => s.communityManage.users)
 
   const issueCredits = useCallback(
     async (ev: FormEvent<HTMLFormElement>) => {
@@ -63,17 +63,18 @@ export const UserPanel: FC = memo(function UserPanel() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((u) => (
-              <TableRow key={u.username}>
-                <TableCell>{u.username}</TableCell>
-                <TableCell>{u.credits}</TableCell>
-                <TableCell>
-                  <Button onClick={() => setSelectedUsername(u.username)}>
-                    Assign Credits
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {users != null &&
+              users.map((u) => (
+                <TableRow key={u.username}>
+                  <TableCell>{u.username}</TableCell>
+                  <TableCell>{u.credits}</TableCell>
+                  <TableCell>
+                    <Button onClick={() => setSelectedUsername(u.username)}>
+                      Assign Credits
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
           </TableBody>
         </Table>
       </div>

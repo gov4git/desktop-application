@@ -5,14 +5,13 @@ import { Link } from 'react-router-dom'
 import { formatDecimal } from '~/shared'
 
 import { routes } from '../../App/index.js'
-import { useCommunity } from '../../store/hooks/communityHooks.js'
-import { useUser } from '../../store/hooks/userHooks.js'
+import { useDataStore } from '../../store/store.js'
 import { useUserBadgeStyles } from './UserBadge.styles.js'
 
 export const UserBadge: FC = function UserBadge() {
   const classes = useUserBadgeStyles()
-  const user = useUser()
-  const community = useCommunity()
+  const user = useDataStore((s) => s.userInfo.user)
+  const community = useDataStore((s) => s.communityInfo.selectedCommunity)
 
   if (user == null) return <></>
 

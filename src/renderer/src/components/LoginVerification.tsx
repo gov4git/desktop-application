@@ -1,7 +1,7 @@
 import type { Verification } from '@octokit/auth-oauth-device/dist-types/types.js'
 import { FC, useCallback, useEffect, useState } from 'react'
 
-import { useFinishLoginFlow } from '../store/hooks/userHooks.js'
+import { useDataStore } from '../store/store.js'
 import { useMessageStyles } from '../styles/index.js'
 import { useLoginVerificationStyle } from './LoginVerification.styles.js'
 import { Message } from './Message.js'
@@ -18,7 +18,7 @@ export const LoginVerification: FC<LoginVerificationProps> =
     const [loginErrors, setLoginErrors] = useState<string[] | null>([])
     const [internalVerification, setInternalVerification] =
       useState<Verification | null>(null)
-    const finishLoginFlow = useFinishLoginFlow()
+    const finishLoginFlow = useDataStore((s) => s.userInfo.finishLoginFlow)
 
     useEffect(() => {
       setInternalVerification(verification)

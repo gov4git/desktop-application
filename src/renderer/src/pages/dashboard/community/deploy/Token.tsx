@@ -1,19 +1,16 @@
 import { Button, Field, Input } from '@fluentui/react-components'
 import { FC, memo } from 'react'
 
-import {
-  useCommunityDeployOrg,
-  useCommunityDeployPat,
-  useSetCommunityDeployPat,
-  useSetCommunityDeployState,
-} from '../../../../store/hooks/communityHooks.js'
+import { useDataStore } from '../../../../store/store.js'
 import { useCommunityDeployStyle } from './styles.js'
 
 export const Token: FC = memo(function Deploy() {
-  const pat = useCommunityDeployPat()
-  const setPat = useSetCommunityDeployPat()
-  const setCommunityDeployState = useSetCommunityDeployState()
-  const selectedOrg = useCommunityDeployOrg()
+  const pat = useDataStore((s) => s.communityDeploy.communityPat)
+  const setPat = useDataStore((s) => s.communityDeploy.setCommunityPat)
+  const setCommunityDeployState = useDataStore(
+    (s) => s.communityDeploy.setState,
+  )
+  const selectedOrg = useDataStore((s) => s.communityDeploy.selectedOrg)
   const styles = useCommunityDeployStyle()
 
   return (

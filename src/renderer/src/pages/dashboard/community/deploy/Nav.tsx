@@ -6,14 +6,11 @@ import {
 } from '@fluentui/react-components'
 import { FC, memo } from 'react'
 
-import {
-  useCommunityDeployState,
-  useSetCommunityDeployState,
-} from '../../../../store/hooks/communityHooks.js'
+import { useDataStore } from '../../../../store/store.js'
 
 export const Nav: FC = memo(function Nav() {
-  const state = useCommunityDeployState()
-  const setState = useSetCommunityDeployState()
+  const state = useDataStore((s) => s.communityDeploy.state)
+  const setState = useDataStore((s) => s.communityDeploy.setState)
 
   return (
     <Breadcrumb>

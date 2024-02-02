@@ -5,12 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { Loader } from '../../../components/Loader.js'
 import { LoginVerification } from '../../../components/LoginVerification.js'
-import { useGlobalRefreshCache } from '../../../store/hooks/globalHooks.js'
-import {
-  useLogout,
-  useStartLoginFlow,
-  useUser,
-} from '../../../store/hooks/userHooks.js'
+import { useDataStore } from '../../../store/store.js'
 import { useButtonStyles, useCardStyles } from '../../../styles/index.js'
 import { useDashboardUserStyles } from './DashboardUser.styles.js'
 
@@ -24,14 +19,14 @@ export const DashboardUser: FC<LoginProps> = function DashboardUser({
   const styles = useDashboardUserStyles()
   const buttonStyles = useButtonStyles()
   const cardStyles = useCardStyles()
-  const user = useUser()
+  const user = useDataStore((s) => s.userInfo.user)
   const navigate = useNavigate()
-  const _logout = useLogout()
+  const _logout = useDataStore((s) => s.userInfo.logout)
   const [verification, setVerification] = useState<Verification | null>(null)
-  const startLoginFlow = useStartLoginFlow()
+  const startLoginFlow = useDataStore((s) => s.userInfo.startLoginFlow)
   const [waitingForVericationCode, setWaitingForVerificationCode] =
     useState(false)
-  const refreshCache = useGlobalRefreshCache()
+  const refreshCache = useDataStore((s) => s.refreshCache)
   const [dataLoading, setDataLoading] = useState(false)
 
   const login = useCallback(async () => {
@@ -49,7 +44,7 @@ export const DashboardUser: FC<LoginProps> = function DashboardUser({
     if (redirectOnLogin !== '') {
       navigate(redirectOnLogin)
     }
-  }, [setVerification, refreshCache, setDataLoading, navigate, redirectOnLogin])
+  }, [setVerification, refreshCache, navigate, redirectOnLogin, setDataLoading])
 
   const logout = useCallback(async () => {
     void _logout()

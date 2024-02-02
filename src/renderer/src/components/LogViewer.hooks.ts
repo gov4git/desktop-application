@@ -1,19 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { logService } from '../services/index.js'
-import { useCatchError } from '../store/hooks/globalHooks.js'
+import { useDataStore } from '../store/store.js'
 
 export function useLogs(): string | null {
   const [logs, setLogs] = useState<string | null>(null)
-  const catchError = useCatchError()
+  const tryRun = useDataStore((s) => s.tryRun)
   const getLogs = useCallback(async () => {
-    try {
+    await tryRun(async () => {
       const l = await logService.getLogs()
       setLogs(l)
-    } catch (ex) {
-      await catchError(`Failed to load logs. ${ex}`)
-    }
-  }, [setLogs, catchError])
+    })
+  }, [setLogs, tryRun])
 
   useEffect(() => {
     void getLogs()

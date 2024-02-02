@@ -1,10 +1,12 @@
 import type { Verification } from '@octokit/auth-oauth-device/dist-types/types.js'
+import type { Draft } from 'immer'
 
 import type { AppUpdateInfo } from '~/shared'
 
 import type {
   Community,
   Motion,
+  MotionSearch,
   MotionStatus,
   MotionVotedStatus,
   MotionVoteOption,
@@ -18,26 +20,38 @@ import type {
   UserCredits,
 } from '../../../electron/services/index.js'
 
+export type NetworkRequest<ReturnType, Args extends Array<any> = []> = {
+  response: {
+    loading: boolean
+    data: ReturnType | null
+    error: string | null
+  }
+  request: (...args: Args) => Promise<void>
+  clearError: () => void
+}
+
 export type GlobalStore = {
-  loading: boolean
-  error: string
   appUpdateInfo: AppUpdateInfo | null
   settingsErrors: string[]
   setSettingsErrors: (errors: string[]) => void
-  setLoading: (loading: boolean) => void
   setAppUpdateInfo: (updates: AppUpdateInfo | null) => void
-  setError: (err: string) => void
-  refreshCache: () => Promise<void>
-  catchError: (error: string) => Promise<void>
   checkForUpdates: () => Promise<void>
+}
+
+export type ErrorStore = {
+  error: string | null
+  clearError: () => void
+  setError: (error: string | null) => void
+  tryRun: (fn: () => Promise<void>) => Promise<void>
+}
+
+export type CacheStore = {
+  refreshCache: () => Promise<void>
 }
 
 export type UserStore = {
   userInfo: {
-    loaded: boolean
     user: User | null
-    setUser: (user: User | null) => void
-    setLoaded: (loading: boolean) => void
     fetchUser: () => Promise<void>
     startLoginFlow: () => Promise<Verification | null>
     finishLoginFlow: () => Promise<string[] | null>
@@ -48,47 +62,36 @@ export type UserStore = {
 }
 
 export type MotionStore = {
-  motions: {
-    data: Motion[]
-    loading: boolean
-    searchArgs: {
-      type: 'concern' | 'proposal'
-      searchTerm: string
-      status: MotionStatus[]
-      voteStatus: MotionVotedStatus[]
-    }
+  motionInfo: {
+    motions: Motion[]
+    searchArgs: Required<MotionSearch>
     searchResults: {
       totalCount: number
       matchingCount: number
     }
-    setLoading: (loading: boolean) => void
+    fetchMotions: (search: MotionSearch, skipCache: boolean) => Promise<void>
     setType: (t: 'concern' | 'proposal') => void
     setSearchTerm: (term: string) => void
     setStatus: (status: MotionStatus[]) => void
     setVoteStatus: (voteStatus: MotionVotedStatus[]) => void
-    fetchMotions: (skipCache?: boolean) => Promise<void>
     resetSearchArgs: () => void
     vote: (voteOptions: MotionVoteOption) => Promise<null | string>
   }
 }
 
 export type CommunityStore = {
-  communities: {
-    data: Community[]
+  communityInfo: {
+    communities: Community[]
     selectedCommunity: Community | null
-    selectedCommunityUrl: string
-    join: {
-      errors: string[]
-      projectUrl: string
-      setProjectUrl: (projectUrl: string) => void
-      joinCommunity: () => Promise<void>
-      setErrors: (errors: string[]) => void
-    }
-    setSelectedCommunityUrl: (url: string) => void
     fetchCommunities: () => Promise<void>
-    selectCommunity: (url: string) => Promise<void>
+    selectCommunity: (communityUrl: string) => Promise<void>
   }
 }
+
+export type CommunityJoinStore = {
+  joinCommunity: (projectUrl: string) => Promise<string[]>
+}
+
 export type CommunityDashboardState = 'initial' | 'join' | 'deploy' | 'manage'
 export type CommunityDeployState =
   | 'initial'
@@ -100,36 +103,51 @@ export type CommunityDashboardStore = {
   communityDashboard: {
     state: CommunityDashboardState
     setState: (state: CommunityDashboardState) => void
-    manage: {
-      loading: boolean
-      community: Community | null
-      users: UserCredits[]
-      issues: IssueSearchResults[]
-      setCommunity: (community: Community | null) => Promise<void>
-      issueVotingCredits: (args: IssueVotingCreditsArgs) => Promise<void>
-      manageIssue: (args: ManageIssueArgs) => Promise<void>
-      fetchUsers: (url: string) => Promise<void>
-      fetchIssues: (url: string) => Promise<void>
-    }
-    deploy: {
-      state: CommunityDeployState
-      orgs: OrgMembershipInfo[]
-      selectedOrg: string
-      repos: string[] | null
-      selectedRepo: string
-      communityPat: string
-      setState: (state: CommunityDeployState) => void
-      setOrg: (org: string) => Promise<void>
-      setRepo: (repo: string) => void
-      fetchOrgs: () => Promise<void>
-      setCommunityPat: (token: string) => void
-      deployCommunity: () => Promise<void>
-    }
+  }
+}
+
+export type CommunityManageStore = {
+  communityManage: {
+    communityToManage: Community | null
+    users: UserCredits[] | null
+    issues: IssueSearchResults[] | null
+    setCommunity: (community: Community) => Promise<void>
+    issueVotingCredits: (credits: IssueVotingCreditsArgs) => Promise<void>
+    manageIssue: (args: ManageIssueArgs) => Promise<void>
+  }
+}
+
+export type CommunityDeployStore = {
+  communityDeploy: {
+    state: CommunityDeployState
+    selectedOrg: string
+    selectedRepo: string
+    communityPat: string
+    orgs: OrgMembershipInfo[] | null
+    repos: string[] | null
+    deployCommunity: () => Promise<void>
+    fetchOrgs: () => Promise<void>
+    selectOrg: (orgName: string) => Promise<void>
+    setState: (state: CommunityDeployState) => void
+    setRepo: (repo: string) => void
+    setCommunityPat: (token: string) => void
   }
 }
 
 export type Store = GlobalStore &
   UserStore &
   MotionStore &
+  CacheStore &
+  CommunityJoinStore &
   CommunityStore &
-  CommunityDashboardStore
+  CommunityDashboardStore &
+  CommunityManageStore &
+  CommunityDeployStore &
+  ErrorStore
+
+export type Set = (
+  args: Store | Partial<Store> | ((draft: Draft<Store>) => void),
+  shouldReplace?: boolean,
+) => void
+
+export type Get = () => Store

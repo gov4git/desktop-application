@@ -1,9 +1,6 @@
 import { FC, useLayoutEffect, useState } from 'react'
 
-import {
-  useResetMotionsSearchArgs,
-  useSetMotionsType,
-} from '../../store/hooks/motionHooks.js'
+import { useDataStore } from '../../store/store.js'
 import { Motions } from './motions/Motions.js'
 
 type PollsPageState = 'ISSUES' | 'PULL_REQUESTS'
@@ -13,8 +10,10 @@ export type PollsPageProps = {
 }
 
 export const PollsPage: FC<PollsPageProps> = function PollsPage({ state }) {
-  const setMotionsType = useSetMotionsType()
-  const resetMotionsSearchOptions = useResetMotionsSearchArgs()
+  const setMotionsType = useDataStore((s) => s.motionInfo.setType)
+  const resetMotionsSearchOptions = useDataStore(
+    (s) => s.motionInfo.resetSearchArgs,
+  )
   const [title, setTitle] = useState('')
 
   useLayoutEffect(() => {

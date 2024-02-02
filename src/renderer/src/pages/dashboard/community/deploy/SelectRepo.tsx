@@ -11,22 +11,18 @@ import {
 import { FC, memo } from 'react'
 
 import { Loader } from '../../../../components/Loader.js'
-import {
-  useCommunityDeployOrg,
-  useCommunityDeployRepo,
-  useCommunityDeployRepos,
-  useSetCommunityDeployRepo,
-  useSetCommunityDeployState,
-} from '../../../../store/hooks/communityHooks.js'
+import { useDataStore } from '../../../../store/store.js'
 import { useCommunityDeployStyle } from './styles.js'
 
 export const SelectRepo: FC = memo(function SelectRepo() {
-  const selectedOrg = useCommunityDeployOrg()
-  const selectedRepo = useCommunityDeployRepo()
-  const setSelectedRepo = useSetCommunityDeployRepo()
-  const repos = useCommunityDeployRepos()
+  const selectedOrg = useDataStore((s) => s.communityDeploy.selectedOrg)
+  const selectedRepo = useDataStore((s) => s.communityDeploy.selectedRepo)
+  const setSelectedRepo = useDataStore((s) => s.communityDeploy.setRepo)
+  const repos = useDataStore((s) => s.communityDeploy.repos)
   const styles = useCommunityDeployStyle()
-  const setCommunityDeployState = useSetCommunityDeployState()
+  const setCommunityDeployState = useDataStore(
+    (s) => s.communityDeploy.setState,
+  )
 
   return (
     <>
