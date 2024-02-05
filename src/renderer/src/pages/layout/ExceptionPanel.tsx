@@ -10,12 +10,12 @@ import { type FC, useCallback } from 'react'
 
 import { LogViewer } from '../../components/index.js'
 import { useDataStore } from '../../store/store.js'
-import { useErrorScreenStyles } from './ErrorScreen.styles.js'
+import { useExceptionPanelStyles } from './ExceptionPanel.styles.js'
 
-export const ErrorScreen: FC = function ErrorScreen() {
-  const styles = useErrorScreenStyles()
-  const clearErrorMessage = useDataStore((s) => s.clearError)
-  const errorMessage = useDataStore((s) => s.error)
+export const ExceptionPanel: FC = function ExceptionPanel() {
+  const styles = useExceptionPanelStyles()
+  const clearErrorMessage = useDataStore((s) => s.clearException)
+  const errorMessage = useDataStore((s) => s.exception)
 
   const onClose = useCallback(() => {
     clearErrorMessage()

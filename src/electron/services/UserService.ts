@@ -1,6 +1,5 @@
-import { existsSync, rmSync } from 'node:fs'
-
 import { eq } from 'drizzle-orm'
+import { existsSync, rmSync } from 'fs'
 
 import { AbstractUserService, serialAsync } from '~/shared'
 
@@ -8,6 +7,7 @@ import { DB } from '../db/db.js'
 import { communities, motions, User, users } from '../db/schema.js'
 import { GitHubService } from './GitHubService.js'
 import { Services } from './Services.js'
+import { SettingsService } from './SettingsService.js'
 
 export type UserServiceOptions = {
   services: Services
@@ -19,6 +19,7 @@ export class UserService extends AbstractUserService {
   private declare readonly identityRepoName: string
   private declare readonly repoUrlBase: string
   private declare readonly db: DB
+  private declare readonly settingsService: SettingsService
 
   constructor({
     services,
@@ -28,11 +29,19 @@ export class UserService extends AbstractUserService {
     this.services = services
     this.db = this.services.load<DB>('db')
     this.gitHubService = this.services.load<GitHubService>('github')
+    this.settingsService = this.services.load<SettingsService>('settings')
     this.identityRepoName = identityRepoName
     this.repoUrlBase = 'https://github.com'
   }
 
-  private deleteDBTables = async () => {
+  private clearData = async () => {
+    const allCommunities = await this.db.select().from(communities)
+
+    for (const community of allCommunities) {
+      if (existsSync(community.configPath)) {
+        rmSync(community.configPath)
+      }
+    }
     await Promise.all([
       this.db.delete(users),
       this.db.delete(motions),
@@ -70,7 +79,7 @@ export class UserService extends AbstractUserService {
       })
   }
 
-  public initializeIdRepos = serialAsync(async () => {
+  private initializeIdRepos = serialAsync(async () => {
     const errors: string[] = []
     const user = (await this.db.select().from(users).limit(1))[0]
 
@@ -99,31 +108,28 @@ export class UserService extends AbstractUserService {
         })
         userInfo[`${keyPrefix}Branch`] = existingRepo.data.default_branch
       } catch (ex: any) {
-        if (ex.status === 404) {
+        if (ex instanceof Error) {
           try {
-            await this.gitHubService.createRepo({
-              token: user.pat,
-              repoName: repo,
-              isPrivate: repo.endsWith('private'),
-            })
-            userInfo[`${keyPrefix}Branch`] = 'main'
-          } catch (er) {
-            errors.push(
-              `Error initializing ${repo}. ${ex.status}: ${JSON.stringify(
-                ex,
-                undefined,
-                2,
-              )}`,
-            )
+            const error = JSON.parse(ex.message)
+            if ('status' in error && error.status === 404) {
+              try {
+                await this.gitHubService.createRepo({
+                  token: user.pat,
+                  repoName: repo,
+                  isPrivate: repo.endsWith('private'),
+                })
+                userInfo[`${keyPrefix}Branch`] = 'main'
+              } catch (er) {
+                errors.push(`Error initializing ${repo}. ${er}`)
+              }
+            } else {
+              errors.push(`Error checking satus of ${repo}. ${ex}`)
+            }
+          } catch (error) {
+            errors.push(`Error checking satus of ${repo}. ${ex}`)
           }
         } else {
-          errors.push(
-            `Error checking satus of ${repo}. ${ex.status}: ${JSON.stringify(
-              ex,
-              undefined,
-              2,
-            )}`,
-          )
+          errors.push(`Error checking satus of ${repo}. ${ex}`)
         }
       }
     }
@@ -160,19 +166,13 @@ export class UserService extends AbstractUserService {
       )
       username = response.data.login.toLowerCase()
     } catch (ex: any) {
-      return [
-        `Error retreiving user info. ${ex.status}: ${JSON.stringify(
-          ex,
-          undefined,
-          2,
-        )}`,
-      ]
+      return [`Error retreiving user info. ${ex}`]
     }
 
     const existingUser = (await this.db.select().from(users).limit(1))[0]
 
     if (existingUser == null || existingUser.username !== username) {
-      await this.deleteDBTables()
+      await this.clearData()
     }
 
     await this.db
@@ -193,19 +193,15 @@ export class UserService extends AbstractUserService {
         },
       })
 
-    return await this.initializeIdRepos()
+    const idErrors = await this.initializeIdRepos()
+
+    await this.settingsService.generateConfigs()
+
+    return idErrors
   }
 
   public logout = serialAsync(async () => {
-    await this.db.delete(users)
-    // const allCommunities = await this.db.select().from(communities)
-
-    // for (const community of allCommunities) {
-    //   if (existsSync(community.configPath)) {
-    //     rmSync(community.configPath)
-    //   }
-    // }
-    // await this.deleteDBTables()
+    await this.clearData()
   })
 
   public getUserAdminOrgs = serialAsync(async () => {

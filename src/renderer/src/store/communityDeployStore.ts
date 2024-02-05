@@ -68,7 +68,7 @@ export const createCommunityDeployStore: StateCreator<
             token,
           })
           await get().refreshCache()
-        })
+        }, `Failed to deploy new community ${org}/${repo}.`)
       }
     }),
   },

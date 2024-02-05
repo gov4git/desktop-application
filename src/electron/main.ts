@@ -60,13 +60,13 @@ async function setup(): Promise<void> {
   })
   services.register('github', gitHubService)
 
-  const gov4GitService = new Gov4GitService(services)
-  services.register('gov4git', gov4GitService)
-
   const settingsService = new SettingsService({
     services,
   })
   services.register('settings', settingsService)
+
+  const gov4GitService = new Gov4GitService(services)
+  services.register('gov4git', gov4GitService)
 
   const userService = new UserService({
     services,

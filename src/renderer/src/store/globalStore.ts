@@ -30,6 +30,6 @@ export const createGlobalStore: StateCreator<
       set((s) => {
         s.appUpdateInfo = updateInfo
       })
-    })
+    }, `Failed to check for app updates.`)
   }),
 })

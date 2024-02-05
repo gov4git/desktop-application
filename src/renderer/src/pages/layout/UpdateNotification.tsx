@@ -14,7 +14,7 @@ export const UpdateNotification: FC = function UpdateNotification() {
   const update = useCallback(async () => {
     await tryRun(async () => {
       appUpdaterService.restartAndUpdate()
-    })
+    }, 'Failed to restart application for updates.')
   }, [tryRun])
 
   if (updates === null) {

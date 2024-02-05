@@ -1,7 +1,6 @@
 import { Tooltip } from '@fluentui/react-tooltip'
-import { FC, useCallback, useEffect, useState } from 'react'
+import { FC, useCallback, useState } from 'react'
 
-import { serialAsync } from '../../../../../shared/index.js'
 import { useDataStore } from '../../../store/store.js'
 import { useRefreshButtonStyles } from './RefreshButton.styles.js'
 
@@ -23,18 +22,6 @@ export const RefreshButton: FC<RefreshButtonProps> = function RefreshButton({
     onLoadingChange(false)
     setLoading(false)
   }, [refreshCache, onLoadingChange, setLoading])
-
-  useEffect(() => {
-    const updateCacheInterval = setInterval(
-      serialAsync(async () => {
-        await refreshCache()
-      }),
-      60 * 1000,
-    )
-    return () => {
-      clearInterval(updateCacheInterval)
-    }
-  }, [refreshCache])
 
   return (
     <button onClick={refresh} className={styles.refreshButton}>

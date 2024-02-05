@@ -7,6 +7,7 @@ import {
 import { request } from '@octokit/request'
 
 import { retryAsync } from '../../shared/index.js'
+import { LogService } from './LogService.js'
 import { Services } from './Services.js'
 
 export type GitHubServiceOptions = {
@@ -103,6 +104,7 @@ export type GetOrgReposArgs = {
 
 export class GitHubService {
   protected declare readonly services: Services
+  protected declare readonly log: LogService
   protected declare readonly authenticate: OAuthAppAuthInterface
   protected declare authVerification: Verification | null
   protected declare oauthTokenInfo: Promise<OAuthAppAuthentication> | null
@@ -110,6 +112,7 @@ export class GitHubService {
 
   constructor({ services, clientId }: GitHubServiceOptions) {
     this.services = services
+    this.log = this.services.load<LogService>('log')
     this.clientId = clientId
   }
 
@@ -162,7 +165,7 @@ export class GitHubService {
     try {
       tokenInfo = await this.oauthTokenInfo
     } catch (ex: any) {
-      return [null, [`Failed to log in. ${JSON.stringify(ex.response.data)}`]]
+      return [null, [`Failed to log in. ${JSON.stringify(ex, undefined, 2)}`]]
     }
 
     const scopes = tokenInfo.scopes[0]!.split(',')
@@ -192,20 +195,26 @@ export class GitHubService {
     ) as typeof request
   }
 
-  public getAuthenticatedUser = async (token: string) => {
-    return await this.reqWithAuth(token)('GET /user')
-  }
-
   public run = async (
     req: typeof request,
     expectedStatus: number,
     ...args: Parameters<typeof request>
   ): ReturnType<typeof request> => {
-    const response = await req(...args)
-    if (response.status !== expectedStatus) {
-      throw response
+    try {
+      const response = await req(...args)
+      if (response.status !== expectedStatus) {
+        throw new Error(JSON.stringify(response, undefined, 2))
+      }
+      this.log.info('GitHub Request:')
+      this.log.info(JSON.stringify(response, undefined, 2))
+      return response
+    } catch (ex) {
+      throw new Error(JSON.stringify(ex, undefined, 2))
     }
-    return response
+  }
+
+  public getAuthenticatedUser = async (token: string) => {
+    return await this.run(this.reqWithAuth(token), 200, 'GET /user')
   }
 
   public getRepoInfo = async ({
@@ -229,20 +238,28 @@ export class GitHubService {
       const response = await this.getRepoInfo(args)
       return response.data.default_branch as string
     } catch (ex: any) {
-      if (ex.status === 404) {
-        throw new Error(
-          `${args.repoName} does not exist on GitHub. Please verify that the repo exists and is public.`,
-        )
-      } else if (ex.status === 403) {
-        throw new Error(
-          `Unauthorized. Insufficient privileges to access ${args.repoName}.`,
-        )
+      if (ex instanceof Error) {
+        try {
+          const error = JSON.parse(ex.message)
+          if ('status' in error) {
+            if (error.status === 404) {
+              throw new Error(
+                `${args.repoName} does not exist on GitHub. Please verify that the repo exists and is public.`,
+              )
+            } else if (error.status === 403) {
+              throw new Error(
+                `Unauthorized. Insufficient privileges to access ${args.repoName}.`,
+              )
+            }
+          }
+          throw new Error(
+            `Failed to retrieve default branch for ${args.repoName}. ${ex}`,
+          )
+        } catch (error) {
+          throw ex
+        }
       } else {
-        throw new Error(
-          `Failed to retrieve default branch for ${
-            args.repoName
-          }. ${JSON.stringify(ex)}`,
-        )
+        throw new Error(`${ex}`)
       }
     }
   }
@@ -381,8 +398,17 @@ export class GitHubService {
         },
       )
     } catch (ex: any) {
-      if (ex.status !== 404) {
-        throw ex
+      if (ex instanceof Error) {
+        try {
+          const error = JSON.parse(ex.message)
+          if ('status' in error && error.status !== 404) {
+            throw ex
+          }
+        } catch (error) {
+          throw ex
+        }
+      } else {
+        throw new Error(`${ex}`)
       }
     }
   }

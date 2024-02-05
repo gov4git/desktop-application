@@ -45,7 +45,7 @@ export const createCommunityManageStore: StateCreator<
             s.communityManage.users = users
             s.communityManage.issues = issues
           })
-        })
+        }, `Failed to manage community ${community.name}.`)
       }
     }),
     issueVotingCredits: serialAsync(async (args: IssueVotingCreditsArgs) => {
@@ -56,7 +56,7 @@ export const createCommunityManageStore: StateCreator<
           s.communityManage.users = newUsers
         })
         await get().refreshCache()
-      })
+      }, `Failed to issue ${args.credits} voting credits to ${args.username}.`)
     }),
     manageIssue: serialAsync(async (args: ManageIssueArgs) => {
       await get().tryRun(async () => {
@@ -65,7 +65,7 @@ export const createCommunityManageStore: StateCreator<
         set((s) => {
           s.communityManage.issues = newIssues
         })
-      })
+      }, `Failed to manage issue #${args.issueNumber}.`)
     }),
   },
 })

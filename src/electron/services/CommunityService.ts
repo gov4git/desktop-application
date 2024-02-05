@@ -150,10 +150,7 @@ ${user.memberPublicBranch}`
 
   private getCommunityMembers = async (community: Community) => {
     const command = ['group', 'list', '--name', 'everybody']
-    return await this.govService.mustRun<string[]>(
-      command,
-      community.configPath,
-    )
+    return await this.govService.mustRun<string[]>(command, community)
   }
 
   private isCommunityMember = async (
@@ -252,7 +249,7 @@ ${user.memberPublicBranch}`
         null,
       ]
     } catch (ex: any) {
-      return [null, ex.message]
+      return [null, `${ex}`]
     }
   }
 
@@ -324,7 +321,10 @@ ${user.memberPublicBranch}`
       await this.selectCommunity(community.url)
     }
 
-    await this.settingsService.generateConfig(user, currentCommunity)
+    const initializationResults = await this.govService.initId()
+    if (!initializationResults.ok) {
+      return [initializationResults.error]
+    }
 
     const syncedCommunity = await this.syncCommunity(user, currentCommunity)
 
@@ -400,10 +400,7 @@ ${user.memberPublicBranch}`
       '--asset',
       'plural',
     ]
-    const credits = await this.govService.mustRun<number>(
-      command,
-      community.configPath,
-    )
+    const credits = await this.govService.mustRun<number>(command, community)
     return { username, credits }
   }
 
@@ -450,7 +447,7 @@ ${user.memberPublicBranch}`
       '--quantity',
       credits,
     ]
-    await this.govService.mustRun(command, community.configPath)
+    await this.govService.mustRun(command, community)
   }
 
   public getCommunityIssues = async (communityUrl: string) => {

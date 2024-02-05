@@ -21,7 +21,7 @@ export const AboutPage = function AboutPage() {
     await tryRun(async () => {
       const ver = await logService.getAppVersion()
       setVersion(ver)
-    })
+    }, 'Failed to load app version.')
   }, [setVersion, tryRun])
 
   useEffect(() => {
