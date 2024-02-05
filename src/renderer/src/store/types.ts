@@ -1,7 +1,7 @@
 import type { Verification } from '@octokit/auth-oauth-device/dist-types/types.js'
 import type { Draft } from 'immer'
 
-import type { AppUpdateInfo } from '~/shared'
+import type { AppUpdateInfo, ServiceErrorResponse } from '~/shared'
 
 import type {
   Community,
@@ -20,16 +20,6 @@ import type {
   UserCredits,
 } from '../../../electron/services/index.js'
 
-export type NetworkRequest<ReturnType, Args extends Array<any> = []> = {
-  response: {
-    loading: boolean
-    data: ReturnType | null
-    error: string | null
-  }
-  request: (...args: Args) => Promise<void>
-  clearError: () => void
-}
-
 export type GlobalStore = {
   appUpdateInfo: AppUpdateInfo | null
   settingsErrors: string[]
@@ -39,10 +29,13 @@ export type GlobalStore = {
 }
 
 export type ErrorStore = {
-  error: string | null
+  error: ServiceErrorResponse | null
   clearError: () => void
-  setError: (error: string | null) => void
-  tryRun: (fn: () => Promise<void>) => Promise<void>
+  setError: (error: ServiceErrorResponse | null) => void
+  exception: string | null
+  clearException: () => void
+  setException: (error: string | null) => void
+  tryRun: (fn: () => Promise<void>, errorMessage?: string) => Promise<void>
 }
 
 export type CacheStore = {
@@ -52,6 +45,7 @@ export type CacheStore = {
 export type UserStore = {
   userInfo: {
     user: User | null
+    userLoaded: boolean
     fetchUser: () => Promise<void>
     startLoginFlow: () => Promise<Verification | null>
     finishLoginFlow: () => Promise<string[] | null>
@@ -82,6 +76,7 @@ export type MotionStore = {
 export type CommunityStore = {
   communityInfo: {
     communities: Community[]
+    communitiesLoaded: boolean
     selectedCommunity: Community | null
     fetchCommunities: () => Promise<void>
     selectCommunity: (communityUrl: string) => Promise<void>

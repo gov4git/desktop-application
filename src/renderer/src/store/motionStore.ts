@@ -39,7 +39,7 @@ export const createMotionStore: StateCreator<
             matchingCount: motions.matchingCount,
           }
         })
-      })
+      }, `Failed to load motions.`)
     }),
     setType: (t: 'concern' | 'proposal') => {
       set((s) => {
@@ -85,7 +85,7 @@ export const createMotionStore: StateCreator<
         ) {
           return 'Sorry, this ballot is closed to voting. Please refresh the page to get the latest list of ballots.'
         } else {
-          get().setError(`${ex}`)
+          get().setException(`Failed to vote. ${ex}`)
           return `There was an error voting. Please view the full logs at the top of the page.`
         }
       }

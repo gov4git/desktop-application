@@ -19,6 +19,6 @@ export const createCacheStore: StateCreator<
           get().userInfo.fetchUser(),
           get().communityInfo.fetchCommunities(),
         ])
-    })
+    }, 'Failed to fetch data.')
   }),
 })

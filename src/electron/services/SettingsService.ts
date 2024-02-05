@@ -1,13 +1,10 @@
-import { eq } from 'drizzle-orm'
-import { existsSync, writeFileSync } from 'fs'
-import { mkdir } from 'fs/promises'
+import { existsSync, mkdirSync, writeFileSync } from 'fs'
 import { dirname } from 'path'
+
+import type { ServiceResponse } from '~/shared'
 
 import { DB } from '../db/db.js'
 import { communities, Community, User, users } from '../db/schema.js'
-import { urlToRepoSegments } from '../lib/github.js'
-import { GitHubService } from './GitHubService.js'
-import { Gov4GitService } from './Gov4GitService.js'
 import { Services } from './Services.js'
 
 export type SettingsServiceOptions = {
@@ -16,46 +13,17 @@ export type SettingsServiceOptions = {
 
 export class SettingsService {
   private declare readonly services: Services
-  private declare readonly govService: Gov4GitService
   private declare readonly db: DB
-  private declare readonly gitHubService: GitHubService
 
   constructor({ services }: SettingsServiceOptions) {
     this.services = services
     this.db = this.services.load<DB>('db')
-    this.govService = this.services.load<Gov4GitService>('gov4git')
-    this.gitHubService = this.services.load<GitHubService>('github')
   }
 
-  private runGov4GitInit = async (config: {
-    member_public_url: string
-    member_private_url: string
-    user: {
-      username: string
-      pat: string
-    }
-  }) => {
-    const user = config.user
-    const publicRepoSegments = urlToRepoSegments(config.member_public_url)
-    const isPublicEmpty = !(await this.gitHubService.hasCommits({
-      repoName: publicRepoSegments.repo,
-      username: publicRepoSegments.owner,
-      token: user.pat,
-    }))
-
-    const privateRepoSegments = urlToRepoSegments(config.member_private_url)
-    const isPrivateEmpty = !(await this.gitHubService.hasCommits({
-      repoName: privateRepoSegments.repo,
-      username: privateRepoSegments.owner,
-      token: user.pat,
-    }))
-
-    if (isPublicEmpty || isPrivateEmpty) {
-      this.govService.mustRun(['init-id'])
-    }
-  }
-
-  public generateConfig = async (user: User, community: Community) => {
+  public generateConfig = async (
+    user: User,
+    community: Community,
+  ): Promise<ServiceResponse<null>> => {
     const config = {
       notice:
         'Do not modify this file. It will be overwritten by Gov4Git application',
@@ -90,20 +58,30 @@ export class SettingsService {
       },
     }
 
-    const dir = dirname(community.configPath)
-    if (!existsSync(dir)) {
-      await mkdir(dir, { recursive: true })
+    try {
+      const dir = dirname(community.configPath)
+      if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true })
+      }
+
+      writeFileSync(
+        community.configPath,
+        JSON.stringify(config, undefined, 2),
+        'utf-8',
+      )
+    } catch (ex) {
+      return {
+        ok: false,
+        statusCode: 500,
+        error: `Failed to write config file ${community.configPath}. ${ex}`,
+      }
     }
 
-    writeFileSync(
-      community.configPath,
-      JSON.stringify(config, undefined, 2),
-      'utf-8',
-    )
-
-    await this.runGov4GitInit(config)
-
-    return config
+    return {
+      ok: true,
+      statusCode: 200,
+      data: null,
+    }
   }
 
   public generateConfigs = async (): Promise<void> => {

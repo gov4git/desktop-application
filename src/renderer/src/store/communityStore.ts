@@ -14,6 +14,7 @@ export const createCommunityStore: StateCreator<
   communityInfo: {
     selectedCommunity: null,
     communities: [],
+    communitiesLoaded: false,
     fetchCommunities: serialAsync(async () => {
       await get().tryRun(async () => {
         const communities = await communityService.getCommunities()
@@ -21,14 +22,15 @@ export const createCommunityStore: StateCreator<
         set((s) => {
           s.communityInfo.communities = communities
           s.communityInfo.selectedCommunity = selectedCommunity
+          s.communityInfo.communitiesLoaded = true
         })
-      })
+      }, `Failed to load communities.`)
     }),
     selectCommunity: serialAsync(async (url: string) => {
       await get().tryRun(async () => {
         await communityService.selectCommunity(url)
         await get().refreshCache()
-      })
+      }, `Failed to select community.`)
     }),
   },
 })

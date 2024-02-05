@@ -2,9 +2,9 @@ import { makeStyles, shorthands } from '@fluentui/react-components'
 
 import { gov4GitTokens } from '../../App/theme/index.js'
 
-export const useErrorScreenStyles = makeStyles({
+export const useExceptionPanelStyles = makeStyles({
   root: {
-    ...shorthands.padding(0, 0, '20px', 0),
+    ...shorthands.padding('36px', 0),
   },
   card: {
     position: 'relative',

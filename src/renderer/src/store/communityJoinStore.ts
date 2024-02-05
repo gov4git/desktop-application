@@ -19,7 +19,7 @@ export const createCommunityJoinStore: StateCreator<
       }
       return insertErrors
     } catch (ex) {
-      get().setError(`${ex}`)
+      get().setException(`Failed to join community. ${ex}`)
       return []
     }
   }),

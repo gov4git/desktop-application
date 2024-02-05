@@ -1,5 +1,7 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
+
+import { serialAsync } from '~/shared'
 
 import { routes } from '../../App/Router.js'
 import { Loader } from '../../components/index.js'
@@ -8,7 +10,8 @@ import {
   useGlobalSettingsErrors,
 } from '../../store/hooks/globalHooks.js'
 import { useDataStore } from '../../store/store.js'
-import { ErrorScreen } from './ErrorScreen.js'
+import { ErrorPanel } from './ErrorPanel.js'
+import { ExceptionPanel } from './ExceptionPanel.js'
 import { Header } from './Header.js'
 import { useLayoutStyles } from './Layout.styles.js'
 import { SiteNav } from './SiteNav.js'
@@ -16,7 +19,8 @@ import { UpdateNotification } from './UpdateNotification.js'
 
 export const Layout = function Layout() {
   const classes = useLayoutStyles()
-  const errorMessage = useDataStore((s) => s.error)
+  const exceptionMessage = useDataStore((s) => s.exception)
+  const error = useDataStore((s) => s.error)
   const mainRef = useRef<HTMLElement>(null)
   const navigate = useNavigate()
   const settingsError = useGlobalSettingsErrors()
@@ -24,14 +28,23 @@ export const Layout = function Layout() {
   const getUser = useDataStore((s) => s.userInfo.fetchUser)
   const getCommunities = useDataStore((s) => s.communityInfo.fetchCommunities)
   const checkForUpdates = useCheckForUpdates()
+  const refreshCache = useDataStore((s) => s.refreshCache)
 
   useEffect(() => {
-    if (errorMessage !== '') {
+    if (exceptionMessage !== '') {
       if (mainRef.current != null) {
         mainRef.current.scrollTo(0, 0)
       }
     }
-  }, [errorMessage])
+  }, [exceptionMessage])
+
+  useEffect(() => {
+    if (error != null) {
+      if (mainRef.current != null) {
+        mainRef.current.scrollTo(0, 0)
+      }
+    }
+  }, [error])
 
   useEffect(() => {
     if (settingsError.length > 0) {
@@ -39,7 +52,7 @@ export const Layout = function Layout() {
     }
   }, [navigate, settingsError])
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     async function run() {
       setLoading(true)
       await Promise.allSettled([getUser(), getCommunities()])
@@ -47,6 +60,19 @@ export const Layout = function Layout() {
     }
     void run()
   }, [getUser, getCommunities, setLoading])
+
+  useEffect(() => {
+    void refreshCache()
+    const updateCacheInterval = setInterval(
+      serialAsync(async () => {
+        await refreshCache()
+      }),
+      60 * 1000,
+    )
+    return () => {
+      clearInterval(updateCacheInterval)
+    }
+  }, [refreshCache])
 
   useEffect(() => {
     void checkForUpdates()
@@ -64,7 +90,8 @@ export const Layout = function Layout() {
       <div className={classes.mainContainer}>
         <SiteNav />
         <main className={classes.main} ref={mainRef}>
-          <ErrorScreen />
+          <ErrorPanel />
+          <ExceptionPanel />
           <Loader isLoading={loading}>
             <Outlet />
           </Loader>

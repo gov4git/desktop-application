@@ -10,7 +10,7 @@ export function useLogs(): string | null {
     await tryRun(async () => {
       const l = await logService.getLogs()
       setLogs(l)
-    })
+    }, 'Failed to load logs.')
   }, [setLogs, tryRun])
 
   useEffect(() => {

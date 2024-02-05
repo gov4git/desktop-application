@@ -1,3 +1,5 @@
+import { ServiceResponse } from '../types/index.js'
+
 export abstract class AbstractValidationService {
-  public abstract validateConfig(): Promise<string[]>
+  public abstract validate(): Promise<ServiceResponse<null>>
 }
