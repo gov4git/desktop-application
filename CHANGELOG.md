@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.11.4
+
+### Patch Changes
+
+- 0e6cdda: Improve error handling
+
 ## 0.11.3
 
 ### Patch Changes
