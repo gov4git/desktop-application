@@ -9,6 +9,7 @@ import { createCommunityManageStore } from './communityManageStore.js'
 import { createCommunityStore } from './communityStore.js'
 import { createErrorStore } from './errorStore.js'
 import { createGlobalStore } from './globalStore.js'
+import { createLogStore } from './logStore.js'
 import { createMotionStore } from './motionStore.js'
 import type { Store } from './types.js'
 import { createUserStore } from './userStore.js'
@@ -25,5 +26,6 @@ export const useDataStore = create<Store>()(
     ...createCommunityManageStore(...a),
     ...createCommunityDeployStore(...a),
     ...createErrorStore(...a),
+    ...createLogStore(...a),
   })),
 )

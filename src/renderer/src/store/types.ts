@@ -38,6 +38,10 @@ export type ErrorStore = {
   tryRun: (fn: () => Promise<void>, errorMessage?: string) => Promise<void>
 }
 
+export type LogStore = {
+  fetchLogs: () => Promise<string>
+}
+
 export type CacheStore = {
   refreshCache: () => Promise<void>
 }
@@ -138,7 +142,8 @@ export type Store = GlobalStore &
   CommunityDashboardStore &
   CommunityManageStore &
   CommunityDeployStore &
-  ErrorStore
+  ErrorStore &
+  LogStore
 
 export type Set = (
   args: Store | Partial<Store> | ((draft: Draft<Store>) => void),
