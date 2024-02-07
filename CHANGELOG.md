@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.11.5
+
+### Patch Changes
+
+- 69b68d9: Provide ability to download/save logs.
+
 ## 0.11.4
 
 ### Patch Changes
