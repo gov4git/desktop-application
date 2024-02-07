@@ -203,12 +203,13 @@ export class GitHubService {
     try {
       const response = await req(...args)
       if (response.status !== expectedStatus) {
+        this.log.error(`GitHub Error:`, response)
         throw new Error(JSON.stringify(response, undefined, 2))
       }
-      this.log.info('GitHub Request:')
-      this.log.info(JSON.stringify(response, undefined, 2))
+      this.log.info('GitHub Request:', response)
       return response
     } catch (ex) {
+      this.log.error(`GitHub Exception:`, ex)
       throw new Error(JSON.stringify(ex, undefined, 2))
     }
   }

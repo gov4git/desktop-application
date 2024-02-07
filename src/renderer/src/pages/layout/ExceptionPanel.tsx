@@ -1,21 +1,27 @@
-import {
-  Accordion,
-  AccordionHeader,
-  AccordionItem,
-  AccordionPanel,
-  Card,
-  Text,
-} from '@fluentui/react-components'
+import { Card, Text } from '@fluentui/react-components'
 import { type FC, useCallback } from 'react'
 
-import { LogViewer } from '../../components/index.js'
+import { ButtonLink } from '../../components/index.js'
 import { useDataStore } from '../../store/store.js'
 import { useExceptionPanelStyles } from './ExceptionPanel.styles.js'
 
 export const ExceptionPanel: FC = function ExceptionPanel() {
+  const fetchLogs = useDataStore((s) => s.fetchLogs)
   const styles = useExceptionPanelStyles()
   const clearErrorMessage = useDataStore((s) => s.clearException)
   const errorMessage = useDataStore((s) => s.exception)
+
+  const saveLogs = useCallback(async () => {
+    const logs = await fetchLogs()
+    const blob = new Blob([logs ?? ''], { type: 'text/plain' })
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(blob)
+    link.download = 'logs.txt'
+    link.click()
+    URL.revokeObjectURL(link.href)
+    document.body.removeChild(link)
+    // navigator.clipboard.writeText(logs ?? '')
+  }, [fetchLogs])
 
   const onClose = useCallback(() => {
     clearErrorMessage()
@@ -35,20 +41,20 @@ export const ExceptionPanel: FC = function ExceptionPanel() {
           Error
         </Text>
         <p>Message: {errorMessage}</p>
-        <Accordion collapsible>
+        {/* <Accordion collapsible>
           <AccordionItem value="1">
             <AccordionHeader>Logs</AccordionHeader>
             <AccordionPanel>
               <LogViewer height="300px" />
             </AccordionPanel>
           </AccordionItem>
-        </Accordion>
+        </Accordion> */}
         <Text size={500} weight="semibold">
           Next Steps
         </Text>
         <p>
-          Please try refreshing the application and/or relaunching the
-          application. If the error persists please copy the above logs and{' '}
+          Please close and relaunch the application. If the error persists,
+          please <ButtonLink onClick={saveLogs}>save</ButtonLink> the logs,{' '}
           <a
             href="https://github.com/gov4git/desktop-application/issues/new"
             target="_blank"
@@ -56,7 +62,7 @@ export const ExceptionPanel: FC = function ExceptionPanel() {
           >
             open a new issue
           </a>
-          .
+          , and upload the saved log file to the issue.
         </p>
       </Card>
     </div>
