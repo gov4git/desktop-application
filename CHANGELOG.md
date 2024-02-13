@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.12.0
+
+### Minor Changes
+
+- 22e596b: Upgrade Gov4Git CLI to v2.1.2
+
 ## 0.11.5
 
 ### Patch Changes
