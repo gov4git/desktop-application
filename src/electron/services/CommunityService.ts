@@ -352,7 +352,7 @@ ${user.memberPublicBranch}`
       '--project',
       `${org}/${repo}`,
       '--release',
-      'v2.0.2',
+      'v2.1.2',
     ]
     await this.govService.mustRun(command, undefined, true)
 
@@ -363,17 +363,31 @@ ${user.memberPublicBranch}`
     if (errors.length) {
       throw new Error(JSON.stringify(errors, undefined, 2))
     }
+    const community = (
+      await this.db
+        .select()
+        .from(communities)
+        .where(eq(communities.projectUrl, projectUrl))
+        .limit(1)
+    )[0]
 
-    await this.govService.mustRun([
-      'user',
-      'add',
-      '--name',
-      user.username,
-      '--repo',
-      user.memberPublicUrl,
-      '--branch',
-      user.memberPublicBranch,
-    ])
+    if (community == null) {
+      throw new Error(`Failed to insert community while deploying.`)
+    }
+
+    await this.govService.mustRun(
+      [
+        'user',
+        'add',
+        '--name',
+        user.username,
+        '--repo',
+        user.memberPublicUrl,
+        '--branch',
+        user.memberPublicBranch,
+      ],
+      community,
+    )
   }
 
   private getCommunityByUrl = async (url: string) => {
@@ -508,7 +522,7 @@ ${user.memberPublicBranch}`
       repo: repoSegments.repo,
       token: user.pat,
       issueNumber,
-      labels: ['gov4git:managed'],
+      labels: ['gov4git:pmp-v1'],
     })
   }
 }

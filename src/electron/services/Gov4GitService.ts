@@ -6,11 +6,22 @@ import { retryAsync, ServiceResponse } from '../../shared/index.js'
 import { DB } from '../db/db.js'
 import { communities, type Community, type User, users } from '../db/schema.js'
 import { urlToRepoSegments } from '../lib/index.js'
-import { parseStdout } from '../lib/stdout.js'
 import { GitHubService } from './GitHubService.js'
 import { LogService } from './LogService.js'
 import { Services } from './Services.js'
 import { SettingsService } from './SettingsService.js'
+
+export type SuccessResponse<T> = {
+  status: 'success'
+  returned: T
+}
+
+export type ErrorResponse = {
+  status: 'error'
+  msg: string
+}
+
+export type Response<T> = ErrorResponse | SuccessResponse<T>
 
 export class Gov4GitService {
   private declare readonly services: Services
@@ -81,6 +92,23 @@ export class Gov4GitService {
     }
   }
 
+  private parse = <T>(stdout: string, cmd: string[]): T => {
+    try {
+      if (stdout.trim() === '') return '' as T
+      const response = JSON.parse(stdout ?? '') as Response<T>
+      if (response.status === 'error') {
+        throw new Error(
+          `Gov4Git Error Response for command ${cmd.join(' ')}: ${stdout}`,
+        )
+      }
+      return response.returned
+    } catch (ex) {
+      throw new Error(
+        `Unable to parse stdout for command ${cmd.join(' ')}: ${stdout}`,
+      )
+    }
+  }
+
   public mustRun = async <T>(
     command: string[],
     community?: Community,
@@ -102,7 +130,7 @@ export class Gov4GitService {
       this.log.info('Running Gov4Git')
       this.log.info(`Command: ${command.join(' ')}`)
       this.log.info('Gov4Git Logs:', stderr)
-      const output = parseStdout<T>(command, stdout)
+      const output = this.parse<T>(stdout, command)
       this.log.info('Gov4Git Response:', output)
       return output
     }
