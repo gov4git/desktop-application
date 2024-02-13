@@ -17,7 +17,7 @@ import { useMessageStyles } from '../../../../styles/messages.js'
 import { useManageCommunityStyles } from './styles.js'
 
 const isManaged = (issue: IssueSearchResults): boolean => {
-  const foundIndex = issue.labels.findIndex((i) => i.name === 'gov4git:managed')
+  const foundIndex = issue.labels.findIndex((i) => i.name === 'gov4git:pmp-v1')
   return foundIndex !== -1
 }
 

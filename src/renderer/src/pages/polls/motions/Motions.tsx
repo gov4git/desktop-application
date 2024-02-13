@@ -22,7 +22,7 @@ export const Motions: FC<MotionsProps> = function Motions({ title }) {
 
   const issuesLink = useMemo(() => {
     if (community == null) return null
-    return `${community.projectUrl}/issues?q=is:open is:issue label:gov4git:managed`
+    return `${community.projectUrl}/issues?q=is:open is:issue label:gov4git:pmp-v1`
   }, [community])
 
   useEffect(() => {
