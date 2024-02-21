@@ -10,9 +10,13 @@ import { RefreshButton } from './RefreshButton.js'
 
 export type MotionsProps = {
   title: string
+  motionType: 'concern' | 'proposal'
 }
 
-export const Motions: FC<MotionsProps> = function Motions({ title }) {
+export const Motions: FC<MotionsProps> = function Motions({
+  title,
+  motionType,
+}) {
   const motions = useDataStore((s) => s.motionInfo.motions)
   const headingStyles = useHeadingsStyles()
   const community = useDataStore((s) => s.communityInfo.selectedCommunity)
@@ -22,8 +26,10 @@ export const Motions: FC<MotionsProps> = function Motions({ title }) {
 
   const issuesLink = useMemo(() => {
     if (community == null) return null
-    return `${community.projectUrl}/issues?q=is:open is:issue label:gov4git:pmp-v1`
-  }, [community])
+    const resource = motionType === 'concern' ? 'issues' : 'pulls'
+    const isOf = motionType === 'concern' ? 'issue' : 'pr'
+    return `${community.projectUrl}/${resource}?q=is:open is:${isOf} label:gov4git:managed,gov4git:pmp-v1`
+  }, [community, motionType])
 
   useEffect(() => {
     async function run() {
@@ -42,7 +48,8 @@ export const Motions: FC<MotionsProps> = function Motions({ title }) {
       <MotionsControls>
         {issuesLink != null && (
           <a href={issuesLink} target="_blank" rel="noreferrer">
-            View all issues in GitHub
+            View all {motionType === 'concern' ? 'issues' : 'pull requests'} in
+            GitHub
           </a>
         )}
       </MotionsControls>

@@ -11,6 +11,7 @@ export type PollsPageProps = {
 
 export const PollsPage: FC<PollsPageProps> = function PollsPage({ state }) {
   const setMotionsType = useDataStore((s) => s.motionInfo.setType)
+  const motionType = useDataStore((s) => s.motionInfo.searchArgs.type)
   const resetMotionsSearchOptions = useDataStore(
     (s) => s.motionInfo.resetSearchArgs,
   )
@@ -29,7 +30,7 @@ export const PollsPage: FC<PollsPageProps> = function PollsPage({ state }) {
     }
   }, [state, setMotionsType, setTitle, resetMotionsSearchOptions])
 
-  return <Motions title={title} />
+  return <Motions title={title} motionType={motionType} />
 }
 
 export default PollsPage
