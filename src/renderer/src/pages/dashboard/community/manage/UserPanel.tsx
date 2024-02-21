@@ -70,7 +70,7 @@ export const UserPanel: FC = memo(function UserPanel() {
                   <TableCell>{u.credits}</TableCell>
                   <TableCell>
                     <Button onClick={() => setSelectedUsername(u.username)}>
-                      Assign Credits
+                      Issue Credits
                     </Button>
                   </TableCell>
                 </TableRow>
