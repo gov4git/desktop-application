@@ -67,7 +67,11 @@ export type MotionStore = {
       totalCount: number
       matchingCount: number
     }
-    fetchMotions: (search: MotionSearch, skipCache: boolean) => Promise<void>
+    fetchMotions: (
+      search: MotionSearch,
+      skipCache: boolean,
+      shouldUpdate?: () => boolean,
+    ) => Promise<void>
     setType: (t: 'concern' | 'proposal') => void
     setSearchTerm: (term: string) => void
     setStatus: (status: MotionStatus[]) => void

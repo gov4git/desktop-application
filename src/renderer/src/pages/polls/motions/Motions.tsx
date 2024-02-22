@@ -32,12 +32,16 @@ export const Motions: FC<MotionsProps> = function Motions({
   }, [community, motionType])
 
   useEffect(() => {
+    let shouldUpdate = true
     async function run() {
       setMotionsLoading(true)
-      await fetchMotions(motionSearchArgs, false)
+      await fetchMotions(motionSearchArgs, false, () => shouldUpdate)
       setMotionsLoading(false)
     }
     void run()
+    return () => {
+      shouldUpdate = false
+    }
   }, [setMotionsLoading, motionSearchArgs, fetchMotions])
 
   return (

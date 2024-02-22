@@ -62,7 +62,7 @@ export const Layout = function Layout() {
   }, [getUser, getCommunities, setLoading])
 
   useEffect(() => {
-    void refreshCache()
+    // void refreshCache()
     const updateCacheInterval = setInterval(
       serialAsync(async () => {
         await refreshCache()
