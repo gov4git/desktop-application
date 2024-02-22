@@ -22,6 +22,10 @@ export const SiteNav: FC = function SiteNav() {
     })
   }, [setPinned])
 
+  if (community == null) {
+    return <></>
+  }
+
   return (
     <nav className={styles.navContainer + ' ' + pinned}>
       <div className={styles.relativeContainer + ' ' + pinned}>
