@@ -29,26 +29,25 @@ export const createMotionStore: StateCreator<
       totalCount: 0,
       matchingCount: 0,
     },
-    fetchMotions: serialAsync(
-      async (
-        args: MotionSearch,
-        skipCache = false,
-        shouldUpdate = () => true,
-      ) => {
-        await get().tryRun(async () => {
-          const motions = await motionService.getMotions(args, skipCache)
-          if (shouldUpdate()) {
-            set((s) => {
-              s.motionInfo.motions = motions.motions
-              s.motionInfo.searchResults = {
-                totalCount: motions.totalCount,
-                matchingCount: motions.matchingCount,
-              }
-            })
-          }
-        }, `Failed to load motions.`)
-      },
-    ),
+    fetchMotions: async (
+      args: MotionSearch,
+      skipCache = false,
+      shouldUpdate = () => true,
+    ) => {
+      await get().tryRun(async () => {
+        const motions = await motionService.getMotions(args, skipCache)
+        if (shouldUpdate()) {
+          console.log('==== UPDATING!!!!! ====')
+          set((s) => {
+            s.motionInfo.motions = motions.motions
+            s.motionInfo.searchResults = {
+              totalCount: motions.totalCount,
+              matchingCount: motions.matchingCount,
+            }
+          })
+        }
+      }, `Failed to load motions.`)
+    },
     setType: (t: 'concern' | 'proposal') => {
       set((s) => {
         s.motionInfo.searchArgs.type = t
