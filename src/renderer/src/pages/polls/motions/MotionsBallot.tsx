@@ -254,99 +254,120 @@ export const MotionsBallot: FC<IssueBallotProps> = function MotionsBallot({
                     </AccordionHeader>
                     <AccordionPanel>
                       <div className={styles.voteContainer}>
-                        <div className={styles.voteArea}>
-                          <div>
-                            <div className={styles.label}>
-                              <label htmlFor={`ballot-vote-${motion.motionId}`}>
-                                Vote:
-                              </label>
-                            </div>
-                            <div className={styles.voteRow}>
-                              <button
-                                className={styles.voteButton}
-                                onClick={() => change(-1)}
-                                onMouseDown={() => onMouseDown('down')}
-                                // onMouseUp={stop}
-                              >
-                                <i className="codicon codicon-chevron-down" />
-                              </button>
-                              <input
-                                className={styles.voteInput}
-                                id={`ballot-vote-${motion.motionId}`}
-                                type="text"
-                                value={displayVoteScore}
-                                onInput={onChange}
-                                // onBlur={onBlur}
-                                style={{
-                                  width: `${inputWidth}ch`,
-                                }}
-                              />
-                              <button
-                                className={styles.voteButton}
-                                onClick={() => change(1)}
-                                onMouseUp={stop}
-                                onMouseDown={() => onMouseDown('up')}
-                              >
-                                <i className="codicon codicon-chevron-up" />
-                              </button>
-                            </div>
-                          </div>
-                          <div className={styles.sliderArea}>
-                            <div className={styles.label}>
-                              Corresponding cost in credits:
-                            </div>
-                            <BubbleSlider
-                              value={totalCostInCredits}
-                              disabled={true}
-                              min={0}
-                              max={
-                                (community?.userVotingCredits ?? 0) +
-                                motion.userStrength
-                              }
-                              ariaLabel="Cost in credits"
-                              onChange={() => undefined}
-                            />
-                          </div>
-                        </div>
-                        <div className={styles.buttonRow}>
-                          <Button
-                            onClick={cancelVote}
-                            appearance="secondary"
-                            disabled={fetchingNewBallot}
-                          >
-                            Cancel
-                          </Button>
-                          <Button
-                            onClick={vote}
-                            appearance="primary"
-                            disabled={
-                              fetchingNewBallot || voteStrengthInCredits === 0
-                            }
-                          >
-                            {!fetchingNewBallot && 'Vote'}
-                            {fetchingNewBallot && (
-                              <i className="codicon codicon-loading codicon-modifier-spin" />
-                            )}
-                          </Button>
-                        </div>
-                        {voteError != null && (
-                          <div className={styles.messageArea}>
-                            <Message
-                              className={messageStyles.error}
-                              messages={[voteError]}
-                              onClose={dismissError}
-                            />
-                          </div>
-                        )}
-                        {successMessage != null && (
-                          <div className={styles.messageArea}>
-                            <Message
-                              className={messageStyles.success}
-                              messages={[successMessage]}
-                              onClose={dismissMessage}
-                            />
-                          </div>
-                        )}
+                        {community == null ||
+                          (community?.userVotingCredits === 0 &&
+                            motion.userScore === 0 && (
+                              <div className={styles.label}>
+                                You do not have any credits to vote.
+                              </div>
+                            ))}
+                        {community != null &&
+                          (community.userVotingCredits !== 0 ||
+                            motion.userScore !== 0) && (
+                            <>
+                              <div className={styles.label}>
+                                Your Voting Credits:{' '}
+                                {community.userVotingCredits +
+                                  Math.abs(motion.userStrength)}
+                              </div>
+                              <div className={styles.voteArea}>
+                                <div>
+                                  <div className={styles.label}>
+                                    <label
+                                      htmlFor={`ballot-vote-${motion.motionId}`}
+                                    >
+                                      Vote:
+                                    </label>
+                                  </div>
+                                  <div className={styles.voteRow}>
+                                    <button
+                                      className={styles.voteButton}
+                                      onClick={() => change(-1)}
+                                      onMouseDown={() => onMouseDown('down')}
+                                      // onMouseUp={stop}
+                                    >
+                                      <i className="codicon codicon-chevron-down" />
+                                    </button>
+                                    <input
+                                      className={styles.voteInput}
+                                      id={`ballot-vote-${motion.motionId}`}
+                                      type="text"
+                                      value={displayVoteScore}
+                                      onInput={onChange}
+                                      // onBlur={onBlur}
+                                      style={{
+                                        width: `${inputWidth}ch`,
+                                      }}
+                                    />
+                                    <button
+                                      className={styles.voteButton}
+                                      onClick={() => change(1)}
+                                      onMouseUp={stop}
+                                      onMouseDown={() => onMouseDown('up')}
+                                    >
+                                      <i className="codicon codicon-chevron-up" />
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className={styles.sliderArea}>
+                                  <div className={styles.label}>
+                                    Corresponding cost in credits:
+                                  </div>
+                                  <BubbleSlider
+                                    value={totalCostInCredits}
+                                    disabled={true}
+                                    min={0}
+                                    max={
+                                      (community?.userVotingCredits ?? 0) +
+                                      motion.userStrength
+                                    }
+                                    ariaLabel="Cost in credits"
+                                    onChange={() => undefined}
+                                  />
+                                </div>
+                              </div>
+                              <div className={styles.buttonRow}>
+                                <Button
+                                  onClick={cancelVote}
+                                  appearance="secondary"
+                                  disabled={fetchingNewBallot}
+                                >
+                                  Cancel
+                                </Button>
+                                <Button
+                                  onClick={vote}
+                                  appearance="primary"
+                                  disabled={
+                                    fetchingNewBallot ||
+                                    voteStrengthInCredits === 0
+                                  }
+                                >
+                                  {!fetchingNewBallot && 'Vote'}
+                                  {fetchingNewBallot && (
+                                    <i className="codicon codicon-loading codicon-modifier-spin" />
+                                  )}
+                                </Button>
+                              </div>
+                              {voteError != null && (
+                                <div className={styles.messageArea}>
+                                  <Message
+                                    className={messageStyles.error}
+                                    messages={[voteError]}
+                                    onClose={dismissError}
+                                  />
+                                </div>
+                              )}
+                              {successMessage != null && (
+                                <div className={styles.messageArea}>
+                                  <Message
+                                    className={messageStyles.success}
+                                    messages={[successMessage]}
+                                    onClose={dismissMessage}
+                                  />
+                                </div>
+                              )}
+                            </>
+                          )}
                       </div>
                     </AccordionPanel>
                   </AccordionItem>
