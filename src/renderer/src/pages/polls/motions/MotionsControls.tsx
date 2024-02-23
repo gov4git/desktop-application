@@ -56,7 +56,7 @@ export const MotionsControls: FC<PropsWithChildren> = function MotionsControls({
   )
 
   return (
-    <>
+    <div className={styles.container}>
       <div className={styles.controls}>
         <div className={styles.searchBox}>
           <div>
@@ -115,6 +115,6 @@ export const MotionsControls: FC<PropsWithChildren> = function MotionsControls({
         </div>
         <div>{children}</div>
       </div>
-    </>
+    </div>
   )
 }

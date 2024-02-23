@@ -3,12 +3,11 @@ import {
   AccordionHeader,
   AccordionItem,
   AccordionPanel,
-  Card,
   Text,
 } from '@fluentui/react-components'
 import { useCallback, useEffect, useState } from 'react'
 
-import { ButtonLink } from '../../components/index.js'
+import { ButtonLink, StyledCard } from '../../components/index.js'
 import { logService } from '../../services/LogService.js'
 import { useDataStore } from '../../store/store.js'
 import { LicenseViewer } from './LicenseViewer.js'
@@ -42,7 +41,7 @@ export const AboutPage = function AboutPage() {
   }, [getVersion])
 
   return (
-    <Card>
+    <StyledCard>
       <h1 style={{ lineHeight: '0', paddingTop: '20px' }}>About Gov4Git</h1>
       <Text weight="medium" size={300}>
         Version: {version}
@@ -103,6 +102,6 @@ export const AboutPage = function AboutPage() {
           GitHub Org
         </a>
       </div>
-    </Card>
+    </StyledCard>
   )
 }

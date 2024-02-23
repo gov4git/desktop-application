@@ -14,9 +14,6 @@ export const useIssueBallotStyles = makeStyles({
       paddingBottom: '4px',
     },
   },
-  card: {
-    marginBottom: '1rem',
-  },
   description: {
     '& ul': {
       ...shorthands.padding('10px', '20px'),

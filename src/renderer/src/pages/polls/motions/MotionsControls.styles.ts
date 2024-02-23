@@ -1,11 +1,14 @@
 import { makeStyles, shorthands } from '@fluentui/react-components'
 
 export const useMotionsControlStyles = makeStyles({
+  container: {
+    ...shorthands.padding('30px', '0'),
+  },
   controls: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    ...shorthands.padding(0, '4px', '12px', '4px'),
+    ...shorthands.padding(0, '0', '8px', '0'),
     ...shorthands.gap('8px'),
   },
   searchBox: {
