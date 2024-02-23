@@ -1,7 +1,5 @@
 import { makeStyles, shorthands } from '@fluentui/react-components'
 
-import { gov4GitTokens } from '../../App/theme/index.js'
-
 export const useLayoutStyles = makeStyles({
   layout: {
     display: 'flex',
@@ -22,10 +20,7 @@ export const useLayoutStyles = makeStyles({
     overflowY: 'hidden',
   },
   main: {
-    ...shorthands.padding(
-      gov4GitTokens.spacingVerticalL,
-      gov4GitTokens.spacingHorizontalM,
-    ),
+    ...shorthands.padding('28px', '28px', '28px', '28px'),
     height: 'calc(100% - 60px)',
     overflowY: 'auto',
     flexGrow: 0,

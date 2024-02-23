@@ -8,7 +8,7 @@ export const useDashboardUserStyles = makeStyles({
     ...shorthands.gap('8px'),
   },
   logoutArea: {
-    ...shorthands.padding('12px', 0),
+    ...shorthands.padding(0, 0, '12px', 0),
     fontSize: '1.1rem',
   },
 })

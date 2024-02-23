@@ -1,7 +1,7 @@
-import { Card, Text } from '@fluentui/react-components'
+import { Text } from '@fluentui/react-components'
 import { type FC, useCallback } from 'react'
 
-import { ButtonLink } from '../../components/index.js'
+import { ButtonLink, StyledCard } from '../../components/index.js'
 import { useDataStore } from '../../store/store.js'
 import { useExceptionPanelStyles } from './ExceptionPanel.styles.js'
 
@@ -33,7 +33,7 @@ export const ExceptionPanel: FC = function ExceptionPanel() {
 
   return (
     <div className={styles.root}>
-      <Card>
+      <StyledCard>
         <button title="close errors" className={styles.close} onClick={onClose}>
           <i className="codicon codicon-chrome-close" />
         </button>
@@ -64,7 +64,7 @@ export const ExceptionPanel: FC = function ExceptionPanel() {
           </a>
           , and upload the saved log file to the issue.
         </p>
-      </Card>
+      </StyledCard>
     </div>
   )
 }

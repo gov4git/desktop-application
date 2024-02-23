@@ -5,7 +5,6 @@ import {
   AccordionPanel,
   Badge,
   Button,
-  Card,
   Text,
 } from '@fluentui/react-components'
 import { parse } from 'marked'
@@ -21,7 +20,7 @@ import {
 import { formatDecimal } from '~/shared'
 
 import type { Motion } from '../../../../../electron/db/schema.js'
-import { BubbleSlider, Message } from '../../../components/index.js'
+import { BubbleSlider, Message, StyledCard } from '../../../components/index.js'
 import { useDataStore } from '../../../store/store.js'
 import { useBadgeStyles } from '../../../styles/badges.js'
 import { useMessageStyles } from '../../../styles/messages.js'
@@ -208,7 +207,7 @@ export const MotionsBallot: FC<IssueBallotProps> = function MotionsBallot({
   }, [stop])
 
   return (
-    <Card className={styles.card}>
+    <StyledCard>
       <div className={styles.root}>
         <div className={styles.rankArea}>
           <Badge
@@ -377,6 +376,6 @@ export const MotionsBallot: FC<IssueBallotProps> = function MotionsBallot({
           </div>
         </div>
       </div>
-    </Card>
+    </StyledCard>
   )
 }

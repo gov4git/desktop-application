@@ -1,6 +1,7 @@
-import { Button, Card, Text } from '@fluentui/react-components'
+import { Button, Text } from '@fluentui/react-components'
 import { FC, useCallback } from 'react'
 
+import { StyledCard } from '../../components/index.js'
 import { appUpdaterService } from '../../services/AppUpdaterService.js'
 import { useGlobalAppUpdateInfo } from '../../store/hooks/globalHooks.js'
 import { useDataStore } from '../../store/store.js'
@@ -23,7 +24,7 @@ export const UpdateNotification: FC = function UpdateNotification() {
 
   return (
     <div className={styles.root}>
-      <Card>
+      <StyledCard>
         <p>
           <Text size={300} weight="medium">
             {!updates.ready && (
@@ -48,7 +49,7 @@ export const UpdateNotification: FC = function UpdateNotification() {
             {updates.ready && 'Update Now'}
           </Button>
         </div>
-      </Card>
+      </StyledCard>
     </div>
   )
 }

@@ -4,8 +4,8 @@ export const useRefreshButtonStyles = makeStyles({
   refreshButton: {
     fontSize: '1.5rem',
     position: 'absolute',
-    right: '20px',
-    top: '20px',
+    right: '28px',
+    top: '12px',
     'text-decoration': 'none',
     ...shorthands.padding(0),
     backgroundColor: 'transparent',

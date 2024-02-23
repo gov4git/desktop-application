@@ -1,12 +1,13 @@
-import { Button, Card } from '@fluentui/react-components'
+import { Button } from '@fluentui/react-components'
 import { Verification } from '@octokit/auth-oauth-device/dist-types/types.js'
 import { FC, useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+import { StyledCard } from '../../../components/index.js'
 import { Loader } from '../../../components/Loader.js'
 import { LoginVerification } from '../../../components/LoginVerification.js'
 import { useDataStore } from '../../../store/store.js'
-import { useButtonStyles, useCardStyles } from '../../../styles/index.js'
+import { useButtonStyles } from '../../../styles/index.js'
 import { useDashboardUserStyles } from './DashboardUser.styles.js'
 
 export type LoginProps = {
@@ -18,7 +19,6 @@ export const DashboardUser: FC<LoginProps> = function DashboardUser({
 }) {
   const styles = useDashboardUserStyles()
   const buttonStyles = useButtonStyles()
-  const cardStyles = useCardStyles()
   const user = useDataStore((s) => s.userInfo.user)
   const navigate = useNavigate()
   const _logout = useDataStore((s) => s.userInfo.logout)
@@ -51,7 +51,7 @@ export const DashboardUser: FC<LoginProps> = function DashboardUser({
   }, [_logout])
 
   return (
-    <Card className={cardStyles.primary}>
+    <StyledCard>
       {verification == null && (
         <Loader isLoading={dataLoading}>
           <div>
@@ -92,6 +92,6 @@ export const DashboardUser: FC<LoginProps> = function DashboardUser({
         </Loader>
       )}
       <LoginVerification verification={verification} onLoggedIn={onLoggedIn} />
-    </Card>
+    </StyledCard>
   )
 }
