@@ -21,13 +21,6 @@ export const Layout = function Layout() {
   const navigate = useNavigate()
   const settingsError = useGlobalSettingsErrors()
   const userLoaded = useDataStore((s) => s.userInfo.userLoaded)
-  const communitiesLoaded = useDataStore(
-    (s) => s.communityInfo.communitiesLoaded,
-  )
-
-  const loading = useMemo(() => {
-    return !userLoaded || !communitiesLoaded
-  }, [userLoaded, communitiesLoaded])
 
   useEffect(() => {
     if (exceptionMessage !== '') {
@@ -60,7 +53,7 @@ export const Layout = function Layout() {
         <main className={classes.main} ref={mainRef}>
           <ErrorPanel />
           <ExceptionPanel />
-          <Loader isLoading={loading}>
+          <Loader isLoading={!userLoaded}>
             <Outlet />
           </Loader>
         </main>
