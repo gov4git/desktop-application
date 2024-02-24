@@ -55,7 +55,7 @@ export const createCommunityManageStore: StateCreator<
         set((s) => {
           s.communityManage.users = newUsers
         })
-        await get().refreshCache()
+        await get().refreshCache(false)
       }, `Failed to issue ${args.credits} voting credits to ${args.username}.`)
     }),
     manageIssue: serialAsync(async (args: ManageIssueArgs) => {

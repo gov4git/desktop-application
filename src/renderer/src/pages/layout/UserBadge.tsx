@@ -5,6 +5,7 @@ import { Link } from 'react-router-dom'
 import { formatDecimal } from '~/shared'
 
 import { routes } from '../../App/index.js'
+import { Loader } from '../../components/Loader.js'
 import { useDataStore } from '../../store/store.js'
 import { useUserBadgeStyles } from './UserBadge.styles.js'
 
@@ -12,6 +13,7 @@ export const UserBadge: FC = function UserBadge() {
   const classes = useUserBadgeStyles()
   const user = useDataStore((s) => s.userInfo.user)
   const community = useDataStore((s) => s.communityInfo.selectedCommunity)
+  const communityLoading = useDataStore((s) => s.communityInfo.loading)
 
   if (user == null) return <></>
 
@@ -20,11 +22,13 @@ export const UserBadge: FC = function UserBadge() {
       <Link to={routes.settings.path} className={classes.navLink}>
         <i className={classes.navIcon + ' codicon codicon-account'} />
         {user.username}
-        {community != null && (
-          <Badge appearance="outline" color="subtle" size="large">
-            <div>{formatDecimal(community.userVotingCredits)}</div>
-          </Badge>
-        )}
+        <Loader isLoading={communityLoading} size="tiny">
+          {community != null && (
+            <Badge appearance="outline" color="subtle" size="large">
+              <div>{formatDecimal(community.userVotingCredits)}</div>
+            </Badge>
+          )}
+        </Loader>
       </Link>
     </div>
   )

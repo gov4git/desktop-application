@@ -3,7 +3,6 @@ import {
   BreadcrumbButton,
   BreadcrumbDivider,
   BreadcrumbItem,
-  Button,
   Menu,
   MenuItem,
   MenuList,
@@ -37,10 +36,21 @@ export const Motions: FC<MotionsProps> = function Motions({
   const communities = useDataStore((s) => s.communityInfo.communities)
   const community = useDataStore((s) => s.communityInfo.selectedCommunity)
   const selectCommunity = useDataStore((s) => s.communityInfo.selectCommunity)
-  const [motionsLoading, setMotionsLoading] = useState(false)
-  const motionSearchArgs = useDataStore((s) => s.motionInfo.searchArgs)
-  const fetchMotions = useDataStore((s) => s.motionInfo.fetchMotions)
+  const [internalCommunityName, setInternalCommunityName] = useState(
+    community?.name ?? '',
+  )
+  const motionsLoading = useDataStore((s) => s.motionInfo.loading)
+  const userLoading = useDataStore((s) => s.userInfo.loading)
+  const communityLoading = useDataStore((s) => s.communityInfo.loading)
   const navigate = useNavigate()
+
+  const loading = useMemo(() => {
+    return motionsLoading || userLoading || communityLoading
+  }, [motionsLoading, userLoading, communityLoading])
+
+  useEffect(() => {
+    setInternalCommunityName(community?.name ?? '')
+  }, [community, setInternalCommunityName])
 
   const issuesLink = useMemo(() => {
     if (community == null) return null
@@ -49,26 +59,14 @@ export const Motions: FC<MotionsProps> = function Motions({
     return `${community.projectUrl}/${resource}?q=is:open is:${isOf} label:gov4git:managed,gov4git:pmp-v1`
   }, [community, motionType])
 
-  useEffect(() => {
-    let shouldUpdate = true
-    async function run() {
-      setMotionsLoading(true)
-      await fetchMotions(motionSearchArgs, false, () => shouldUpdate)
-      setMotionsLoading(false)
-    }
-    void run()
-    return () => {
-      shouldUpdate = false
-    }
-  }, [setMotionsLoading, motionSearchArgs, fetchMotions])
-
   const changeCommunity = useCallback(
     async (c: Community) => {
       if (c.url !== community?.url) {
+        setInternalCommunityName(c.name)
         await selectCommunity(c.url)
       }
     },
-    [community, selectCommunity],
+    [community, selectCommunity, setInternalCommunityName],
   )
 
   const changePage = useCallback(
@@ -85,7 +83,7 @@ export const Motions: FC<MotionsProps> = function Motions({
           <BreadcrumbItem>
             <Menu>
               <MenuTrigger disableButtonEnhancement>
-                <BreadcrumbButton>{community?.name}</BreadcrumbButton>
+                <BreadcrumbButton>{internalCommunityName}</BreadcrumbButton>
               </MenuTrigger>
 
               <MenuPopover>
@@ -128,7 +126,7 @@ export const Motions: FC<MotionsProps> = function Motions({
           </BreadcrumbItem>
         </Breadcrumb>
       </div>
-      <RefreshButton onLoadingChange={setMotionsLoading} />
+      <RefreshButton />
       {/* <h1 className={headingStyles.pageHeading}>{title}</h1> */}
 
       <MotionsControls>
@@ -140,7 +138,7 @@ export const Motions: FC<MotionsProps> = function Motions({
         )}
       </MotionsControls>
 
-      <Loader isLoading={motionsLoading}>
+      <Loader isLoading={loading}>
         {(motions == null || motions.length === 0) && (
           <StyledCard>
             <p>No matching ballots to display at this time.</p>

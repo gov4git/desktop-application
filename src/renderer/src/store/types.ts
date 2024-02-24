@@ -43,14 +43,15 @@ export type LogStore = {
 }
 
 export type CacheStore = {
-  refreshCache: () => Promise<void>
+  refreshCache: (silent?: boolean) => Promise<void>
 }
 
 export type UserStore = {
   userInfo: {
     user: User | null
+    loading: boolean
     userLoaded: boolean
-    fetchUser: () => Promise<void>
+    fetchUser: (silent?: boolean) => Promise<void>
     startLoginFlow: () => Promise<Verification | null>
     finishLoginFlow: () => Promise<string[] | null>
     logout: () => Promise<void>
@@ -62,6 +63,7 @@ export type UserStore = {
 export type MotionStore = {
   motionInfo: {
     motions: Motion[]
+    loading: boolean
     searchArgs: Required<MotionSearch>
     searchResults: {
       totalCount: number
@@ -69,7 +71,8 @@ export type MotionStore = {
     }
     fetchMotions: (
       search: MotionSearch,
-      skipCache: boolean,
+      skipCache?: boolean,
+      silent?: boolean,
       shouldUpdate?: () => boolean,
     ) => Promise<void>
     setType: (t: 'concern' | 'proposal') => void
@@ -84,9 +87,10 @@ export type MotionStore = {
 export type CommunityStore = {
   communityInfo: {
     communities: Community[]
+    loading: boolean
     communitiesLoaded: boolean
     selectedCommunity: Community | null
-    fetchCommunities: () => Promise<void>
+    fetchCommunities: (silent?: boolean) => Promise<void>
     selectCommunity: (communityUrl: string) => Promise<void>
   }
 }

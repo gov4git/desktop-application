@@ -11,14 +11,17 @@ export const createCacheStore: StateCreator<
   [],
   CacheStore
 > = (set, get) => ({
-  refreshCache: serialAsync(async () => {
+  refreshCache: serialAsync(async (silent = true) => {
     await get().tryRun(async () => {
+      if (!silent) {
+        set((s) => {
+          s.communityInfo.loading = true
+        })
+      }
+
       const searchArgs = get().motionInfo.searchArgs
-      await get().motionInfo.fetchMotions(searchArgs, true),
-        await Promise.all([
-          get().userInfo.fetchUser(),
-          get().communityInfo.fetchCommunities(),
-        ])
+      await get().motionInfo.fetchMotions(searchArgs, true, silent),
+        await Promise.all([get().communityInfo.fetchCommunities(silent)])
     }, 'Failed to fetch data.')
   }),
 })

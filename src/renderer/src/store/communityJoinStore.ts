@@ -15,7 +15,7 @@ export const createCommunityJoinStore: StateCreator<
     try {
       const insertErrors = await communityService.insertCommunity(projectUrl)
       if (insertErrors.length === 0) {
-        await get().refreshCache()
+        await get().refreshCache(false)
       }
       return insertErrors
     } catch (ex) {
