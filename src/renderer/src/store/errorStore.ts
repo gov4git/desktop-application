@@ -60,6 +60,12 @@ export const createErrorStore: StateCreator<
           s.exception = `${msg} ${ex}`
         })
       }
+      set((s) => {
+        s.motionInfo.loading = false
+        s.communityInfo.loading = false
+        s.userInfo.loading = false
+        s.userInfo.userLoaded = true
+      })
     }
   },
 })
