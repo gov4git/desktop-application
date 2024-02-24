@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.13.1
+
+### Patch Changes
+
+- fa160df: Refactor data sync
+
 ## 0.13.0
 
 ### Minor Changes
