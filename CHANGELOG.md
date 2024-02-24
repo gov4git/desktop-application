@@ -1,5 +1,13 @@
 # gov4git-desktop-app
 
+## 0.13.2
+
+### Patch Changes
+
+- d5401fd: Fix error screen
+
+  - Clear loaders after error.
+
 ## 0.13.1
 
 ### Patch Changes
