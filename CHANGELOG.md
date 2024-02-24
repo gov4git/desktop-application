@@ -1,5 +1,30 @@
 # gov4git-desktop-app
 
+## 0.13.0
+
+### Minor Changes
+
+- 1ba2223: Upgrade Gov4Git cli to v2.1.5
+- 9879632: Improve styling
+- bf3ddff: Add voting credits hover over tip.
+
+  - Addresses gov4git/roadmap#8
+
+### Patch Changes
+
+- 5d78926: Refactor data syncing
+- cad8f0b: Fix view all issues/prs in GitHub link
+
+  - Correctly label and link to PRs when proposals are selected
+
+- 64cd10b: Hide site nav until user has logged in.
+
+  - Addresses gov4git/roadmap#7
+
+- 358591a: Fix data race
+- 01c4b7e: Fix deployment version
+- d12ba7c: Show message when user has 0 voting credits.
+
 ## 0.12.0
 
 ### Minor Changes
