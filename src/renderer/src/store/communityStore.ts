@@ -37,13 +37,14 @@ export const createCommunityStore: StateCreator<
     }),
     selectCommunity: serialAsync(async (url: string) => {
       await get().tryRun(async () => {
+        set((s) => {
+          s.motionInfo.loading = true
+          s.communityInfo.loading = true
+        })
         await communityService.selectCommunity(url)
         const searchArgs = get().motionInfo.searchArgs
-        await Promise.all([
-          get().motionInfo.fetchMotions(searchArgs, false, false),
-          get().communityInfo.fetchCommunities(false),
-        ])
-        await get().refreshCache(true)
+        await get().motionInfo.fetchMotions(searchArgs, false, false)
+        await get().communityInfo.fetchCommunities(false)
       }, `Failed to select community.`)
     }),
   },

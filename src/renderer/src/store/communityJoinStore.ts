@@ -13,10 +13,24 @@ export const createCommunityJoinStore: StateCreator<
 > = (set, get) => ({
   joinCommunity: serialAsync(async (projectUrl: string) => {
     try {
-      const insertErrors = await communityService.insertCommunity(projectUrl)
+      set((s) => {
+        s.communityInfo.loading = true
+        s.motionInfo.loading = true
+      })
+      const communities = get().communityInfo.communities
+      const [communityUrl, insertErrors] =
+        await communityService.insertCommunity(projectUrl)
       if (insertErrors.length === 0) {
-        await get().refreshCache(false)
+        if (communities.length === 0) {
+          await get().communityInfo.selectCommunity(communityUrl)
+        } else {
+          await get().communityInfo.fetchCommunities(false)
+        }
       }
+      set((s) => {
+        s.communityInfo.loading = false
+        s.motionInfo.loading = false
+      })
       return insertErrors
     } catch (ex) {
       get().setException(`Failed to join community. ${ex}`)

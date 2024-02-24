@@ -253,12 +253,14 @@ ${user.memberPublicBranch}`
     }
   }
 
-  public insertCommunity = async (projectUrl: string): Promise<string[]> => {
+  public insertCommunity = async (
+    projectUrl: string,
+  ): Promise<[string, string[]]> => {
     const user = await this.userService.getUser()
     if (user == null)
-      return ['Unauthorized. Please log in to join a new community']
+      return ['', ['Unauthorized. Please log in to join a new community']]
     if (projectUrl === '') {
-      return [`Community URL is a required field.`]
+      return ['', [`Community URL is a required field.`]]
     }
 
     const projectRepoUrl = projectUrl
@@ -279,13 +281,13 @@ ${user.memberPublicBranch}`
       projectRepoUrl,
     )
     if (projectRepoError != null) {
-      return [projectRepoError]
+      return ['', [projectRepoError]]
     }
 
     const [communityMainBranch, communityRepoError] =
       await this.getDefaultBranchFromUrl(user, communityUrl)
     if (communityRepoError != null) {
-      return [communityRepoError]
+      return ['', [communityRepoError]]
     }
 
     const configPath = resolve(
@@ -312,25 +314,17 @@ ${user.memberPublicBranch}`
         })
         .returning()
     )[0]!
-    const communityCount = await this.db
-      .select({
-        count: sql<number>`count(*)`,
-      })
-      .from(communities)
-    if (communityCount.length === 0 || communityCount[0]?.count === 1) {
-      await this.selectCommunity(community.url)
-    }
 
     const initializationResults = await this.govService.initId()
     if (!initializationResults.ok) {
-      return [initializationResults.error]
+      return ['', [initializationResults.error]]
     }
 
     const syncedCommunity = await this.syncCommunity(user, currentCommunity)
 
     await this.requestToJoin(user, syncedCommunity)
 
-    return []
+    return [syncedCommunity.url, []]
   }
 
   public deployCommunity = async ({
@@ -358,7 +352,15 @@ ${user.memberPublicBranch}`
 
     const projectUrl = `https://github.com/${org}/${repo}`
 
-    const errors = await this.insertCommunity(projectUrl)
+    const [communityUrl, errors] = await this.insertCommunity(projectUrl)
+    const communityCount = await this.db
+      .select({
+        count: sql<number>`count(*)`,
+      })
+      .from(communities)
+    if (communityCount.length === 0 || communityCount[0]?.count === 1) {
+      await this.selectCommunity(communityUrl)
+    }
 
     if (errors.length) {
       throw new Error(JSON.stringify(errors, undefined, 2))
