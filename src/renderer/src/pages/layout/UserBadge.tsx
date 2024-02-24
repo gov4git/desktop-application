@@ -1,4 +1,4 @@
-import { Badge } from '@fluentui/react-components'
+import { Badge, Tooltip } from '@fluentui/react-components'
 import type { FC } from 'react'
 import { Link } from 'react-router-dom'
 
@@ -24,9 +24,14 @@ export const UserBadge: FC = function UserBadge() {
         {user.username}
         <Loader isLoading={communityLoading} size="tiny">
           {community != null && (
-            <Badge appearance="outline" color="subtle" size="large">
-              <div>{formatDecimal(community.userVotingCredits)}</div>
-            </Badge>
+            <Tooltip
+              content={`You have ${community.userVotingCredits} voting credits in the ${community.name} community.`}
+              relationship="description"
+            >
+              <Badge appearance="outline" color="subtle" size="large">
+                <div>{formatDecimal(community.userVotingCredits)}</div>
+              </Badge>
+            </Tooltip>
           )}
         </Loader>
       </Link>
