@@ -4,8 +4,6 @@ import { serialAsync } from '~/shared'
 
 import { useDataStore } from '../../store/store.js'
 
-let firstMount = true
-
 export const DataLoader: FC = function DataLoader() {
   const getUser = useDataStore((s) => s.userInfo.fetchUser)
   const getCommunities = useDataStore((s) => s.communityInfo.fetchCommunities)
@@ -20,12 +18,6 @@ export const DataLoader: FC = function DataLoader() {
       await fetchMotions(motionSearchArgs, false, false, () => shouldUpdate)
     }
     void run()
-    if (firstMount) {
-      setTimeout(async () => {
-        await fetchMotions(motionSearchArgs, true, true, () => shouldUpdate)
-        firstMount = false
-      }, 1000)
-    }
 
     return () => {
       shouldUpdate = false

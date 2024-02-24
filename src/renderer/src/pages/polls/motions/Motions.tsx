@@ -40,13 +40,7 @@ export const Motions: FC<MotionsProps> = function Motions({
     community?.name ?? '',
   )
   const motionsLoading = useDataStore((s) => s.motionInfo.loading)
-  const userLoading = useDataStore((s) => s.userInfo.loading)
-  const communityLoading = useDataStore((s) => s.communityInfo.loading)
   const navigate = useNavigate()
-
-  const loading = useMemo(() => {
-    return motionsLoading || userLoading || communityLoading
-  }, [motionsLoading, userLoading, communityLoading])
 
   useEffect(() => {
     setInternalCommunityName(community?.name ?? '')
@@ -138,7 +132,7 @@ export const Motions: FC<MotionsProps> = function Motions({
         )}
       </MotionsControls>
 
-      <Loader isLoading={loading}>
+      <Loader isLoading={motionsLoading}>
         {(motions == null || motions.length === 0) && (
           <StyledCard>
             <p>No matching ballots to display at this time.</p>
