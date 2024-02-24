@@ -1,4 +1,4 @@
-import { FC, useLayoutEffect, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 
 import { useDataStore } from '../../store/store.js'
 import { Motions } from './motions/Motions.js'
@@ -17,7 +17,7 @@ export const PollsPage: FC<PollsPageProps> = function PollsPage({ state }) {
   )
   const [title, setTitle] = useState('')
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     resetMotionsSearchOptions()
     switch (state) {
       case 'PULL_REQUESTS':

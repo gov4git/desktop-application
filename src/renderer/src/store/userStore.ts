@@ -13,13 +13,22 @@ export const createUserStore: StateCreator<
 > = (set, get) => ({
   userInfo: {
     user: null,
+    loading: false,
     userLoaded: false,
-    fetchUser: serialAsync(async () => {
+    fetchUser: serialAsync(async (silent = true) => {
       await get().tryRun(async () => {
+        if (!silent) {
+          set((s) => {
+            s.userInfo.loading = true
+          })
+        }
         const user = await userService.getUser()
         set((s) => {
           s.userInfo.user = user
           s.userInfo.userLoaded = true
+          if (!silent) {
+            s.userInfo.loading = false
+          }
         })
       }, `Failed to load user.`)
     }),
@@ -42,7 +51,7 @@ export const createUserStore: StateCreator<
     logout: serialAsync(async () => {
       await get().tryRun(async () => {
         await userService.logout()
-        await get().refreshCache()
+        await get().refreshCache(false)
       }, `Failed to logout.`)
     }),
     fetchAdminOrgs: serialAsync(async () => {

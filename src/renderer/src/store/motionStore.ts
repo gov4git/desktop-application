@@ -19,6 +19,7 @@ export const createMotionStore: StateCreator<
 > = (set, get) => ({
   motionInfo: {
     motions: [],
+    loading: false,
     searchArgs: {
       type: 'concern',
       search: '',
@@ -32,17 +33,25 @@ export const createMotionStore: StateCreator<
     fetchMotions: async (
       args: MotionSearch,
       skipCache = false,
+      silent = true,
       shouldUpdate = () => true,
     ) => {
       await get().tryRun(async () => {
+        if (!silent) {
+          set((s) => {
+            s.motionInfo.loading = true
+          })
+        }
         const motions = await motionService.getMotions(args, skipCache)
         if (shouldUpdate()) {
-          console.log('==== UPDATING!!!!! ====')
           set((s) => {
             s.motionInfo.motions = motions.motions
             s.motionInfo.searchResults = {
               totalCount: motions.totalCount,
               matchingCount: motions.matchingCount,
+            }
+            if (!silent) {
+              s.motionInfo.loading = false
             }
           })
         }
@@ -81,7 +90,7 @@ export const createMotionStore: StateCreator<
     vote: async (voteOptions: MotionVoteOption) => {
       try {
         await motionService.vote(voteOptions)
-        await get().refreshCache()
+        await get().refreshCache(true)
         return null
       } catch (ex: any) {
         if (

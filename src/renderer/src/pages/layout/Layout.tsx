@@ -1,15 +1,11 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 
-import { serialAsync } from '~/shared'
-
 import { routes } from '../../App/Router.js'
-import { Loader } from '../../components/index.js'
-import {
-  useCheckForUpdates,
-  useGlobalSettingsErrors,
-} from '../../store/hooks/globalHooks.js'
+import { Loader } from '../../components/Loader.js'
+import { useGlobalSettingsErrors } from '../../store/hooks/globalHooks.js'
 import { useDataStore } from '../../store/store.js'
+import { DataLoader } from './DataLoader.js'
 import { ErrorPanel } from './ErrorPanel.js'
 import { ExceptionPanel } from './ExceptionPanel.js'
 import { Header } from './Header.js'
@@ -24,11 +20,14 @@ export const Layout = function Layout() {
   const mainRef = useRef<HTMLElement>(null)
   const navigate = useNavigate()
   const settingsError = useGlobalSettingsErrors()
-  const [loading, setLoading] = useState(false)
-  const getUser = useDataStore((s) => s.userInfo.fetchUser)
-  const getCommunities = useDataStore((s) => s.communityInfo.fetchCommunities)
-  const checkForUpdates = useCheckForUpdates()
-  const refreshCache = useDataStore((s) => s.refreshCache)
+  const userLoaded = useDataStore((s) => s.userInfo.userLoaded)
+  const communitiesLoaded = useDataStore(
+    (s) => s.communityInfo.communitiesLoaded,
+  )
+
+  const loading = useMemo(() => {
+    return !userLoaded || !communitiesLoaded
+  }, [userLoaded, communitiesLoaded])
 
   useEffect(() => {
     if (exceptionMessage !== '') {
@@ -52,40 +51,9 @@ export const Layout = function Layout() {
     }
   }, [navigate, settingsError])
 
-  useEffect(() => {
-    async function run() {
-      setLoading(true)
-      await Promise.allSettled([getUser(), getCommunities()])
-      setLoading(false)
-    }
-    void run()
-  }, [getUser, getCommunities, setLoading])
-
-  useEffect(() => {
-    // void refreshCache()
-    const updateCacheInterval = setInterval(
-      serialAsync(async () => {
-        await refreshCache()
-      }),
-      60 * 1000,
-    )
-    return () => {
-      clearInterval(updateCacheInterval)
-    }
-  }, [refreshCache])
-
-  useEffect(() => {
-    void checkForUpdates()
-    const checkForUpdatesInterval = setInterval(async () => {
-      return await checkForUpdates()
-    }, 60 * 1000)
-    return () => {
-      clearInterval(checkForUpdatesInterval)
-    }
-  }, [checkForUpdates])
-
   return (
     <div id="layout" className={classes.layout}>
+      <DataLoader />
       <Header className={classes.header} />
       <div className={classes.mainContainer}>
         <SiteNav />

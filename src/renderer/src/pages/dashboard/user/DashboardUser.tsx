@@ -27,7 +27,8 @@ export const DashboardUser: FC<LoginProps> = function DashboardUser({
   const [waitingForVericationCode, setWaitingForVerificationCode] =
     useState(false)
   const refreshCache = useDataStore((s) => s.refreshCache)
-  const [dataLoading, setDataLoading] = useState(false)
+  const userLoading = useDataStore((s) => s.userInfo.loading)
+  const fetchUser = useDataStore((s) => s.userInfo.fetchUser)
 
   const login = useCallback(async () => {
     setWaitingForVerificationCode(true)
@@ -38,13 +39,11 @@ export const DashboardUser: FC<LoginProps> = function DashboardUser({
 
   const onLoggedIn = useCallback(async () => {
     setVerification(null)
-    setDataLoading(true)
-    await refreshCache()
-    setDataLoading(false)
+    await Promise.allSettled([refreshCache(false), fetchUser(false)])
     if (redirectOnLogin !== '') {
       navigate(redirectOnLogin)
     }
-  }, [setVerification, refreshCache, navigate, redirectOnLogin, setDataLoading])
+  }, [setVerification, refreshCache, navigate, redirectOnLogin, fetchUser])
 
   const logout = useCallback(async () => {
     void _logout()
@@ -53,7 +52,7 @@ export const DashboardUser: FC<LoginProps> = function DashboardUser({
   return (
     <StyledCard>
       {verification == null && (
-        <Loader isLoading={dataLoading}>
+        <Loader isLoading={userLoading}>
           <div>
             {user != null && (
               <div className={styles.logoutArea}>
