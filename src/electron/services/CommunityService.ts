@@ -346,7 +346,7 @@ ${user.memberPublicBranch}`
       '--project',
       `${org}/${repo}`,
       '--release',
-      'v2.1.5',
+      'v2.2.0',
     ]
     await this.govService.mustRun(command, undefined, true)
 
