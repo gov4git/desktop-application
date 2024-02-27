@@ -1,14 +1,14 @@
 import { Button } from '@fluentui/react-components'
 import { FC, memo, useCallback, useState } from 'react'
 
-import { Message } from '../../../../components/Message.js'
-import { useDataStore } from '../../../../store/store.js'
-import { useMessageStyles } from '../../../../styles/index.js'
+import { Message } from '../../../../../components/Message.js'
+import { useDataStore } from '../../../../../store/store.js'
+import { useMessageStyles } from '../../../../../styles/index.js'
 
 export const ReviewDeploy: FC = memo(function ReviewDeploy() {
   const [loading, setLoading] = useState(false)
-  const setCommunityDashboardState = useDataStore(
-    (s) => s.communityDashboard.setState,
+  const setCommunityOverviewState = useDataStore(
+    (s) => s.communityOverview.setState,
   )
   const setCommunityDeployState = useDataStore(
     (s) => s.communityDeploy.setState,
@@ -42,8 +42,8 @@ export const ReviewDeploy: FC = memo(function ReviewDeploy() {
   const dismissMessage = useCallback(() => {
     setSuccessMessage('')
     setCommunityDeployState('initial')
-    setCommunityDashboardState('initial')
-  }, [setSuccessMessage, setCommunityDashboardState, setCommunityDeployState])
+    setCommunityOverviewState('overview')
+  }, [setSuccessMessage, setCommunityOverviewState, setCommunityDeployState])
 
   return (
     <>

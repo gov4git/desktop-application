@@ -1,19 +1,19 @@
 import { StateCreator } from 'zustand'
 import type {} from 'zustand/middleware/immer'
 
-import { CommunityDashboardStore, Store } from './types.js'
+import { CommunityOverviewStore, Store } from './types.js'
 
-export const createCommunityDashboardStore: StateCreator<
+export const createCommunityOverviewStore: StateCreator<
   Store,
   [['zustand/immer', never]],
   [],
-  CommunityDashboardStore
+  CommunityOverviewStore
 > = (set, get) => ({
-  communityDashboard: {
+  communityOverview: {
     state: 'overview',
     setState: (state) => {
       set((s) => {
-        s.communityDashboard.state = state
+        s.communityOverview.state = state
       })
     },
   },

@@ -1,6 +1,6 @@
 import { FC, memo, useMemo } from 'react'
 
-import { useDataStore } from '../../../../store/store.js'
+import { useDataStore } from '../../../../../store/store.js'
 import { Nav } from './Nav.js'
 import { ReviewDeploy } from './ReviewDeploy.js'
 import { SelectOrg } from './SelectOrg.js'

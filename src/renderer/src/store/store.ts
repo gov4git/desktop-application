@@ -6,6 +6,7 @@ import { createCommunityDashboardStore } from './communityDashboardStore.js'
 import { createCommunityDeployStore } from './communityDeployStore.js'
 import { createCommunityJoinStore } from './communityJoinStore.js'
 import { createCommunityManageStore } from './communityManageStore.js'
+import { createCommunityOverviewStore } from './communityOverviewStore.js'
 import { createCommunityStore } from './communityStore.js'
 import { createErrorStore } from './errorStore.js'
 import { createGlobalStore } from './globalStore.js'
@@ -27,5 +28,6 @@ export const useDataStore = create<Store>()(
     ...createCommunityDeployStore(...a),
     ...createErrorStore(...a),
     ...createLogStore(...a),
+    ...createCommunityOverviewStore(...a),
   })),
 )

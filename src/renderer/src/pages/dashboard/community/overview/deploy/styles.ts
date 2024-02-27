@@ -1,6 +1,6 @@
 import { makeStyles, shorthands } from '@fluentui/react-components'
 
-import { gov4GitTokens } from '../../../../App/theme/tokens.js'
+import { gov4GitTokens } from '../../../../../App/theme/tokens.js'
 
 export const useCommunityDeployStyle = makeStyles({
   firstCol: {
@@ -10,7 +10,7 @@ export const useCommunityDeployStyle = makeStyles({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    ...shorthands.gap('8px'),
+    ...shorthands.gap('16px'),
     ...shorthands.padding('8px', 0),
   },
   instructionTitle: {
