@@ -13,7 +13,7 @@ import type {
   User,
 } from '../../../electron/db/schema.js'
 import type {
-  IssueSearchResults,
+  CommunityIssuesResponse,
   IssueVotingCreditsArgs,
   ManageIssueArgs,
   OrgMembershipInfo,
@@ -117,7 +117,7 @@ export type CommunityManageStore = {
   communityManage: {
     communityToManage: Community | null
     users: UserCredits[] | null
-    issues: IssueSearchResults[] | null
+    issues: CommunityIssuesResponse | null
     setCommunity: (community: Community) => Promise<void>
     issueVotingCredits: (credits: IssueVotingCreditsArgs) => Promise<void>
     manageIssue: (args: ManageIssueArgs) => Promise<void>

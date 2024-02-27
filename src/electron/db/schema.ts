@@ -113,3 +113,21 @@ export const motionsFullTextSearch = sqliteTable('motionsFullTextSearch', {
 export type MotionsFullTextSearch = typeof motionsFullTextSearch.$inferSelect
 export type MotionsFullTextSearchInsert =
   typeof motionsFullTextSearch.$inferInsert
+
+export const policies = sqliteTable(
+  'policies',
+  {
+    id: int('id').primaryKey(),
+    title: text('title').notNull(),
+    communityUrl: text('communityUrl').notNull(),
+    motionType: text('motionType', { enum: ['concern', 'proposal'] }).notNull(),
+    description: text('description').notNull(),
+    githubLabel: text('githubLabel').notNull(),
+  },
+  (t) => ({
+    uniqueId: unique().on(t.title, t.communityUrl),
+  }),
+)
+
+export type Policy = typeof policies.$inferSelect
+export type PolicyInsert = typeof policies.$inferInsert

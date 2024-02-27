@@ -25,6 +25,7 @@ import {
   GitHubService,
   LogService,
   MotionService,
+  PolicyService,
   Services,
   ValidationService,
 } from './services/index.js'
@@ -67,6 +68,9 @@ async function setup(): Promise<void> {
 
   const gov4GitService = new Gov4GitService(services)
   services.register('gov4git', gov4GitService)
+
+  const policyService = new PolicyService({ services })
+  services.register('policy', policyService)
 
   const userService = new UserService({
     services,

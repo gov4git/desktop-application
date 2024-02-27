@@ -57,6 +57,13 @@
       "when": 1705330060343,
       "tag": "0007_shiny_mastermind",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1708984378622,
+      "tag": "0008_amusing_dark_beast",
+      "breakpoints": true
     }
   ]
 }
