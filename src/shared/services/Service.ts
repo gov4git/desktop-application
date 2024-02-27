@@ -12,6 +12,7 @@ export type ServiceId =
   | 'validation'
   | 'motion'
   | 'github'
+  | 'policy'
 
 export type ObjectProxy<T> = {
   [P in keyof T]: ServiceProxy<T[P]>

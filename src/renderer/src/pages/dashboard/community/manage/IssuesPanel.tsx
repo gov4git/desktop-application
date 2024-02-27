@@ -1,5 +1,7 @@
 import {
   Button,
+  Dropdown,
+  Option,
   Table,
   TableBody,
   TableCell,
@@ -10,15 +12,15 @@ import {
 import { parse } from 'marked'
 import { type FC, memo, useCallback, useState } from 'react'
 
-import type { IssueSearchResults } from '../../../../../../electron/services/index.js'
+import { Policy } from '../../../../../../electron/db/schema.js'
+import type { CommunityIssue } from '../../../../../../electron/services/index.js'
 import { Message } from '../../../../components/Message.js'
 import { useDataStore } from '../../../../store/store.js'
 import { useMessageStyles } from '../../../../styles/messages.js'
 import { useManageCommunityStyles } from './styles.js'
 
-const isManaged = (issue: IssueSearchResults): boolean => {
-  const foundIndex = issue.labels.findIndex((i) => i.name === 'gov4git:pmp-v1')
-  return foundIndex !== -1
+const isManaged = (issue: CommunityIssue): boolean => {
+  return issue.policy != null
 }
 
 export const IssuesPanel: FC = memo(function IssuesPanel() {
@@ -29,25 +31,36 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
   const selectedCommunity = useDataStore(
     (s) => s.communityManage.communityToManage,
   )!
-  const [selectedIssue, setSelectedIssue] = useState<IssueSearchResults | null>(
+  const [selectedIssue, setSelectedIssue] = useState<CommunityIssue | null>(
     null,
   )
+  const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null)
   const manageIssue = useDataStore((s) => s.communityManage.manageIssue)
   const issues = useDataStore((s) => s.communityManage.issues)
 
+  const selectPolicy = useCallback(
+    (policy: Policy) => {
+      console.log('POLICY')
+      console.log(policy)
+      setSelectedPolicy(policy)
+    },
+    [setSelectedPolicy],
+  )
+
   const onSelect = useCallback(
-    (issue: IssueSearchResults) => {
+    (issue: CommunityIssue) => {
       setSelectedIssue(issue)
     },
     [setSelectedIssue],
   )
 
   const manage = useCallback(async () => {
-    if (selectedIssue != null) {
+    if (selectedIssue != null && selectedPolicy != null) {
       setLoading(true)
       await manageIssue({
         communityUrl: selectedCommunity.url,
         issueNumber: selectedIssue.number,
+        label: selectedPolicy.githubLabel,
       })
       setSuccessMessage(
         [
@@ -57,7 +70,13 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
       )
       setLoading(false)
     }
-  }, [manageIssue, setLoading, selectedCommunity, selectedIssue])
+  }, [
+    manageIssue,
+    setLoading,
+    selectedCommunity,
+    selectedIssue,
+    selectedPolicy,
+  ])
 
   const dismissMessage = useCallback(() => {
     setSuccessMessage('')
@@ -75,7 +94,7 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
           </TableHeader>
           <TableBody>
             {issues != null &&
-              issues.map((i) => (
+              issues.issues.map((i) => (
                 <TableRow
                   key={i.id}
                   onClick={() => onSelect(i)}
@@ -117,12 +136,29 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
           ></div>
           <div>
             {!isManaged(selectedIssue) && (
-              <Button onClick={manage} appearance="primary">
-                {!loading && <>Manage with Gov4Git</>}
-                {loading && (
-                  <i className="codicon codicon-loading codicon-modifier-spin" />
-                )}
-              </Button>
+              <>
+                <Dropdown placeholder="Select a policy">
+                  {issues?.policies.map((p) => (
+                    <Option
+                      key={p.title}
+                      value={p.title}
+                      onClick={() => selectPolicy(p)}
+                    >
+                      {p.title}
+                    </Option>
+                  ))}
+                </Dropdown>
+                <Button
+                  disabled={loading || selectedPolicy == null}
+                  onClick={manage}
+                  appearance="primary"
+                >
+                  {!loading && <>Manage with Gov4Git</>}
+                  {loading && (
+                    <i className="codicon codicon-loading codicon-modifier-spin" />
+                  )}
+                </Button>
+              </>
             )}
             {isManaged(selectedIssue) && <strong>Managed with Gov4Git</strong>}
           </div>

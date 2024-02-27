@@ -1,14 +1,20 @@
 import { eq, sql } from 'drizzle-orm'
 import { resolve } from 'path'
 
-import { AbstractCommunityService } from '~/shared'
+import { AbstractCommunityService, Expand } from '~/shared'
 
 import { DB } from '../db/db.js'
-import { communities, Community, User } from '../db/schema.js'
+import {
+  communities,
+  type Community,
+  type Policy,
+  type User,
+} from '../db/schema.js'
 import { RepoSegments, urlToRepoSegments } from '../lib/index.js'
 import { hashString, toResolvedPath } from '../lib/paths.js'
-import { GitHubService } from './GitHubService.js'
+import { GitHubService, IssueSearchResults } from './GitHubService.js'
 import { Gov4GitService } from './Gov4GitService.js'
+import { PolicyService } from './PolicyService.js'
 import { Services } from './Services.js'
 import { SettingsService } from './SettingsService.js'
 import { UserService } from './UserService.js'
@@ -38,7 +44,20 @@ export type IssueVotingCreditsArgs = {
 export type ManageIssueArgs = {
   communityUrl: string
   issueNumber: number
+  label: string
 }
+
+export type CommunityIssue = Expand<
+  IssueSearchResults & {
+    policy: Policy | null
+  }
+>
+
+export type CommunityIssuesResponse = {
+  policies: Policy[]
+  issues: CommunityIssue[]
+}
+
 export class CommunityService extends AbstractCommunityService {
   private declare readonly services: Services
   private declare readonly configDir: string
@@ -47,6 +66,7 @@ export class CommunityService extends AbstractCommunityService {
   private declare readonly settingsService: SettingsService
   private declare readonly govService: Gov4GitService
   private declare readonly gitHubService: GitHubService
+  private declare readonly policyService: PolicyService
 
   constructor({ services, configDir = '~/.gov4git' }: CommunityServiceOptions) {
     super()
@@ -57,6 +77,7 @@ export class CommunityService extends AbstractCommunityService {
     this.userService = this.services.load<UserService>('user')
     this.settingsService = this.services.load<SettingsService>('settings')
     this.govService = this.services.load<Gov4GitService>('gov4git')
+    this.policyService = this.services.load<PolicyService>('policy')
   }
 
   public getCommunity = async (): Promise<Community | null> => {
@@ -466,7 +487,9 @@ ${user.memberPublicBranch}`
     await this.govService.mustRun(command, community)
   }
 
-  public getCommunityIssues = async (communityUrl: string) => {
+  public getCommunityIssues = async (
+    communityUrl: string,
+  ): Promise<CommunityIssuesResponse> => {
     const user = await this.userService.getUser()
     if (user == null) {
       throw new Error(
@@ -486,18 +509,45 @@ ${user.memberPublicBranch}`
       )
     }
 
+    const policies = (
+      await this.policyService.getPolicies(communityUrl)
+    ).filter((p) => p.motionType === 'concern')
+
     const repoSegments = urlToRepoSegments(community.projectUrl)
-    return await this.gitHubService.searchRepoIssues({
+    const issues = await this.gitHubService.searchRepoIssues({
       repoOwner: repoSegments.owner,
       repoName: repoSegments.repo,
       token: user.pat,
       state: 'open',
     })
+
+    const communityIssues: CommunityIssue[] = issues.map((issue) => {
+      let policy: Policy | null = null
+      for (const label of issue.labels) {
+        policy =
+          policies.find((p) => {
+            return label.name === p.githubLabel
+          }) ?? null
+        if (policy != null) {
+          break
+        }
+      }
+      return {
+        ...issue,
+        policy,
+      }
+    })
+
+    return {
+      policies,
+      issues: communityIssues,
+    }
   }
 
   public manageIssue = async ({
     communityUrl,
     issueNumber,
+    label,
   }: ManageIssueArgs) => {
     const user = await this.userService.getUser()
     if (user == null) {
@@ -524,7 +574,7 @@ ${user.memberPublicBranch}`
       repo: repoSegments.repo,
       token: user.pat,
       issueNumber,
-      labels: ['gov4git:pmp-v1'],
+      labels: [label],
     })
   }
 }

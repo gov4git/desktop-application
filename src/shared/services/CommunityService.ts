@@ -1,7 +1,7 @@
 import type { Community } from '../../electron/db/schema.js'
 import type {
+  CommunityIssuesResponse,
   DeployCommunityArgs,
-  IssueSearchResults,
   IssueVotingCreditsArgs,
   ManageIssueArgs,
   UserCredits,
@@ -22,6 +22,6 @@ export abstract class AbstractCommunityService {
   ): Promise<void>
   public abstract getCommunityIssues(
     communityUrl: string,
-  ): Promise<IssueSearchResults[]>
+  ): Promise<CommunityIssuesResponse>
   public abstract manageIssue(args: ManageIssueArgs): Promise<void>
 }
