@@ -11,8 +11,9 @@ import {
 } from '@fluentui/react-components'
 import { type FC, FormEvent, memo, useCallback, useState } from 'react'
 
-import { useDataStore } from '../../../../store/store.js'
-import { useManageCommunityStyles } from './styles.js'
+import { Loader } from '../../../../../components/Loader.js'
+import { useDataStore } from '../../../../../store/store.js'
+import { useManageCommunityStyles } from '../styles.js'
 
 export const UserPanel: FC = memo(function UserPanel() {
   const selectedCommunity = useDataStore(
@@ -26,6 +27,7 @@ export const UserPanel: FC = memo(function UserPanel() {
   const [loading, setLoading] = useState(false)
   const styles = useManageCommunityStyles()
   const users = useDataStore((s) => s.communityManage.users)
+  const usersLoading = useDataStore((s) => s.communityManage.usersLoading)
 
   const issueCredits = useCallback(
     async (ev: FormEvent<HTMLFormElement>) => {
@@ -52,7 +54,7 @@ export const UserPanel: FC = memo(function UserPanel() {
   )
 
   return (
-    <>
+    <Loader isLoading={usersLoading}>
       <div className={styles.tableArea}>
         <Table>
           <TableHeader>
@@ -111,6 +113,6 @@ export const UserPanel: FC = memo(function UserPanel() {
           </div>
         </form>
       )}
-    </>
+    </Loader>
   )
 })

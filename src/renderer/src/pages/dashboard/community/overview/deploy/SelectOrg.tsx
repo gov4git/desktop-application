@@ -13,10 +13,10 @@ import {
 import { Verification } from '@octokit/auth-oauth-device/dist-types/types.js'
 import { FC, memo, useCallback, useEffect, useState } from 'react'
 
-import { Loader } from '../../../../components/Loader.js'
-import { LoginVerification } from '../../../../components/LoginVerification.js'
-import { useDataStore } from '../../../../store/store.js'
-import { useButtonStyles } from '../../../../styles/index.js'
+import { Loader } from '../../../../../components/Loader.js'
+import { LoginVerification } from '../../../../../components/LoginVerification.js'
+import { useDataStore } from '../../../../../store/store.js'
+import { useButtonStyles } from '../../../../../styles/index.js'
 import { useCommunityDeployStyle } from './styles.js'
 
 export const SelectOrg: FC = memo(function SelectOrg() {
@@ -26,8 +26,8 @@ export const SelectOrg: FC = memo(function SelectOrg() {
   const selectedOrg = useDataStore((s) => s.communityDeploy.selectedOrg)
   const setSelectedOrg = useDataStore((s) => s.communityDeploy.selectOrg)
   const styles = useCommunityDeployStyle()
-  const setCommunityDashboardState = useDataStore(
-    (s) => s.communityDashboard.setState,
+  const setCommunityOverviewState = useDataStore(
+    (s) => s.communityOverview.setState,
   )
   const setCommunityDeployState = useDataStore(
     (s) => s.communityDeploy.setState,
@@ -108,7 +108,7 @@ export const SelectOrg: FC = memo(function SelectOrg() {
           </Table>
         )}
         <div className={styles.buttonRow}>
-          <Button onClick={() => setCommunityDashboardState('initial')}>
+          <Button onClick={() => setCommunityOverviewState('overview')}>
             Cancel
           </Button>
           <Button

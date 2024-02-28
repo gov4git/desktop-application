@@ -11,6 +11,15 @@ export const DataLoader: FC = function DataLoader() {
   const refreshCache = useDataStore((s) => s.refreshCache)
   const motionSearchArgs = useDataStore((s) => s.motionInfo.searchArgs)
   const fetchMotions = useDataStore((s) => s.motionInfo.fetchMotions)
+  const communityToManage = useDataStore(
+    (s) => s.communityManage.communityToManage,
+  )
+  const fetchCommunityUsers = useDataStore(
+    (s) => s.communityManage.fetchCommunityUsers,
+  )
+  const fetchCommunityIssues = useDataStore(
+    (s) => s.communityManage.fetchCommunityIssues,
+  )
 
   useEffect(() => {
     let shouldUpdate = true
@@ -30,6 +39,25 @@ export const DataLoader: FC = function DataLoader() {
     }
     void run()
   }, [getUser, getCommunities])
+
+  useEffect(() => {
+    let shouldUpdate = true
+
+    async function run() {
+      if (communityToManage != null) {
+        await Promise.allSettled([
+          fetchCommunityUsers(communityToManage, false, () => shouldUpdate),
+          fetchCommunityIssues(communityToManage, false, () => shouldUpdate),
+        ])
+      }
+    }
+
+    void run()
+
+    return () => {
+      shouldUpdate = false
+    }
+  }, [communityToManage, fetchCommunityUsers, fetchCommunityIssues])
 
   useEffect(() => {
     // void refreshCache()

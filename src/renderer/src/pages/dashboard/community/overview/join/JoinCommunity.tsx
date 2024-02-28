@@ -1,10 +1,10 @@
 import { Button, Field, InfoLabel, Input } from '@fluentui/react-components'
 import { FC, FormEvent, memo, useCallback, useState } from 'react'
 
-import { Message } from '../../../../components/Message.js'
-import { useDataStore } from '../../../../store/store.js'
-import { useMessageStyles } from '../../../../styles/index.js'
-import { useJoinCommunityStyles } from './styles.js'
+import { Message } from '../../../../../components/Message.js'
+import { useDataStore } from '../../../../../store/store.js'
+import { useMessageStyles } from '../../../../../styles/index.js'
+import { useJoinCommunityStyles } from './JoinCommunity.styles.js'
 
 export const JoinCommunity: FC = memo(function JoinCommunity() {
   const messageStyles = useMessageStyles()
@@ -13,8 +13,8 @@ export const JoinCommunity: FC = memo(function JoinCommunity() {
   const styles = useJoinCommunityStyles()
   const joinCommunity = useDataStore((s) => s.joinCommunity)
   const [errors, setErrors] = useState<string[]>([])
-  const setCommunityDashboardState = useDataStore(
-    (s) => s.communityDashboard.setState,
+  const setCommunityOverviewState = useDataStore(
+    (s) => s.communityOverview.setState,
   )
 
   const save = useCallback(
@@ -27,14 +27,14 @@ export const JoinCommunity: FC = memo(function JoinCommunity() {
       setNewProjectUrl('')
       setLoading(false)
       if (errors.length === 0) {
-        setCommunityDashboardState('initial')
+        setCommunityOverviewState('overview')
       }
     },
     [
       setLoading,
       joinCommunity,
       setNewProjectUrl,
-      setCommunityDashboardState,
+      setCommunityOverviewState,
       newProjectUrl,
       setErrors,
     ],
@@ -78,7 +78,7 @@ export const JoinCommunity: FC = memo(function JoinCommunity() {
           />
         </Field>
         <div className={styles.formRow}>
-          <Button onClick={() => setCommunityDashboardState('initial')}>
+          <Button onClick={() => setCommunityOverviewState('overview')}>
             Cancel
           </Button>
           <Button

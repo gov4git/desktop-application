@@ -12,12 +12,13 @@ import {
 import { parse } from 'marked'
 import { type FC, memo, useCallback, useState } from 'react'
 
-import { Policy } from '../../../../../../electron/db/schema.js'
-import type { CommunityIssue } from '../../../../../../electron/services/index.js'
-import { Message } from '../../../../components/Message.js'
-import { useDataStore } from '../../../../store/store.js'
-import { useMessageStyles } from '../../../../styles/messages.js'
-import { useManageCommunityStyles } from './styles.js'
+import { Policy } from '../../../../../../../electron/db/schema.js'
+import type { CommunityIssue } from '../../../../../../../electron/services/index.js'
+import { Loader } from '../../../../../components/Loader.js'
+import { Message } from '../../../../../components/Message.js'
+import { useDataStore } from '../../../../../store/store.js'
+import { useMessageStyles } from '../../../../../styles/messages.js'
+import { useManageCommunityStyles } from '../styles.js'
 
 const isManaged = (issue: CommunityIssue): boolean => {
   return issue.policy != null
@@ -37,6 +38,7 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
   const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null)
   const manageIssue = useDataStore((s) => s.communityManage.manageIssue)
   const issues = useDataStore((s) => s.communityManage.issues)
+  const issuesLoading = useDataStore((s) => s.communityManage.issuesLoading)
 
   const selectPolicy = useCallback(
     (policy: Policy) => {
@@ -83,7 +85,7 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
   }, [setSuccessMessage])
 
   return (
-    <div>
+    <Loader isLoading={issuesLoading}>
       <div className={styles.tableArea}>
         <Table>
           <TableHeader>
@@ -171,6 +173,6 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
           )}
         </div>
       )}
-    </div>
+    </Loader>
   )
 })

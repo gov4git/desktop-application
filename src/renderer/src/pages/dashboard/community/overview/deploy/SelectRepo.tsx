@@ -10,8 +10,8 @@ import {
 } from '@fluentui/react-components'
 import { FC, memo } from 'react'
 
-import { Loader } from '../../../../components/Loader.js'
-import { useDataStore } from '../../../../store/store.js'
+import { Loader } from '../../../../../components/Loader.js'
+import { useDataStore } from '../../../../../store/store.js'
 import { useCommunityDeployStyle } from './styles.js'
 
 export const SelectRepo: FC = memo(function SelectRepo() {

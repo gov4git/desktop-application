@@ -6,7 +6,7 @@ import {
 } from '@fluentui/react-components'
 import { FC, memo } from 'react'
 
-import { useDataStore } from '../../../../store/store.js'
+import { useDataStore } from '../../../../../store/store.js'
 
 export const Nav: FC = memo(function Nav() {
   const state = useDataStore((s) => s.communityDeploy.state)

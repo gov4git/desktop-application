@@ -99,13 +99,7 @@ export type CommunityJoinStore = {
   joinCommunity: (projectUrl: string) => Promise<string[]>
 }
 
-export type CommunityDashboardState = 'initial' | 'join' | 'deploy' | 'manage'
-export type CommunityDeployState =
-  | 'initial'
-  | 'repo-select'
-  | 'provide-token'
-  | 'deploy'
-
+export type CommunityDashboardState = 'overview' | 'manage'
 export type CommunityDashboardStore = {
   communityDashboard: {
     state: CommunityDashboardState
@@ -113,16 +107,49 @@ export type CommunityDashboardStore = {
   }
 }
 
+export type CommunityOverviewState = 'overview' | 'join' | 'deploy'
+export type CommunityOverviewStore = {
+  communityOverview: {
+    state: CommunityOverviewState
+    setState: (state: CommunityOverviewState) => void
+  }
+}
+
+export type CommunityManageState =
+  | 'overview'
+  | 'users'
+  | 'issues'
+  | 'pull-requests'
 export type CommunityManageStore = {
   communityManage: {
+    state: CommunityManageState
+    setState: (state: CommunityManageState) => void
     communityToManage: Community | null
+    usersLoading: boolean
     users: UserCredits[] | null
+    issuesLoading: boolean
     issues: CommunityIssuesResponse | null
-    setCommunity: (community: Community) => Promise<void>
+    setCommunity: (community: Community) => void
+    fetchCommunityIssues: (
+      community: Community,
+      silent?: boolean,
+      shouldUpdate?: () => boolean,
+    ) => Promise<void>
+    fetchCommunityUsers: (
+      Community: Community,
+      silent?: boolean,
+      shouldUpdate?: () => boolean,
+    ) => Promise<void>
     issueVotingCredits: (credits: IssueVotingCreditsArgs) => Promise<void>
     manageIssue: (args: ManageIssueArgs) => Promise<void>
   }
 }
+
+export type CommunityDeployState =
+  | 'initial'
+  | 'repo-select'
+  | 'provide-token'
+  | 'deploy'
 
 export type CommunityDeployStore = {
   communityDeploy: {
@@ -151,7 +178,8 @@ export type Store = GlobalStore &
   CommunityManageStore &
   CommunityDeployStore &
   ErrorStore &
-  LogStore
+  LogStore &
+  CommunityOverviewStore
 
 export type Set = (
   args: Store | Partial<Store> | ((draft: Draft<Store>) => void),

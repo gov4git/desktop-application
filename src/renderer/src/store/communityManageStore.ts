@@ -26,28 +26,71 @@ export const createCommunityManageStore: StateCreator<
   CommunityManageStore
 > = (set, get) => ({
   communityManage: {
+    state: 'overview',
     communityToManage: null,
+    usersLoading: false,
     users: null,
+    issuesLoading: false,
     issues: null,
-    setCommunity: serialAsync(async (community: Community | null) => {
-      if (community != null) {
+    setState: (state) => {
+      set((s) => {
+        s.communityManage.state = state
+      })
+    },
+    setCommunity: (community: Community | null) => {
+      const currentCommunity = get().communityManage.communityToManage
+      if (currentCommunity == null || currentCommunity.url != community?.url) {
         set((s) => {
           s.communityManage.communityToManage = community
           s.communityManage.users = null
           s.communityManage.issues = null
         })
-        await get().tryRun(async () => {
-          const [users, issues] = await Promise.all([
-            fetchUsers(community.url),
-            fetchIssues(community.url),
-          ])
+      }
+    },
+    fetchCommunityUsers: async (
+      community: Community,
+      silent = true,
+      shouldUpdate = () => true,
+    ) => {
+      await get().tryRun(async () => {
+        if (!silent) {
+          set((s) => {
+            s.communityManage.usersLoading = true
+          })
+        }
+        const users = await communityService.getCommunityUsers(community.url)
+        if (shouldUpdate()) {
           set((s) => {
             s.communityManage.users = users
-            s.communityManage.issues = issues
+            if (!silent) {
+              s.communityManage.usersLoading = false
+            }
           })
-        }, `Failed to manage community ${community.name}.`)
-      }
-    }),
+        }
+      }, `Failed to load users for community ${community.name}`)
+    },
+    fetchCommunityIssues: async (
+      community: Community,
+      silent = true,
+      shouldUpdate = () => true,
+    ) => {
+      await get().tryRun(async () => {
+        if (!silent) {
+          set((s) => {
+            s.communityManage.issuesLoading = true
+          })
+        }
+        const issues = await communityService.getCommunityIssues(community.url)
+        if (shouldUpdate()) {
+          set((s) => {
+            s.communityManage.issues = issues
+            if (!silent) {
+              s.communityManage.issuesLoading = false
+            }
+          })
+        }
+      }, `Failed to load issues for community ${community.name}`)
+    },
     issueVotingCredits: serialAsync(async (args: IssueVotingCreditsArgs) => {
       await get().tryRun(async () => {
         await communityService.issueVotingCredits(args)

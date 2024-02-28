@@ -1,6 +1,6 @@
 import { makeStyles, shorthands } from '@fluentui/react-components'
 
-import { gov4GitTokens } from '../../../App/theme/index.js'
+import { gov4GitTokens } from '../../../../App/theme/index.js'
 
 export const useCommunityTableStyle = makeStyles({
   formRow: {

@@ -1,7 +1,7 @@
 import { Button, Field, Input } from '@fluentui/react-components'
 import { FC, memo } from 'react'
 
-import { useDataStore } from '../../../../store/store.js'
+import { useDataStore } from '../../../../../store/store.js'
 import { useCommunityDeployStyle } from './styles.js'
 
 export const Token: FC = memo(function Deploy() {

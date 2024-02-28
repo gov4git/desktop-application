@@ -7,7 +7,6 @@ import type {
   MotionVotedStatus,
   MotionVoteOption,
 } from '../../../electron/db/schema.js'
-import { serialAsync } from '../../../shared/index.js'
 import { motionService } from '../services/MotionService.js'
 import type { MotionStore, Store } from './types.js'
 

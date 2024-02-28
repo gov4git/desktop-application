@@ -10,12 +10,14 @@ import {
 } from '@fluentui/react-components'
 import { FC, useCallback, useEffect, useMemo, useState } from 'react'
 
-import type { Community } from '../../../../../electron/db/schema.js'
-import { useDataStore } from '../../../store/store.js'
+import type { Community } from '../../../../../../electron/db/schema.js'
+import { Loader } from '../../../../components/Loader.js'
+import { useDataStore } from '../../../../store/store.js'
 import { useCommunityTableStyle } from './CommunityTable.styles.js'
 
 export const CommunityTable: FC = function CommunityTable() {
   const communities = useDataStore((s) => s.communityInfo.communities)
+  const communitiesLoading = useDataStore((s) => s.communityInfo.loading)
   const selectedCommunity = useDataStore(
     (s) => s.communityInfo.selectedCommunity,
   )
@@ -55,7 +57,7 @@ export const CommunityTable: FC = function CommunityTable() {
   }, [communities, setCommunityPages])
 
   return (
-    <>
+    <Loader isLoading={communitiesLoading}>
       {communities != null && communities.length > 0 && (
         <Table>
           <TableHeader>
@@ -94,7 +96,7 @@ export const CommunityTable: FC = function CommunityTable() {
           </TableBody>
         </Table>
       )}
-    </>
+    </Loader>
   )
 }
 
