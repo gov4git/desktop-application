@@ -6,6 +6,7 @@ import { AbstractUserService, serialAsync } from '~/shared'
 import { DB } from '../db/db.js'
 import { communities, motions, User, users } from '../db/schema.js'
 import { GitHubService } from './GitHubService.js'
+import { Gov4GitService } from './Gov4GitService.js'
 import { Services } from './Services.js'
 import { SettingsService } from './SettingsService.js'
 
@@ -20,14 +21,18 @@ export class UserService extends AbstractUserService {
   private declare readonly repoUrlBase: string
   private declare readonly db: DB
   private declare readonly settingsService: SettingsService
+  private declare readonly govService: Gov4GitService
+  private declare initialized: boolean
 
   constructor({
     services,
     identityRepoName = 'gov4git-identity',
   }: UserServiceOptions) {
     super()
+    this.initialized = false
     this.services = services
     this.db = this.services.load<DB>('db')
+    this.govService = this.services.load<Gov4GitService>('gov4git')
     this.gitHubService = this.services.load<GitHubService>('github')
     this.settingsService = this.services.load<SettingsService>('settings')
     this.identityRepoName = identityRepoName
@@ -49,11 +54,19 @@ export class UserService extends AbstractUserService {
     ])
   }
 
-  public getUser = async (): Promise<User | null> => {
+  public getUser = serialAsync(async (): Promise<User | null> => {
     const userInfo = (await this.db.select().from(users).limit(1))[0]
 
+    if (!this.initialized) {
+      const errors = await this.initializeIdRepos()
+      if (errors.length === 0) {
+        await this.govService.initId()
+      }
+      this.initialized = true
+    }
+
     return userInfo ?? null
-  }
+  })
 
   /**
    * Bypasses interactive user login flow and verification.

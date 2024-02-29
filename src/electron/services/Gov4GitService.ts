@@ -113,14 +113,17 @@ export class Gov4GitService {
     command: string[],
     community?: Community,
     skipConfig = false,
+    configPath = '',
   ): Promise<T> => {
-    if (!skipConfig) {
+    if (!skipConfig && configPath === '') {
       const configPathResponse = await this.loadConfigPath(community)
       if (!configPathResponse.ok) {
         throw new Error(`${configPathResponse.error}`)
       } else {
         command.push('--config', configPathResponse.data)
       }
+    } else if (configPath !== '') {
+      command.push('--config', configPath)
     }
 
     command.push('-v')
@@ -171,7 +174,11 @@ export class Gov4GitService {
 
     if (isPublicEmpty || isPrivateEmpty) {
       try {
-        await this.mustRun(['init-id'])
+        const response = await this.settingsService.generateConfig(user)
+        if (!response.ok) {
+          return response
+        }
+        await this.mustRun(['init-id'], undefined, false, response.data)
         return {
           ok: true,
           statusCode: 201,
