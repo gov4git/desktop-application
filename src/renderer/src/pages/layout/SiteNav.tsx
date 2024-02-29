@@ -22,7 +22,7 @@ export const SiteNav: FC = function SiteNav() {
     })
   }, [setPinned])
 
-  if (community == null) {
+  if (community == null || !community.isMember) {
     return <></>
   }
 
