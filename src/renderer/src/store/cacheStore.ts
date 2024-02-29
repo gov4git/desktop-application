@@ -21,7 +21,10 @@ export const createCacheStore: StateCreator<
 
       const searchArgs = get().motionInfo.searchArgs
       await get().motionInfo.fetchMotions(searchArgs, true, silent),
-        await Promise.all([get().communityInfo.fetchCommunities(silent)])
+        await Promise.all([
+          get().userInfo.fetchUser(silent),
+          get().communityInfo.fetchCommunities(silent),
+        ])
     }, 'Failed to fetch data.')
   }),
 })
