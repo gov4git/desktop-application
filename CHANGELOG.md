@@ -1,5 +1,12 @@
 # gov4git-desktop-app
 
+## 0.15.1
+
+### Patch Changes
+
+- a56525e: Refresh user on cache refresh
+- cb99df5: Hide site nav for unauthorized users
+
 ## 0.15.0
 
 ### Minor Changes
