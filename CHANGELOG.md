@@ -1,5 +1,21 @@
 # gov4git-desktop-app
 
+## 0.15.0
+
+### Minor Changes
+
+- 79a34f7: Add community dashboard
+- 5bbb50b: Add policy service
+
+  - Add policy info to GH issues
+  - Add policy option to management of issues.
+
+### Patch Changes
+
+- a0767a4: Fix initializing id repos
+
+  - Addresses #109
+
 ## 0.14.0
 
 ### Minor Changes
