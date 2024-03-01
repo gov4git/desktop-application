@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.15.3
+
+### Patch Changes
+
+- b5965cd: Increase max buffer limit
+
 ## 0.15.2
 
 ### Patch Changes
