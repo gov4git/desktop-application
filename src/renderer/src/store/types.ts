@@ -14,10 +14,10 @@ import type {
 } from '../../../electron/db/schema.js'
 import type {
   CommunityIssuesResponse,
+  CommunityUser,
   IssueVotingCreditsArgs,
   ManageIssueArgs,
   OrgMembershipInfo,
-  UserCredits,
 } from '../../../electron/services/index.js'
 
 export type GlobalStore = {
@@ -126,7 +126,7 @@ export type CommunityManageStore = {
     setState: (state: CommunityManageState) => void
     communityToManage: Community | null
     usersLoading: boolean
-    users: UserCredits[] | null
+    users: CommunityUser[] | null
     issuesLoading: boolean
     issues: CommunityIssuesResponse | null
     setCommunity: (community: Community) => void

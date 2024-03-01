@@ -56,29 +56,50 @@ export const UserPanel: FC = memo(function UserPanel() {
   return (
     <Loader isLoading={usersLoading}>
       <div className={styles.tableArea}>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHeaderCell>Active User</TableHeaderCell>
-              <TableHeaderCell>Voting Credits</TableHeaderCell>
-              <TableHeaderCell>Actions</TableHeaderCell>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {users != null &&
-              users.map((u) => (
+        {users == null && (
+          <>No active users or requests to join to display at this time.</>
+        )}
+        {users != null && (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHeaderCell>User</TableHeaderCell>
+                <TableHeaderCell>Membership Status</TableHeaderCell>
+                <TableHeaderCell>Voting Credits</TableHeaderCell>
+                <TableHeaderCell>Actions</TableHeaderCell>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {users.map((u) => (
                 <TableRow key={u.username}>
                   <TableCell>{u.username}</TableCell>
-                  <TableCell>{u.credits}</TableCell>
                   <TableCell>
-                    <Button onClick={() => setSelectedUsername(u.username)}>
-                      Issue Credits
-                    </Button>
+                    {u.requestUrl != null && (
+                      <a href={u.requestUrl} target="_blank" rel="noreferrer">
+                        {u.membershipStatus}
+                      </a>
+                    )}
+                    {u.requestUrl == null && <>{u.membershipStatus}</>}
+                  </TableCell>
+                  <TableCell>
+                    {u.votingCredits == null ? 'NA' : u.votingCredits}
+                  </TableCell>
+                  <TableCell>
+                    {u.membershipStatus === 'Active' && (
+                      <Button onClick={() => setSelectedUsername(u.username)}>
+                        Issue Credits
+                      </Button>
+                    )}
+                    {u.membershipStatus === 'Pending' &&
+                      u.issueNumber != null && (
+                        <Button>Approve Request to Join</Button>
+                      )}
                   </TableCell>
                 </TableRow>
               ))}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        )}
       </div>
       {selectedUsername !== '' && (
         <form onSubmit={issueCredits} className={styles.issueCreditsForm}>
