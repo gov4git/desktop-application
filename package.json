@@ -93,7 +93,7 @@
     "@fluentui/react-components": "^9.41.0",
     "@fluentui/react-icons": "^2.0.223",
     "@fluentui/react-search-preview": "^0.1.33",
-    "@gov4git/js-client": "2.2.0",
+    "@gov4git/js-client": "2.2.1",
     "@octokit/auth-oauth-device": "^6.0.1",
     "@octokit/request": "^8.1.6",
     "@vscode/codicons": "^0.0.35",
