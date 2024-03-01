@@ -22,7 +22,7 @@ export const PollsPage: FC<PollsPageProps> = function PollsPage({ state }) {
     switch (state) {
       case 'PULL_REQUESTS':
         setMotionsType('proposal')
-        setTitle('Prioritize Pull Requests')
+        setTitle('Decide on Pull Requests')
         break
       default:
         setMotionsType('concern')

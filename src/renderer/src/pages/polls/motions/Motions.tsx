@@ -99,7 +99,7 @@ export const Motions: FC<MotionsProps> = function Motions({
                   <Text weight="bold" size={400}>
                     {motionType === 'concern'
                       ? 'Prioritize Issues'
-                      : 'Prioritize Pull Requests'}
+                      : 'Decide on Pull Requests'}
                   </Text>
                 </BreadcrumbButton>
               </MenuTrigger>
@@ -112,7 +112,7 @@ export const Motions: FC<MotionsProps> = function Motions({
                   <MenuItem
                     onClick={() => changePage(routes.pullRequests.path)}
                   >
-                    Prioritize Pull Requests
+                    Decide on Pull Requests
                   </MenuItem>
                 </MenuList>
               </MenuPopover>

@@ -42,7 +42,7 @@ export const routes = {
   },
   pullRequests: {
     path: '/changes',
-    name: 'Request for Changes',
+    name: 'Approval',
     siteNav: true,
     forAdmin: false,
     iconClass: 'codicon-request-changes',
