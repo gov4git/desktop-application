@@ -82,6 +82,9 @@ export type IssueSearchResults = {
     url: string
     name: string
   }>
+  user: {
+    login: string
+  }
 }
 
 export type GetOrgsArgs = {

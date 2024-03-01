@@ -47,6 +47,14 @@ export type ManageIssueArgs = {
   label: string
 }
 
+export type CommunityUser = {
+  username: string
+  votingCredits: number | null
+  membershipStatus: 'Active' | 'Denied' | 'Pending'
+  requestUrl: string | null
+  issueNumber: number | null
+}
+
 export type CommunityIssue = Expand<
   IssueSearchResults & {
     policy: Policy | null
@@ -428,7 +436,7 @@ ${user.memberPublicBranch}`
   private getUserCredits = async (
     username: string,
     community: Community,
-  ): Promise<UserCredits> => {
+  ): Promise<number> => {
     const command = [
       'account',
       'balance',
@@ -437,12 +445,18 @@ ${user.memberPublicBranch}`
       '--asset',
       'plural',
     ]
-    const credits = await this.govService.mustRun<number>(command, community)
-    return { username, credits }
+    return await this.govService.mustRun<number>(command, community)
   }
 
-  public getCommunityUsers = async (url: string): Promise<UserCredits[]> => {
-    const community = await this.getCommunityByUrl(url)
+  public getCommunityUsers = async (url: string): Promise<CommunityUser[]> => {
+    const [user, community] = await Promise.all([
+      this.userService.getUser(),
+      this.getCommunityByUrl(url),
+    ])
+
+    if (user == null) {
+      throw new Error(`Failed to load users for ${url}. Unauthorized.`)
+    }
 
     if (community == null) {
       throw new Error(
@@ -450,11 +464,54 @@ ${user.memberPublicBranch}`
       )
     }
 
-    const users = await this.getCommunityMembers(community)
+    const existingUsers = await this.getCommunityMembers(community)
+    const usersAdded = new Set<string>()
+    const repoSegments = urlToRepoSegments(community.projectUrl)
+    const joinRequests = await this.gitHubService.searchRepoIssues({
+      repoOwner: repoSegments.owner,
+      repoName: repoSegments.repo,
+      token: user.pat,
+      state: 'all',
+      title: "I'd like to join this project's community",
+    })
 
-    return await Promise.all(
-      users.map((u) => this.getUserCredits(u, community)),
-    )
+    const communityUsers: CommunityUser[] = []
+
+    for (const userRequest of joinRequests) {
+      const username = userRequest.user.login.toLowerCase()
+      let status: CommunityUser['membershipStatus'] =
+        userRequest.state == 'closed' ? 'Denied' : 'Pending'
+      if (existingUsers.includes(username)) {
+        status = 'Active'
+      }
+      communityUsers.push({
+        username,
+        issueNumber: userRequest.number,
+        membershipStatus: status,
+        requestUrl: userRequest.html_url,
+        votingCredits:
+          status === 'Active'
+            ? await this.getUserCredits(username, community)
+            : null,
+      })
+      usersAdded.add(username)
+    }
+
+    for (const username of existingUsers) {
+      if (usersAdded.has(username)) {
+        continue
+      }
+      communityUsers.push({
+        username,
+        issueNumber: null,
+        membershipStatus: 'Active',
+        requestUrl: null,
+        votingCredits: await this.getUserCredits(username, community),
+      })
+      usersAdded.add(username)
+    }
+
+    return communityUsers
   }
 
   public issueVotingCredits = async ({
