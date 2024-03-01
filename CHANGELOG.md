@@ -1,5 +1,12 @@
 # gov4git-desktop-app
 
+## 0.15.2
+
+### Patch Changes
+
+- fa5c1f0: Update pull requests labels
+- a03a917: Add foundation for management dashboard
+
 ## 0.15.1
 
 ### Patch Changes
