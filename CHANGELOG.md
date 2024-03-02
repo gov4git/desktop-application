@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.15.5
+
+### Patch Changes
+
+- c5337e1: Fix number formatting and NaN issue
+
 ## 0.15.4
 
 ### Patch Changes
