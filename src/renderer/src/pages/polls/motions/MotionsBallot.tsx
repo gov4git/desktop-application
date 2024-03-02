@@ -36,9 +36,6 @@ export const MotionsBallot: FC<IssueBallotProps> = function MotionsBallot({
   const styles = useIssueBallotStyles()
   const badgeStyles = useBadgeStyles()
   const [voteScore, setVoteScore] = useState(motion.userScore)
-  const [displayVoteScore, setDisplayVoteScore] = useState(
-    formatDecimal(voteScore),
-  )
   const [voteStrengthInCredits, setVoteStrengthInCredits] = useState(0)
   const [totalCostInCredits, setTotalCostInCredits] = useState(0)
   const messageStyles = useMessageStyles()
@@ -113,37 +110,33 @@ export const MotionsBallot: FC<IssueBallotProps> = function MotionsBallot({
       const regex = /^-?\d+\.?\d*$/
       if (val === '' || !regex.test(val)) {
         setVoteScore((v: number) => {
-          setDisplayVoteScore(formatDecimal(v))
           return v
         })
       } else {
         const value = +e.target.value
         if (value > maxScore) {
-          setDisplayVoteScore(formatDecimal(maxScore))
-          setVoteScore(+formatDecimal(maxScore))
+          setVoteScore(maxScore)
         } else if (value < minScore) {
-          setDisplayVoteScore(formatDecimal(minScore))
-          setVoteScore(+formatDecimal(minScore))
+          setVoteScore(minScore)
         } else {
-          setDisplayVoteScore(e.target.value)
-          setVoteScore(+formatDecimal(value))
+          setVoteScore(+value)
         }
       }
     },
-    [setVoteScore, minScore, maxScore, setDisplayVoteScore],
+    [setVoteScore, minScore, maxScore],
   )
 
   useEffect(() => {
-    setInputWidth(displayVoteScore.length + 4)
-  }, [setInputWidth, displayVoteScore])
+    setInputWidth(`${voteScore}`.length + 4)
+  }, [setInputWidth, voteScore])
 
   const change = useCallback(
     (amount: number) => {
       setVoteScore((v: number) => {
         const newVal = v + amount
-        if (newVal > maxScore) return +formatDecimal(maxScore)
-        if (newVal < minScore) return +formatDecimal(minScore)
-        return +formatDecimal(newVal)
+        if (newVal > maxScore) return maxScore
+        if (newVal < minScore) return minScore
+        return newVal
       })
     },
     [setVoteScore, minScore, maxScore],
@@ -191,10 +184,6 @@ export const MotionsBallot: FC<IssueBallotProps> = function MotionsBallot({
   const dismissMessage = useCallback(() => {
     setSuccessMessage(null)
   }, [setSuccessMessage])
-
-  useEffect(() => {
-    setDisplayVoteScore(formatDecimal(voteScore))
-  }, [voteScore, setDisplayVoteScore])
 
   useEffect(() => {
     const listener = () => {
@@ -291,7 +280,7 @@ export const MotionsBallot: FC<IssueBallotProps> = function MotionsBallot({
                                       className={styles.voteInput}
                                       id={`ballot-vote-${motion.motionId}`}
                                       type="text"
-                                      value={displayVoteScore}
+                                      value={voteScore}
                                       onInput={onChange}
                                       // onBlur={onBlur}
                                       style={{
