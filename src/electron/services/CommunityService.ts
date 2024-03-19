@@ -7,6 +7,7 @@ import { DB } from '../db/db.js'
 import {
   communities,
   type Community,
+  motions,
   type Policy,
   type User,
 } from '../db/schema.js'
@@ -88,6 +89,48 @@ export class CommunityService extends AbstractCommunityService {
     this.policyService = this.services.load<PolicyService>('policy')
   }
 
+  private communityExists = async (
+    user: User,
+    community: Community,
+  ): Promise<boolean> => {
+    const projectRepoSegments = urlToRepoSegments(community.projectUrl)
+    const projectRepoExists = await this.gitHubService.doesRepoExist({
+      repoName: projectRepoSegments.repo,
+      username: projectRepoSegments.owner,
+      token: user.pat,
+    })
+    if (!projectRepoExists) return false
+    const communityRepoSegments = urlToRepoSegments(community.url)
+    return await this.gitHubService.doesRepoExist({
+      repoName: communityRepoSegments.repo,
+      username: communityRepoSegments.owner,
+      token: user.pat,
+    })
+  }
+
+  public deleteCommunity = async (url: string) => {
+    await Promise.all([
+      this.db.delete(communities).where(eq(communities.url, url)),
+      this.db.delete(motions).where(eq(motions.communityUrl, url)),
+    ])
+  }
+
+  private removeNonExistentCommunities = async (
+    user: User,
+    communityList: Community[],
+  ): Promise<Community[]> => {
+    const newCommunityList: Community[] = []
+    for (const community of communityList) {
+      const exists = await this.communityExists(user, community)
+      if (!exists) {
+        await this.deleteCommunity(community.url)
+      } else {
+        newCommunityList.push(community)
+      }
+    }
+    return newCommunityList
+  }
+
   public getCommunity = async (): Promise<Community | null> => {
     const user = await this.userService.getUser()
     if (user == null) return null
@@ -99,6 +142,10 @@ export class CommunityService extends AbstractCommunityService {
         .limit(1)
     )[0]
     if (community == null) return null
+    if (!(await this.communityExists(user, community))) {
+      await this.deleteCommunity(community.url)
+      return null
+    }
     return await this.syncCommunity(user, community)
   }
 
@@ -106,7 +153,11 @@ export class CommunityService extends AbstractCommunityService {
     const user = await this.userService.getUser()
     if (user == null) return []
     const allCommunities = await this.db.select().from(communities)
-    const syncCommunities = allCommunities.map((c) => {
+    const existingCommunities = await this.removeNonExistentCommunities(
+      user,
+      allCommunities,
+    )
+    const syncCommunities = existingCommunities.map((c) => {
       return this.syncCommunity(user, c)
     })
     return await Promise.all(syncCommunities)

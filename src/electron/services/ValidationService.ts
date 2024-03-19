@@ -96,29 +96,11 @@ export class ValidationService extends AbstractValidationService {
   ): Promise<boolean> => {
     const repoSegments = urlToRepoSegments(repoUrl)
 
-    try {
-      await this.gitHubService.getRepoInfo({
-        repoName: repoSegments.repo,
-        username: repoSegments.owner,
-        token: user.pat,
-      })
-      return true
-    } catch (ex: any) {
-      if (ex instanceof Error) {
-        try {
-          const error = JSON.parse(ex.message)
-          if ('status' in error && error.status === 404) {
-            return false
-          } else {
-            throw ex
-          }
-        } catch (error) {
-          throw ex
-        }
-      } else {
-        throw new Error(`${ex}`)
-      }
-    }
+    return this.gitHubService.doesRepoExist({
+      repoName: repoSegments.repo,
+      username: repoSegments.owner,
+      token: user.pat,
+    })
   }
 
   private validateIdRepos = async (
