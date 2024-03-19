@@ -237,6 +237,36 @@ export class GitHubService {
     )
   }
 
+  public doesRepoExist = async ({
+    repoName,
+    username,
+    token,
+  }: GetRepoInfoArgs): Promise<boolean> => {
+    try {
+      await this.getRepoInfo({
+        repoName: repoName,
+        username: username,
+        token: token,
+      })
+      return true
+    } catch (ex: any) {
+      if (ex instanceof Error) {
+        try {
+          const error = JSON.parse(ex.message)
+          if ('status' in error && error.status === 404) {
+            return false
+          } else {
+            throw ex
+          }
+        } catch (error) {
+          throw ex
+        }
+      } else {
+        throw new Error(`${ex}`)
+      }
+    }
+  }
+
   public getDefaultBranch = async (args: GetRepoInfoArgs) => {
     try {
       const response = await this.getRepoInfo(args)
