@@ -8,6 +8,7 @@ import {
   communities,
   type Community,
   motions,
+  policies,
   type Policy,
   type User,
 } from '../db/schema.js'
@@ -112,6 +113,7 @@ export class CommunityService extends AbstractCommunityService {
     await Promise.all([
       this.db.delete(communities).where(eq(communities.url, url)),
       this.db.delete(motions).where(eq(motions.communityUrl, url)),
+      this.db.delete(policies).where(eq(policies.communityUrl, url)),
     ])
   }
 

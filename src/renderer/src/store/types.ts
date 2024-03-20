@@ -92,6 +92,7 @@ export type CommunityStore = {
     selectedCommunity: Community | null
     fetchCommunities: (silent?: boolean) => Promise<void>
     selectCommunity: (communityUrl: string) => Promise<void>
+    deleteCommunity: (url: string) => Promise<void>
   }
 }
 

@@ -47,5 +47,11 @@ export const createCommunityStore: StateCreator<
         await get().communityInfo.fetchCommunities(false)
       }, `Failed to select community.`)
     }),
+    deleteCommunity: serialAsync(async (url: string) => {
+      await get().tryRun(async () => {
+        await communityService.deleteCommunity(url)
+        await get().refreshCache(false)
+      })
+    }),
   },
 })
