@@ -137,6 +137,7 @@ const CommunityAction: FC<CommunityMembersipStatusProps> =
     const setManagedCommunity = useDataStore(
       (s) => s.communityManage.setCommunity,
     )
+    const removeCommunity = useDataStore((s) => s.communityInfo.deleteCommunity)
 
     const manage = useCallback(() => {
       setManagedCommunity(community)
@@ -157,6 +158,12 @@ const CommunityAction: FC<CommunityMembersipStatusProps> =
         <a href={community.joinRequestUrl!} target="_blank" rel="noreferrer">
           View Request
         </a>
+      )
+    }
+
+    if (community.isMember || community.isMaintainer) {
+      return (
+        <Button onClick={() => removeCommunity(community.url)}>Remove</Button>
       )
     }
 

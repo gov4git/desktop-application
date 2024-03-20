@@ -24,4 +24,5 @@ export abstract class AbstractCommunityService {
     communityUrl: string,
   ): Promise<CommunityIssuesResponse>
   public abstract manageIssue(args: ManageIssueArgs): Promise<void>
+  public abstract deleteCommunity(url: string): Promise<void>
 }
