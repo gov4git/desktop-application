@@ -1,5 +1,17 @@
 # gov4git-desktop-app
 
+## 0.15.6
+
+### Patch Changes
+
+- 3ff310e: Filter out deleted communities
+
+  - Addresses #114, #128
+
+- 4946f12: Add option to remove communities
+
+  - Addresses #127
+
 ## 0.15.5
 
 ### Patch Changes
