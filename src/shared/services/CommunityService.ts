@@ -6,6 +6,7 @@ import type {
   IssueVotingCreditsArgs,
   ManageIssueArgs,
 } from '../../electron/services/index.js'
+import { ServiceResponse } from '../types/ServiceResponse.js'
 
 export abstract class AbstractCommunityService {
   public abstract insertCommunity(
@@ -25,4 +26,8 @@ export abstract class AbstractCommunityService {
   ): Promise<CommunityIssuesResponse>
   public abstract manageIssue(args: ManageIssueArgs): Promise<void>
   public abstract deleteCommunity(url: string): Promise<void>
+  public abstract approveUserRequest(
+    community: Community,
+    user: CommunityUser,
+  ): Promise<ServiceResponse<string>>
 }

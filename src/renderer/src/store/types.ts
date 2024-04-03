@@ -1,7 +1,11 @@
 import type { Verification } from '@octokit/auth-oauth-device/dist-types/types.js'
 import type { Draft } from 'immer'
 
-import type { AppUpdateInfo, ServiceErrorResponse } from '~/shared'
+import type {
+  AppUpdateInfo,
+  ServiceErrorResponse,
+  ServiceResponse,
+} from '~/shared'
 
 import type {
   Community,
@@ -143,6 +147,10 @@ export type CommunityManageStore = {
     ) => Promise<void>
     issueVotingCredits: (credits: IssueVotingCreditsArgs) => Promise<void>
     manageIssue: (args: ManageIssueArgs) => Promise<void>
+    approveUserRequest: (
+      community: Community,
+      user: CommunityUser,
+    ) => Promise<ServiceResponse<string>>
   }
 }
 

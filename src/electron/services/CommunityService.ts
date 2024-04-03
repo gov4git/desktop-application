@@ -1,7 +1,7 @@
 import { eq, sql } from 'drizzle-orm'
 import { resolve } from 'path'
 
-import { AbstractCommunityService, Expand } from '~/shared'
+import { AbstractCommunityService, Expand, ServiceResponse } from '~/shared'
 
 import { DB } from '../db/db.js'
 import {
@@ -565,6 +565,51 @@ ${user.memberPublicBranch}`
     }
 
     return communityUsers
+  }
+
+  public approveUserRequest = async (
+    community: Community,
+    user: CommunityUser,
+  ): Promise<ServiceResponse<string>> => {
+    const manager = await this.userService.getUser()
+    if (manager == null) {
+      return {
+        ok: false,
+        statusCode: 401,
+        error: `Unauthenticated. Please log in.`,
+      }
+    }
+
+    if (!community.isMaintainer) {
+      return {
+        ok: false,
+        statusCode: 403,
+        error: `Forbidden. You do not have sufficient privileges to approve this request.`,
+      }
+    }
+
+    const repoSegments = urlToRepoSegments(community.projectUrl)
+    try {
+      await this.gitHubService.addIssueComment({
+        owner: repoSegments.owner,
+        repo: repoSegments.repo,
+        token: manager.pat,
+        issueNumber: user.issueNumber!,
+        comment: 'Approve',
+      })
+    } catch (ex) {
+      return {
+        ok: false,
+        statusCode: 500,
+        error: `Failed to update GitHub issue ${user.requestUrl}. ${ex}`,
+      }
+    }
+
+    return {
+      ok: true,
+      statusCode: 200,
+      data: `Success. The request to join has been approved for user ${user.username}. It may take a few hours before user has been added to the community.`,
+    }
   }
 
   public issueVotingCredits = async ({
