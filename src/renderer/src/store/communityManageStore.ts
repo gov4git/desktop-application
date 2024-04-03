@@ -5,6 +5,7 @@ import { serialAsync } from '~/shared'
 
 import type { Community } from '../../../electron/db/schema.js'
 import type {
+  CommunityUser,
   IssueVotingCreditsArgs,
   ManageIssueArgs,
 } from '../../../electron/services/CommunityService.js'
@@ -110,5 +111,10 @@ export const createCommunityManageStore: StateCreator<
         })
       }, `Failed to manage issue #${args.issueNumber}.`)
     }),
+    approveUserRequest: serialAsync(
+      async (community: Community, user: CommunityUser) => {
+        return await communityService.approveUserRequest(community, user)
+      },
+    ),
   },
 })

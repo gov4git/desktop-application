@@ -61,6 +61,14 @@ export type UpdateIssueArgs = {
   stateReason?: 'completed' | 'not_planned' | 'reopened'
 }
 
+export type AddIssueCommentArgs = {
+  token: string
+  owner: string
+  repo: string
+  issueNumber: number
+  comment: string
+}
+
 export type SearchRepoIssuesArgs = {
   repoOwner: string
   repoName: string
@@ -375,6 +383,26 @@ export class GitHubService {
         ...(state != null ? { state } : null),
         ...(stateReason != null ? { state_reason: stateReason } : null),
         ...(labels != null ? { labels } : null),
+      },
+    )
+  }
+
+  public addIssueComment = async ({
+    owner,
+    repo,
+    issueNumber,
+    comment,
+    token,
+  }: AddIssueCommentArgs) => {
+    await this.run(
+      this.reqWithAuth(token),
+      201,
+      'POST /repos/{owner}/{repo}/issues/{issue_number}/comments',
+      {
+        owner,
+        repo,
+        issue_number: issueNumber,
+        body: comment,
       },
     )
   }
