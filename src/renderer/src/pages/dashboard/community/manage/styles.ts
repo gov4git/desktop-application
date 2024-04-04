@@ -65,4 +65,10 @@ export const useManageCommunityStyles = makeStyles({
       width: '150px',
     },
   },
+  manageIssueFormArea: {
+    display: 'flex',
+    flexDirection: 'column',
+    ...shorthands.gap('8px'),
+    ...shorthands.padding('12px', 0, '32px', 0),
+  },
 })

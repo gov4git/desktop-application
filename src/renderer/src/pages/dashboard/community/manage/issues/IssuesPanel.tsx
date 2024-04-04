@@ -9,8 +9,11 @@ import {
   TableHeaderCell,
   TableRow,
 } from '@fluentui/react-components'
+import { SearchBox } from '@fluentui/react-search-preview'
 import { parse } from 'marked'
-import { type FC, memo, useCallback, useState } from 'react'
+import { type FC, memo, useCallback, useEffect, useMemo, useState } from 'react'
+
+import { debounceAsync } from '~/shared'
 
 import { Policy } from '../../../../../../../electron/db/schema.js'
 import type { CommunityIssue } from '../../../../../../../electron/services/index.js'
@@ -38,7 +41,30 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
   const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null)
   const manageIssue = useDataStore((s) => s.communityManage.manageIssue)
   const issues = useDataStore((s) => s.communityManage.issues)
+  const [filteredIssues, setFilteredIssues] = useState(issues?.issues)
   const issuesLoading = useDataStore((s) => s.communityManage.issuesLoading)
+  const [showManageButton, setShowManageButton] = useState(true)
+  const [search, setSearch] = useState('')
+  const [searchBox, setSearchBox] = useState('')
+
+  const debounceSetSearch = useMemo(() => {
+    return debounceAsync(setSearch)
+  }, [setSearch])
+
+  useEffect(() => {
+    debounceSetSearch(searchBox)
+  }, [searchBox, debounceSetSearch])
+
+  useEffect(() => {
+    if (search !== '') {
+      const filteredIssues = issues?.issues.filter((i) => {
+        return i.title.toLowerCase().includes(search.toLowerCase())
+      })
+      setFilteredIssues(filteredIssues)
+    } else {
+      setFilteredIssues(issues?.issues)
+    }
+  }, [search, issues, setFilteredIssues])
 
   const selectPolicy = useCallback(
     (policy: Policy) => {
@@ -52,8 +78,10 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
   const onSelect = useCallback(
     (issue: CommunityIssue) => {
       setSelectedIssue(issue)
+      setShowManageButton(true)
+      setSelectedPolicy(null)
     },
-    [setSelectedIssue],
+    [setSelectedIssue, setShowManageButton, setSelectedPolicy],
   )
 
   const manage = useCallback(async () => {
@@ -87,6 +115,25 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
   return (
     <Loader isLoading={issuesLoading}>
       <div className={styles.tableArea}>
+        <div className={styles.searchControls}>
+          <div className={styles.searchBox}>
+            <SearchBox
+              className={styles.searchInput}
+              size="medium"
+              placeholder="Search"
+              value={searchBox}
+              onChange={(e: any) => setSearchBox(e.target.value)}
+              dismiss={
+                // eslint-disable-next-line
+                <i
+                  onClick={() => setSearchBox('')}
+                  className="codicon codicon-chrome-close"
+                ></i>
+              }
+            />
+          </div>
+          <div></div>
+        </div>
         <Table>
           <TableHeader>
             <TableRow>
@@ -95,8 +142,8 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {issues != null &&
-              issues.issues.map((i) => (
+            {filteredIssues != null &&
+              filteredIssues.map((i) => (
                 <TableRow
                   key={i.id}
                   onClick={() => onSelect(i)}
@@ -124,6 +171,72 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
       </div>
       {selectedIssue != null && (
         <div className={styles.selectedIssueArea}>
+          {successMessage !== '' && (
+            <Message
+              className={messageStyles.success}
+              messages={[successMessage]}
+              onClose={dismissMessage}
+            />
+          )}
+          <div className={styles.manageIssueFormArea}>
+            {!isManaged(selectedIssue) && (
+              <>
+                {showManageButton && (
+                  <Button
+                    appearance="primary"
+                    onClick={() => setShowManageButton(false)}
+                  >
+                    Manage with Gov4Git
+                  </Button>
+                )}
+                {!showManageButton && (
+                  <>
+                    <div>
+                      <div>Select a Policy:</div>
+                      <Dropdown placeholder="Select a policy">
+                        {issues?.policies.map((p) => (
+                          <Option
+                            key={p.title}
+                            value={p.title}
+                            onClick={() => selectPolicy(p)}
+                          >
+                            {p.title}
+                          </Option>
+                        ))}
+                      </Dropdown>
+                    </div>
+                    {selectedPolicy != null && (
+                      <>
+                        <div
+                          dangerouslySetInnerHTML={{
+                            __html: parse(selectedPolicy.description ?? ''),
+                          }}
+                        ></div>
+                        <div>
+                          <Button
+                            disabled={loading || selectedPolicy == null}
+                            onClick={manage}
+                            appearance="primary"
+                          >
+                            {loading && (
+                              <i className="codicon codicon-loading codicon-modifier-spin" />
+                            )}
+                            Manage with Gov4Git using {selectedPolicy?.title}
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+              </>
+            )}
+            {isManaged(selectedIssue) && (
+              <strong>
+                Managed with Gov4Git using {selectedIssue.policy?.title}
+              </strong>
+            )}
+          </div>
+
           <hgroup className={styles.titleArea}>
             <h2>{selectedIssue.title}</h2>
             <a href={selectedIssue.html_url} target="_blank" rel="noreferrer">
@@ -136,41 +249,6 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
               __html: parse(selectedIssue.body ?? ''),
             }}
           ></div>
-          <div>
-            {!isManaged(selectedIssue) && (
-              <>
-                <Dropdown placeholder="Select a policy">
-                  {issues?.policies.map((p) => (
-                    <Option
-                      key={p.title}
-                      value={p.title}
-                      onClick={() => selectPolicy(p)}
-                    >
-                      {p.title}
-                    </Option>
-                  ))}
-                </Dropdown>
-                <Button
-                  disabled={loading || selectedPolicy == null}
-                  onClick={manage}
-                  appearance="primary"
-                >
-                  {!loading && <>Manage with Gov4Git</>}
-                  {loading && (
-                    <i className="codicon codicon-loading codicon-modifier-spin" />
-                  )}
-                </Button>
-              </>
-            )}
-            {isManaged(selectedIssue) && <strong>Managed with Gov4Git</strong>}
-          </div>
-          {successMessage !== '' && (
-            <Message
-              className={messageStyles.success}
-              messages={[successMessage]}
-              onClose={dismissMessage}
-            />
-          )}
         </div>
       )}
     </Loader>
