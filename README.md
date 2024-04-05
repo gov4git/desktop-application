@@ -23,3 +23,7 @@ curl -sSfLO https://github.com/gov4git/desktop-application/releases/latest/downl
 sudo chmod +x ./gov4git-desktop-app.AppImage
 ./gov4git-desktop-app.AppImage
 ```
+
+## Development
+
+[Docs](docs/README.md)
