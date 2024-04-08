@@ -267,7 +267,7 @@ ${user.memberPublicBranch}`
   ): Promise<{ status: 'open' | 'closed'; url: string } | null> => {
     const repoSegments = urlToRepoSegments(community.projectUrl)
     const userJoinRequest = (
-      await this.gitHubService.searchRepoIssues({
+      await this.gitHubService.searchRepoIssuesOrPrs({
         repoOwner: repoSegments.owner,
         repoName: repoSegments.repo,
         creator: user.username,
@@ -520,7 +520,7 @@ ${user.memberPublicBranch}`
     const existingUsers = await this.getCommunityMembers(community)
     const usersAdded = new Set<string>()
     const repoSegments = urlToRepoSegments(community.projectUrl)
-    const joinRequests = await this.gitHubService.searchRepoIssues({
+    const joinRequests = await this.gitHubService.searchRepoIssuesOrPrs({
       repoOwner: repoSegments.owner,
       repoName: repoSegments.repo,
       token: user.pat,
@@ -642,8 +642,9 @@ ${user.memberPublicBranch}`
     await this.govService.mustRun(command, community)
   }
 
-  public getCommunityIssues = async (
+  public getCommunityIssuesOrPrs = async (
     communityUrl: string,
+    getPrs = false,
   ): Promise<CommunityIssuesResponse> => {
     const user = await this.userService.getUser()
     if (user == null) {
@@ -666,14 +667,17 @@ ${user.memberPublicBranch}`
 
     const policies = (
       await this.policyService.getPolicies(communityUrl)
-    ).filter((p) => p.motionType === 'concern')
+    ).filter((p) =>
+      getPrs ? p.motionType === 'proposal' : p.motionType === 'concern',
+    )
 
     const repoSegments = urlToRepoSegments(community.projectUrl)
-    const issues = await this.gitHubService.searchRepoIssues({
+    const issues = await this.gitHubService.searchRepoIssuesOrPrs({
       repoOwner: repoSegments.owner,
       repoName: repoSegments.repo,
       token: user.pat,
       state: 'open',
+      pullRequests: getPrs,
     })
 
     const communityIssues: CommunityIssue[] = issues.map((issue) => {
@@ -699,7 +703,7 @@ ${user.memberPublicBranch}`
     }
   }
 
-  public manageIssue = async ({
+  public manageIssueOrPr = async ({
     communityUrl,
     issueNumber,
     label,

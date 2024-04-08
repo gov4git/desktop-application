@@ -20,6 +20,9 @@ export const DataLoader: FC = function DataLoader() {
   const fetchCommunityIssues = useDataStore(
     (s) => s.communityManage.fetchCommunityIssues,
   )
+  const fetchCommunityPrs = useDataStore(
+    (s) => s.communityManage.fetchCommunityPullRequests,
+  )
 
   useEffect(() => {
     let shouldUpdate = true
@@ -48,6 +51,7 @@ export const DataLoader: FC = function DataLoader() {
         await Promise.allSettled([
           fetchCommunityUsers(communityToManage, false, () => shouldUpdate),
           fetchCommunityIssues(communityToManage, false, () => shouldUpdate),
+          fetchCommunityPrs(communityToManage, false, () => shouldUpdate),
         ])
       }
     }
@@ -57,7 +61,12 @@ export const DataLoader: FC = function DataLoader() {
     return () => {
       shouldUpdate = false
     }
-  }, [communityToManage, fetchCommunityUsers, fetchCommunityIssues])
+  }, [
+    communityToManage,
+    fetchCommunityUsers,
+    fetchCommunityIssues,
+    fetchCommunityPrs,
+  ])
 
   useEffect(() => {
     // void refreshCache()

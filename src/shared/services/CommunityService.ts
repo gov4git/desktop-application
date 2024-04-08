@@ -21,10 +21,11 @@ export abstract class AbstractCommunityService {
   public abstract issueVotingCredits(
     args: IssueVotingCreditsArgs,
   ): Promise<void>
-  public abstract getCommunityIssues(
+  public abstract getCommunityIssuesOrPrs(
     communityUrl: string,
+    getPrs?: boolean,
   ): Promise<CommunityIssuesResponse>
-  public abstract manageIssue(args: ManageIssueArgs): Promise<void>
+  public abstract manageIssueOrPr(args: ManageIssueArgs): Promise<void>
   public abstract deleteCommunity(url: string): Promise<void>
   public abstract approveUserRequest(
     community: Community,

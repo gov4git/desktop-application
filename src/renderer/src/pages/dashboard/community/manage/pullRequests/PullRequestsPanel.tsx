@@ -23,11 +23,11 @@ import { useDataStore } from '../../../../../store/store.js'
 import { useMessageStyles } from '../../../../../styles/messages.js'
 import { useManageCommunityStyles } from '../styles.js'
 
-const isManaged = (issue: CommunityIssue): boolean => {
-  return issue.policy != null
+const isManaged = (pullRequest: CommunityIssue): boolean => {
+  return pullRequest.policy != null
 }
 
-export const IssuesPanel: FC = memo(function IssuesPanel() {
+export const PullRequestsPanel: FC = memo(function PullRequestsPanel() {
   const styles = useManageCommunityStyles()
   const messageStyles = useMessageStyles()
   const [loading, setLoading] = useState(false)
@@ -35,14 +35,14 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
   const selectedCommunity = useDataStore(
     (s) => s.communityManage.communityToManage,
   )!
-  const [selectedIssue, setSelectedIssue] = useState<CommunityIssue | null>(
-    null,
-  )
+  const [selectedPr, setSelectedPr] = useState<CommunityIssue | null>(null)
   const [selectedPolicy, setSelectedPolicy] = useState<Policy | null>(null)
-  const manageIssue = useDataStore((s) => s.communityManage.manageIssueOrPr)
-  const issues = useDataStore((s) => s.communityManage.issues)
-  const [filteredIssues, setFilteredIssues] = useState(issues?.issues)
-  const issuesLoading = useDataStore((s) => s.communityManage.issuesLoading)
+  const managePr = useDataStore((s) => s.communityManage.manageIssueOrPr)
+  const pullRequests = useDataStore((s) => s.communityManage.pullRequests)
+  const [filteredPrs, setFilteredPrs] = useState(pullRequests?.issues)
+  const pullRequestsLoading = useDataStore(
+    (s) => s.communityManage.pullRequestsLoading,
+  )
   const [showManageButton, setShowManageButton] = useState(true)
   const [search, setSearch] = useState('')
   const [searchBox, setSearchBox] = useState('')
@@ -57,14 +57,14 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
 
   useEffect(() => {
     if (search !== '') {
-      const filteredIssues = issues?.issues.filter((i) => {
+      const filteredIssues = pullRequests?.issues.filter((i) => {
         return i.title.toLowerCase().includes(search.toLowerCase())
       })
-      setFilteredIssues(filteredIssues)
+      setFilteredPrs(filteredIssues)
     } else {
-      setFilteredIssues(issues?.issues)
+      setFilteredPrs(pullRequests?.issues)
     }
-  }, [search, issues, setFilteredIssues])
+  }, [search, pullRequests, setFilteredPrs])
 
   const selectPolicy = useCallback(
     (policy: Policy) => {
@@ -77,43 +77,37 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
 
   const onSelect = useCallback(
     (issue: CommunityIssue) => {
-      setSelectedIssue(issue)
+      setSelectedPr(issue)
       setShowManageButton(true)
       setSelectedPolicy(null)
     },
-    [setSelectedIssue, setShowManageButton, setSelectedPolicy],
+    [setSelectedPr, setShowManageButton, setSelectedPolicy],
   )
 
   const manage = useCallback(async () => {
-    if (selectedIssue != null && selectedPolicy != null) {
+    if (selectedPr != null && selectedPolicy != null) {
       setLoading(true)
-      await manageIssue({
+      await managePr({
         communityUrl: selectedCommunity.url,
-        issueNumber: selectedIssue.number,
+        issueNumber: selectedPr.number,
         label: selectedPolicy.githubLabel,
       })
       setSuccessMessage(
         [
-          `Success. Issue #${selectedIssue.number}, ${selectedIssue.title}, is now marked to be managed by Gov4Git.`,
+          `Success. Pull Request #${selectedPr.number}, ${selectedPr.title}, is now marked to be managed by Gov4Git.`,
           'It may take take a few hours before the system creates a ballot for the issue.',
         ].join(' '),
       )
       setLoading(false)
     }
-  }, [
-    manageIssue,
-    setLoading,
-    selectedCommunity,
-    selectedIssue,
-    selectedPolicy,
-  ])
+  }, [managePr, setLoading, selectedCommunity, selectedPr, selectedPolicy])
 
   const dismissMessage = useCallback(() => {
     setSuccessMessage('')
   }, [setSuccessMessage])
 
   return (
-    <Loader isLoading={issuesLoading}>
+    <Loader isLoading={pullRequestsLoading}>
       <div className={styles.tableArea}>
         <div className={styles.searchControls}>
           <div className={styles.searchBox}>
@@ -138,17 +132,17 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
           <TableHeader>
             <TableRow>
               <TableHeaderCell>Managed</TableHeaderCell>
-              <TableHeaderCell>Issue</TableHeaderCell>
+              <TableHeaderCell>Pull Request</TableHeaderCell>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredIssues != null &&
-              filteredIssues.map((i) => (
+            {filteredPrs != null &&
+              filteredPrs.map((i) => (
                 <TableRow
                   key={i.id}
                   onClick={() => onSelect(i)}
                   className={
-                    selectedIssue != null && selectedIssue.id === i.id
+                    selectedPr != null && selectedPr.id === i.id
                       ? styles.selectedRow
                       : ''
                   }
@@ -169,7 +163,7 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
           </TableBody>
         </Table>
       </div>
-      {selectedIssue != null && (
+      {selectedPr != null && (
         <div className={styles.selectedIssueArea}>
           {successMessage !== '' && (
             <Message
@@ -179,7 +173,7 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
             />
           )}
           <div className={styles.manageIssueFormArea}>
-            {!isManaged(selectedIssue) && (
+            {!isManaged(selectedPr) && (
               <>
                 {showManageButton && (
                   <Button
@@ -194,7 +188,7 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
                     <div>
                       <div>Select a Policy:</div>
                       <Dropdown placeholder="Select a policy">
-                        {issues?.policies.map((p) => (
+                        {pullRequests?.policies.map((p) => (
                           <Option
                             key={p.title}
                             value={p.title}
@@ -230,23 +224,23 @@ export const IssuesPanel: FC = memo(function IssuesPanel() {
                 )}
               </>
             )}
-            {isManaged(selectedIssue) && (
+            {isManaged(selectedPr) && (
               <strong>
-                Managed with Gov4Git using {selectedIssue.policy?.title}
+                Managed with Gov4Git using {selectedPr.policy?.title}
               </strong>
             )}
           </div>
 
           <hgroup className={styles.titleArea}>
-            <h2>{selectedIssue.title}</h2>
-            <a href={selectedIssue.html_url} target="_blank" rel="noreferrer">
-              {selectedIssue.html_url}
+            <h2>{selectedPr.title}</h2>
+            <a href={selectedPr.html_url} target="_blank" rel="noreferrer">
+              {selectedPr.html_url}
             </a>
           </hgroup>
           <div
             className={styles.description}
             dangerouslySetInnerHTML={{
-              __html: parse(selectedIssue.body ?? ''),
+              __html: parse(selectedPr.body ?? ''),
             }}
           ></div>
         </div>
