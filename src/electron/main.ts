@@ -11,6 +11,7 @@ import {
 import type { InvokeServiceProps } from '~/shared'
 
 import {
+  CLI_VERSION,
   COMMUNITY_REPO_NAME,
   CONFIG_PATH,
   DB_PATH,
@@ -39,6 +40,7 @@ const logService = new LogService(resolve(CONFIG_PATH, 'logs.txt'))
 services.register('log', logService)
 
 logService.info(`Gov4Git Version ${logService.getAppVersion()}`)
+logService.info(`CLI_VERSION of protocol: ${CLI_VERSION}`)
 
 async function setup(): Promise<void> {
   try {
