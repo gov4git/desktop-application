@@ -134,8 +134,15 @@ export type CommunityManageStore = {
     users: CommunityUser[] | null
     issuesLoading: boolean
     issues: CommunityIssuesResponse | null
+    pullRequestsLoading: boolean
+    pullRequests: CommunityIssuesResponse | null
     setCommunity: (community: Community) => void
     fetchCommunityIssues: (
+      community: Community,
+      silent?: boolean,
+      shouldUpdate?: () => boolean,
+    ) => Promise<void>
+    fetchCommunityPullRequests: (
       community: Community,
       silent?: boolean,
       shouldUpdate?: () => boolean,
@@ -146,7 +153,7 @@ export type CommunityManageStore = {
       shouldUpdate?: () => boolean,
     ) => Promise<void>
     issueVotingCredits: (credits: IssueVotingCreditsArgs) => Promise<void>
-    manageIssue: (args: ManageIssueArgs) => Promise<void>
+    manageIssueOrPr: (args: ManageIssueArgs) => Promise<void>
     approveUserRequest: (
       community: Community,
       user: CommunityUser,

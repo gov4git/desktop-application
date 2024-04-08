@@ -16,8 +16,8 @@ const fetchUsers = serialAsync(async (url: string) => {
   return await communityService.getCommunityUsers(url)
 })
 
-const fetchIssues = serialAsync(async (url: string) => {
-  return await communityService.getCommunityIssues(url)
+const fetchIssuesOrPrs = serialAsync(async (url: string, pr = false) => {
+  return await communityService.getCommunityIssuesOrPrs(url, pr)
 })
 
 export const createCommunityManageStore: StateCreator<
@@ -33,6 +33,8 @@ export const createCommunityManageStore: StateCreator<
     users: null,
     issuesLoading: false,
     issues: null,
+    pullRequestsLoading: false,
+    pullRequests: null,
     setState: (state) => {
       set((s) => {
         s.communityManage.state = state
@@ -81,7 +83,9 @@ export const createCommunityManageStore: StateCreator<
             s.communityManage.issuesLoading = true
           })
         }
-        const issues = await communityService.getCommunityIssues(community.url)
+        const issues = await communityService.getCommunityIssuesOrPrs(
+          community.url,
+        )
         if (shouldUpdate()) {
           set((s) => {
             s.communityManage.issues = issues
@@ -91,6 +95,31 @@ export const createCommunityManageStore: StateCreator<
           })
         }
       }, `Failed to load issues for community ${community.name}`)
+    },
+    fetchCommunityPullRequests: async (
+      community: Community,
+      silent = true,
+      shouldUpdate = () => true,
+    ) => {
+      await get().tryRun(async () => {
+        if (!silent) {
+          set((s) => {
+            s.communityManage.pullRequestsLoading = true
+          })
+        }
+        const pullRequests = await communityService.getCommunityIssuesOrPrs(
+          community.url,
+          true,
+        )
+        if (shouldUpdate()) {
+          set((s) => {
+            s.communityManage.pullRequests = pullRequests
+            if (!silent) {
+              s.communityManage.pullRequestsLoading = false
+            }
+          })
+        }
+      }, `Failed to load pull requests for community ${community.name}`)
     },
     issueVotingCredits: serialAsync(async (args: IssueVotingCreditsArgs) => {
       await get().tryRun(async () => {
@@ -102,12 +131,14 @@ export const createCommunityManageStore: StateCreator<
         await get().refreshCache(false)
       }, `Failed to issue ${args.credits} voting credits to ${args.username}.`)
     }),
-    manageIssue: serialAsync(async (args: ManageIssueArgs) => {
+    manageIssueOrPr: serialAsync(async (args: ManageIssueArgs) => {
       await get().tryRun(async () => {
-        await communityService.manageIssue(args)
-        const newIssues = await fetchIssues(args.communityUrl)
+        await communityService.manageIssueOrPr(args)
+        const newIssues = await fetchIssuesOrPrs(args.communityUrl)
+        const newPrs = await fetchIssuesOrPrs(args.communityUrl, true)
         set((s) => {
           s.communityManage.issues = newIssues
+          s.communityManage.pullRequests = newPrs
         })
       }, `Failed to manage issue #${args.issueNumber}.`)
     }),

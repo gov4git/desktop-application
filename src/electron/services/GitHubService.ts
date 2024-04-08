@@ -76,6 +76,7 @@ export type SearchRepoIssuesArgs = {
   creator?: string
   title?: string
   state?: 'open' | 'closed' | 'all'
+  pullRequests?: boolean
 }
 
 export type IssueSearchResults = {
@@ -407,13 +408,14 @@ export class GitHubService {
     )
   }
 
-  public searchRepoIssues = async ({
+  public searchRepoIssuesOrPrs = async ({
     repoOwner,
     repoName,
     creator,
     token,
     title,
     state = 'all',
+    pullRequests = false,
   }: SearchRepoIssuesArgs) => {
     let allResponses: IssueSearchResults[] = []
     let currentResponse
@@ -435,8 +437,20 @@ export class GitHubService {
       allResponses = [
         ...allResponses,
         ...currentResponse.data.filter((i: any) => {
-          if (title == null) return !('pull_request' in i)
-          return !('pull_request' in i) && i.title === title
+          let keep = true
+          if (title != null && i.title !== title) {
+            keep = false
+          }
+          const isPullRequest = 'pull_request' in i
+          if (pullRequests && !isPullRequest) {
+            keep = false
+          }
+          if (!pullRequests && isPullRequest) {
+            keep = false
+          }
+          return keep
+          // if (title == null) return !('pull_request' in i)
+          // return !('pull_request' in i) && i.title === title
         }),
       ]
       page += 1
