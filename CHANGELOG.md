@@ -1,5 +1,18 @@
 # gov4git-desktop-app
 
+## 0.16.0
+
+### Minor Changes
+
+- 72c9e24: Upgrade to gov4git v2.2.5
+
+### Patch Changes
+
+- 0187f17: Add pull requests management
+- 34e0a70: Add issue management
+- 4f37427: Dynamically set protocol CLI version
+- f102452: Add user management
+
 ## 0.15.6
 
 ### Patch Changes
