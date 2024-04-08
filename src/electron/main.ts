@@ -11,10 +11,12 @@ import {
 import type { InvokeServiceProps } from '~/shared'
 
 import {
+  CLI_VERSION,
   COMMUNITY_REPO_NAME,
   CONFIG_PATH,
   DB_PATH,
   GITHUB_OAUTH_CLIENT_ID,
+  setCliVersion,
 } from './configs.js'
 import { DB, loadDb } from './db/db.js'
 import { migrateDb } from './db/migrate.js'
@@ -41,6 +43,13 @@ services.register('log', logService)
 logService.info(`Gov4Git Version ${logService.getAppVersion()}`)
 
 async function setup(): Promise<void> {
+  try {
+    logService.info(`Setting CLI Version for protocol`)
+    setCliVersion(app.isPackaged)
+    logService.info(`CLI_VERSION of protocol: ${CLI_VERSION}`)
+  } catch (ex) {
+    logService.error(`Failed to set CLI_VERSION`)
+  }
   try {
     logService.info(`Initializing DB: ${DB_PATH}`)
     const db = loadDb(DB_PATH)

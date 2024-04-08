@@ -3,6 +3,7 @@ import { resolve } from 'path'
 
 import { AbstractCommunityService, Expand, ServiceResponse } from '~/shared'
 
+import { CLI_VERSION } from '../configs.js'
 import { DB } from '../db/db.js'
 import {
   communities,
@@ -428,7 +429,7 @@ ${user.memberPublicBranch}`
       '--project',
       `${org}/${repo}`,
       '--release',
-      'v2.2.5',
+      `v${CLI_VERSION}`,
     ]
     await this.govService.mustRun(command, undefined, true)
 
