@@ -33,10 +33,6 @@ extraResources:
     to: 'migrations'
     filter:
       - '**/*'
-  - from: '.'
-    to: '.'
-    filter:
-      - 'package.json'
 win:
   executableName: Gov4Git
 nsis:

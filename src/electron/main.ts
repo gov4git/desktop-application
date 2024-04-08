@@ -16,7 +16,6 @@ import {
   CONFIG_PATH,
   DB_PATH,
   GITHUB_OAUTH_CLIENT_ID,
-  setCliVersion,
 } from './configs.js'
 import { DB, loadDb } from './db/db.js'
 import { migrateDb } from './db/migrate.js'
@@ -41,15 +40,9 @@ const logService = new LogService(resolve(CONFIG_PATH, 'logs.txt'))
 services.register('log', logService)
 
 logService.info(`Gov4Git Version ${logService.getAppVersion()}`)
+logService.info(`CLI_VERSION of protocol: ${CLI_VERSION}`)
 
 async function setup(): Promise<void> {
-  try {
-    logService.info(`Setting CLI Version for protocol`)
-    setCliVersion(app.isPackaged)
-    logService.info(`CLI_VERSION of protocol: ${CLI_VERSION}`)
-  } catch (ex) {
-    logService.error(`Failed to set CLI_VERSION`)
-  }
   try {
     logService.info(`Initializing DB: ${DB_PATH}`)
     const db = loadDb(DB_PATH)
