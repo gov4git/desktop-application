@@ -1,11 +1,5 @@
 # gov4git-desktop-app
 
-## 0.17.0
-
-### Minor Changes
-
-- 301adf0: upgrade to Gov4Git client v2.2.6
-
 ## 0.16.0
 
 ### Minor Changes

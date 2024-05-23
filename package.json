@@ -1,7 +1,7 @@
 {
   "name": "gov4git-desktop-app",
   "private": true,
-  "version": "0.17.0",
+  "version": "0.16.0",
   "description": "Gov4Git Desktop Application",
   "type": "commonjs",
   "main": "./build/electron/main.js",
@@ -93,7 +93,7 @@
     "@fluentui/react-components": "^9.41.0",
     "@fluentui/react-icons": "^2.0.223",
     "@fluentui/react-search-preview": "^0.1.33",
-    "@gov4git/js-client": "2.2.6",
+    "@gov4git/js-client": "2.2.5",
     "@octokit/auth-oauth-device": "^6.0.1",
     "@octokit/request": "^8.1.6",
     "@vscode/codicons": "^0.0.35",
