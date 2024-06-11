@@ -1,5 +1,11 @@
 # gov4git-desktop-app
 
+## 0.19.0
+
+### Minor Changes
+
+- 6341997: bump to gov4git v2.2.6
+
 ## 0.17.0
 
 ### Minor Changes
