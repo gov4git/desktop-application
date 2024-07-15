@@ -54,7 +54,7 @@ export const LoginVerification: FC<LoginVerificationProps> =
         {internalVerification != null && (
           <div className={styles.verificationArea}>
             <div>
-              Login with your deviec at{' '}
+              Login with your device at{' '}
               <a
                 href={internalVerification.verification_uri}
                 target="_blank"
