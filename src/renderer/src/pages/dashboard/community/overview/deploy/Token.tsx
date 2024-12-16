@@ -20,6 +20,19 @@ export const Token: FC = memo(function Deploy() {
           Gov4Git requires access to a Personal Access Token in order to manage
           the newly deployed community repo.
         </p>
+        
+        <p>
+          To set your organization as the resource owner when generating a personal access token, your organization must opt into fine-grained personal access tokens.
+          If your organization has not already opted in, you will not see it as an option. 
+          You can check and set this policy by following the steps in{' '}
+            <a
+              target="_blank"
+              href="https://docs.github.com/en/organizations/managing-programmatic-access-to-your-organization/setting-a-personal-access-token-policy-for-your-organization"
+              rel="noreferrer"
+            >
+              Setting a personal access token policy for your organization.
+            </a>{' '}
+        </p>
         <h3 className={styles.instructionTitle}>
           Generating a Personal Access Token
         </h3>
